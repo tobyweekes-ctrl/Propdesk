@@ -5,6 +5,7 @@ import { config } from '../env.mjs';
 import { cached, cacheAge } from '../cache.mjs';
 import { nbaStatsProvider } from '../providers/nbaStats.mjs';
 import { balldontlieProvider } from '../providers/balldontlie.mjs';
+import { espnProvider } from '../providers/espn.mjs';
 import { espnInjuryProvider } from '../providers/espnInjuries.mjs';
 import { oddsApiProvider, quota } from '../providers/oddsApi.mjs';
 import { demoProvider, demoInjuries, demoEventProps } from '../providers/demo.mjs';
@@ -20,7 +21,8 @@ const demo = () => config.statsProvider === 'demo';
 function statsProvider() {
   if (demo()) return demoProvider(today());
   if (config.statsProvider === 'balldontlie') return balldontlieProvider;
-  return nbaStatsProvider;
+  if (config.statsProvider === 'nba') return nbaStatsProvider;
+  return espnProvider;
 }
 
 // ---------- seasons ----------

@@ -68,3 +68,15 @@ test('ESPN injury report (real response, trimmed) -> normalised', () => {
     assert.ok(i.status);
   }
 });
+
+test('ESPN box score (real game, trimmed) -> rows and DNPs', async () => {
+  const { normaliseSummary } = await import('../server/providers/espn.mjs');
+  const json = JSON.parse(readFileSync(new URL('./fixtures/espn-summary.json', import.meta.url)));
+  const { rows, dnps, players } = normaliseSummary(json, { gameId: '401909868', date: '2026-10-26', home: 'CHA', away: 'WAS' });
+  assert.equal(players.length, 6);
+  assert.equal(dnps.length, 2);
+  assert.match(dnps[0].reason, /COACH/);
+  const ad = rows.find((r) => r.playerId === '6583');
+  assert.deepEqual([ad.team, ad.opp, ad.home, ad.min, ad.pts, ad.reb, ad.fg3m, ad.fg3a, ad.fta, ad.pm, ad.starter], ['WAS', 'CHA', false, 36, 29, 10, 3, 6, 4, 6, true]);
+  for (const r of rows) assert.ok(r.home === (r.team === 'CHA'));
+});

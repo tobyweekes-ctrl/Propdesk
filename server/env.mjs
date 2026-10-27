@@ -18,7 +18,7 @@ if (existsSync(envPath)) {
 const e = process.env;
 export const config = {
   port: Number(e.PORT || 5177),
-  statsProvider: (e.STATS_PROVIDER || 'nba').toLowerCase(),
+  statsProvider: (e.STATS_PROVIDER || 'espn').toLowerCase(),
   injuryProvider: (e.INJURY_PROVIDER || 'espn').toLowerCase(),
   balldontlieKey: e.BALLDONTLIE_API_KEY || '',
   balldontlieRpm: Number(e.BALLDONTLIE_RPM || 60),

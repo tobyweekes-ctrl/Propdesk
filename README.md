@@ -22,17 +22,17 @@ npm start                 # http://localhost:5177
 npm run warm              # optional: pre-fetch both seasons, slate, injuries
 npm run backtest          # model on last season's games; report in reports/
 npm test
-STATS_PROVIDER=demo npm start   # fully offline synthetic league (fictional players)
+STATS_PROVIDER=demo npm start   # fictional offline league, development only
 ```
 
 ## Data sources
 
 | Data | Source | Cost / caching |
 |---|---|---|
-| Box scores, both seasons | `stats.nba.com` `leaguegamelog` (what `nba_api` wraps); 1 call per season | past season: cached forever; current: 3h |
-| Positions | `stats.nba.com` `playerindex` | with the season |
+| Box scores, both seasons (**default**) | ESPN public JSON (`STATS_PROVIDER=espn`): scoreboard per date + box score per game, no key, works anywhere | per game and per past date: forever; first pull of a past season ≈ 1,400 requests, once |
+| Box scores (alternative) | `stats.nba.com` `leaguegamelog` (what `nba_api` wraps), `STATS_PROVIDER=nba`; 1 call per season | past season forever; current 3h |
 | Box scores (alternative) | balldontlie `/stats` (`STATS_PROVIDER=balldontlie`, ALL-STAR tier) | full pull once, then a date-incremental top-up |
-| Tonight's games | `scoreboardv2`, or balldontlie `/games` | 1h |
+| Tonight's games | from the chosen stats source | 10 min – 1h |
 | Prop lines | The Odds API: `/events` (free) + `/events/{id}/odds` with all 8 prop markets in one call, only for games you open | `ODDS_TTL_MIN` (10 min) |
 | Game spread (optional) | Added to the same call when `ODDS_FETCH_SPREADS=true` (+1 market); **off by default** | with the props |
 | Injuries | ESPN public injury report | 30 min |
@@ -42,8 +42,13 @@ From these the data layer works out pace, offensive and defensive rating, usage 
 league average and shrunk toward 1 for small samples), rest days, back-to-backs, and
 **absences and returns** (team games missed, minutes in each game since coming back).
 
-Note: stats.nba.com blocks many cloud and datacenter IPs. It works from a home connection. If it
-is blocked for you, use `STATS_PROVIDER=balldontlie`.
+All of this is **real NBA data**. ESPN's endpoints are unofficial, so if they ever change, switch to
+`STATS_PROVIDER=nba` (stats.nba.com blocks many cloud IPs but usually works from home) or `balldontlie`.
+`STATS_PROVIDER=demo` is a fictional offline league used only for development and tests; the app shows a
+DEMO DATA tag whenever it is on.
+
+Run `npm run warm` once after install: it pulls last season's ~1,230 box scores (about 10 minutes, cached
+for good) so the first search is instant.
 
 ## Using it
 
@@ -121,7 +126,7 @@ Demo and live data are stored separately.
 server/
   index.mjs            HTTP server + API routes
   env.mjs, cache.mjs, http.mjs, teams.mjs, stats.mjs, util.mjs
-  providers/           nbaStats, balldontlie, oddsApi, espnInjuries, demo
+  providers/           espn, nbaStats, balldontlie, oddsApi, espnInjuries, demo
   data/derive.mjs      pure derivations (pace, usage, position defence, absences)
   data/store.mjs       provider selection, caching, indexed League, search, lines
   data/splits.mjs      home/away, opponent, rest, with/without teammates
