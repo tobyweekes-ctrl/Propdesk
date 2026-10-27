@@ -2,6 +2,7 @@
 import { $, esc, fmt, api, state } from './ui.js';
 import { renderPlayer } from './player.js';
 import { renderBets } from './bets.js';
+import { renderLanding } from './landing.js';
 
 // ---------- status + slate ----------
 async function loadStatus() {
@@ -62,8 +63,8 @@ document.addEventListener('keydown', (e) => {
 
 function choose(p) {
   results = []; renderAc();
-  input.value = p.name;
   input.blur();
+  input.value = '';
   const stat = location.hash.match(/^#\/p\/[^/]+\/(\w+)/)?.[1] || 'pts';
   location.hash = `#/p/${p.id}/${stat}`;
 }
@@ -72,9 +73,11 @@ function choose(p) {
 async function route() {
   const view = $('#view');
   view.onclick = null;
-  if (location.hash.startsWith('#/bets')) return renderBets(view);
   const m = location.hash.match(/^#\/p\/([^/]+)(?:\/(\w+))?/);
-  if (!m) { view.innerHTML = '<p class="empty">Press / and search a player.</p>'; return; }
+  document.body.classList.toggle('is-landing', !m && !location.hash.startsWith('#/bets'));
+  for (const a of document.querySelectorAll('.nav a')) a.toggleAttribute('aria-current', a.getAttribute('href') === (location.hash.startsWith('#/bets') ? '#/bets' : '#/'));
+  if (location.hash.startsWith('#/bets')) return renderBets(view);
+  if (!m) return renderLanding(view);
   const stat = state.stats[m[2]] ? m[2] : 'pts';
   return renderPlayer(view, m[1], stat);
 }

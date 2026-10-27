@@ -5,6 +5,14 @@ import { absenceInfo, restDays } from '../data/derive.mjs';
 
 const OUT_STATUSES = /^(out|doubtful|suspended)/i;
 
+/** Date of the team's first game in `season` (team games carry no season tag, so find it via seasonOf). */
+function seasonStartOf(games, season) {
+  // games are date-ascending; scan back from the end while still in this season
+  let start = '9999';
+  for (let i = games.length - 1; i >= 0 && seasonOf(games[i].date) === season; i--) start = games[i].date;
+  return start;
+}
+
 /**
  * @param L  indexed league holding the box scores (rows on/after game.date are ignored)
  * @param playerId
@@ -31,7 +39,12 @@ export function buildContext(L, playerId, game, opts = {}) {
   const myTeamGames = teamGamesBefore(game.team);
 
   // teammates who were in the rotation lately (so their absence tonight is new information)
-  const recentTeamGames = myTeamGames.slice(-4);
+  // Look only at this season once it has games: someone injured since the opener is already
+  // reflected in this season's minutes, so his absence is not new information.
+  const seasonStart = seasonStartOf(myTeamGames, cur);
+  const thisSeason = myTeamGames.filter((g) => g.date >= seasonStart);
+  const recentTeamGames = (thisSeason.length >= 2 ? thisSeason : myTeamGames).slice(-4);
+  const needApps = Math.min(2, recentTeamGames.length);
   const rotation = new Map(); // id -> {apps, min}
   for (const g of recentTeamGames) {
     for (const id of g.players) {
@@ -43,7 +56,7 @@ export function buildContext(L, playerId, game, opts = {}) {
     }
   }
   const activeMates = [...rotation.entries()]
-    .filter(([, e]) => e.apps >= 2 && e.min / e.apps >= 15)
+    .filter(([, e]) => e.apps >= needApps && e.min / e.apps >= 15)
     .map(([id, e]) => ({ id, name: L.players.get(id)?.name, group: L.groupOf(id), min: e.min / e.apps }));
 
   let teammatesOut;

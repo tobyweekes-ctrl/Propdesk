@@ -10,7 +10,7 @@ probability, the no-vig edge and a verdict. For analysis only. Gamble responsibl
 - **Server-side data layer.** All third-party calls and API keys stay on the server. The browser only talks to `/api/*`.
 - **Two-level cache:** in-memory in front of JSON files in `cache/`. It shares one in-flight call between concurrent
   callers, serves the stale copy if an upstream fails, keeps completed seasons forever and throttles each host.
-- **Vanilla ES-module frontend, no build step.** Hand-drawn SVG charts (phase 3). Fast, small and keyboard-first.
+- **Vanilla ES-module frontend, no build step.** Hand-drawn SVG chart, no chart library. Fast, small and keyboard-first.
 - **Model in its own module** (`server/model/`) as pure functions with every weight in `server/model/config.mjs`,
   shared by the API and `scripts/backtest.mjs`.
 
@@ -44,6 +44,21 @@ league average and shrunk toward 1 for small samples), rest days, back-to-backs,
 
 Note: stats.nba.com blocks many cloud and datacenter IPs. It works from a home connection. If it
 is blocked for you, use `STATS_PROVIDER=balldontlie`.
+
+## Using it
+
+- **Landing:** tonight's games with each team's main players; click one, or press `/` and search any player.
+- **Stat:** chips for PTS, REB, AST, 3PM, PRA, P+R, P+A, R+A, or keys `1`–`8`.
+- **Verdict strip:** the best bet across all lines (OVER / UNDER / PASS, confidence, edge, EV), projection,
+  the model's own line and projected minutes.
+- **Chart:** the last 10 or 20 games as bars with the selected line drawn across (over green, under red) and the
+  projection dashed. Hover, or focus the chart and use ← →, for each game. Hit rates for L5 / L10 / L20 / season
+  / last season sit underneath.
+- **Lines by bookie:** price, model probability, edge, EV and pick per book, with the best price highlighted.
+  **Click a row** to put that line on the chart, hit rates and splits. **Take** logs it as a bet.
+- **Splits:** this season / last season, home / away, vs tonight's opponent, rest days, and with / without each
+  key teammate (seasons they shared a team only; teammates out tonight are flagged).
+- **Minutes and adjustments:** every step behind the projection, plus a box to enter your own minutes.
 
 ## Model (`server/model/`)
 
@@ -109,9 +124,10 @@ server/
   providers/           nbaStats, balldontlie, oddsApi, espnInjuries, demo
   data/derive.mjs      pure derivations (pace, usage, position defence, absences)
   data/store.mjs       provider selection, caching, indexed League, search, lines
+  data/splits.mjs      home/away, opponent, rest, with/without teammates
   data/userdata.mjs    manual lines, bet log, odds snapshots, grading
   model/               config, context, minutes, projection, distributions, odds, evaluate
-web/                   index.html, styles.css, js/ (app, player, bets, ui)
+web/                   index.html, styles.css, js/ (app, landing, player, chart, bets, ui)
 scripts/               warm-cache.mjs, backtest.mjs
 userdata/, reports/    created at runtime, gitignored
 test/
@@ -120,7 +136,8 @@ test/
 ## API
 
 `GET /api/health` · `/api/players/search?q=` · `/api/player/:id` · `/api/player/:id/lines?stat=pts`
-· `/api/player/:id/analysis?stat=pts[&line=&over=&under=&book=][&min=]` · `/api/slate?date=` · `/api/injuries`
+· `/api/player/:id/analysis?stat=pts[&line=&over=&under=&book=][&min=]` · `/api/player/:id/splits?stat=pts`
+· `/api/slate?date=` · `/api/slate/players` · `/api/injuries`
 · `/api/teams` · `/api/stats` · `GET/POST /api/entries` · `PATCH/DELETE /api/entries/:id` · `GET /api/bets`
 
 Stat keys: `pts reb ast fg3m pra pr pa ra`.

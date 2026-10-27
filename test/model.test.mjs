@@ -134,3 +134,13 @@ test('minutes: teammate out raises minutes; return ramp lowers them', () => {
   const m = projectPlayer(buildContext(L, ret.id, { date: L.today, team: ret.team, opp: 'BOS', home: true }), DEFAULTS).minutes;
   assert.ok(m.restricted && m.steps.some((s) => s.key === 'restriction'));
 });
+
+test('a teammate out since opening night is not treated as new information', async () => {
+  const injuries = await store.getInjuries();
+  const outName = injuries.find((i) => i.status === 'Out' && L.playerLogs([...L.players.values()].find((p) => p.name === i.name).id).every((r) => r.season !== L.current))?.name;
+  assert.ok(outName, 'demo has a player out all season');
+  const mate = [...L.players.values()].find((p) => p.name === outName);
+  const star = [...L.players.values()].filter((p) => p.team === mate.team && p.id !== mate.id && L.playerLogs(p.id).filter((r) => r.season === L.current).length >= 2)[0];
+  const ctx = buildContext(L, star.id, { date: L.today, team: star.team, opp: 'BOS', home: true }, { injuries });
+  assert.ok(!ctx.teammatesOut.some((m) => m.id === mate.id));
+});

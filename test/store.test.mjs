@@ -49,3 +49,18 @@ test('slate and lines: best over/under flagged once each', async () => {
   const bo = res.lines.find((l) => l.bestOver);
   assert.equal(bo.line, Math.min(...res.lines.map((l) => l.line)));
 });
+
+test('splits: groups, values arrays and a teammate out tonight', async () => {
+  const { computeSplits } = await import('../server/data/splits.mjs');
+  const injuries = await store.getInjuries();
+  const out = injuries.find((i) => i.status === 'Out');
+  const mate = [...L.players.values()].find((p) => p.name === out.name);
+  const star = [...L.players.values()].filter((p) => p.team === mate.team && p.id !== mate.id)
+    .sort((a, b) => L.playerLogs(b.id).length - L.playerLogs(a.id).length)[0];
+  const rows = computeSplits(L, star.id, 'pts', { opp: 'BOS', injuries });
+  for (const g of ['Season', 'Venue', 'Opponent', 'Rest']) assert.ok(rows.some((r) => r.group === g), g);
+  for (const r of rows) assert.equal(r.values.length, r.n);
+  const without = rows.find((r) => r.key === `without:${mate.id}`);
+  assert.ok(without && without.outTonight, 'teammate out tonight is split on');
+  assert.ok(without.n >= 1, 'games this season without the injured teammate count');
+});

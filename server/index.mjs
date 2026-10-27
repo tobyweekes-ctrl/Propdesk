@@ -11,6 +11,7 @@ import {
 } from './data/store.mjs';
 import { listEntries, addEntry, updateEntry, deleteEntry, betLog, grade } from './data/userdata.mjs';
 import { analyse } from './model/index.mjs';
+import { computeSplits } from './data/splits.mjs';
 import { parsePrice } from './model/odds.mjs';
 
 const WEB = join(ROOT, 'web');
@@ -33,6 +34,26 @@ get('/api/players/search', async (_p, q) => {
 get('/api/slate', async (_p, q) => getSlate(q.get('date') || today()));
 
 get('/api/injuries', async () => getInjuries());
+
+// tonight's games with each side's main players (by recent minutes), for the landing page
+get('/api/slate/players', async () => {
+  const L = await getLeague();
+  const [games, injuries] = await Promise.all([getSlate(), getInjuries().catch(() => [])]);
+  const top = (team) => [...L.players.values()]
+    .filter((p) => p.team === team)
+    .map((p) => {
+      const recent = L.playerLogs(p.id).filter((r) => r.team === team).slice(-10);
+      return { p, recent, min: recent.reduce((a, r) => a + r.min, 0) / Math.max(1, recent.length) };
+    })
+    .filter((x) => x.recent.length >= 3)
+    .sort((a, b) => b.min - a.min)
+    .slice(0, 5)
+    .map(({ p, recent, min }) => {
+      const a = averages(recent);
+      return { id: p.id, name: p.name, pos: p.pos, min: round(min), pts: a.pts, reb: a.reb, ast: a.ast, injury: injuryFor(injuries, p)?.status || null };
+    });
+  return games.map((g) => ({ ...g, homePlayers: top(g.home), awayPlayers: top(g.away) }));
+});
 
 get('/api/teams', async () => {
   const L = await getLeague();
@@ -70,6 +91,16 @@ get('/api/player/:id', async ({ id }) => {
     },
     logs: logs.slice(-40).reverse().map((r) => ({ ...r, usg: round(r.usg) })),
   };
+});
+
+get('/api/player/:id/splits', async ({ id }, q) => {
+  const L = await getLeague();
+  const p = L.players.get(id) || fail(404, 'player not found');
+  const stat = q.get('stat') || 'pts';
+  if (!STATS[stat]) fail(400, `unknown stat ${stat}`);
+  const [g, injuries] = await Promise.all([gameFor(p.team), getInjuries().catch(() => [])]);
+  const opp = g ? (g.home === p.team ? g.away : g.home) : null;
+  return computeSplits(L, id, stat, { opp, injuries });
 });
 
 get('/api/player/:id/lines', async ({ id }, q) => {
