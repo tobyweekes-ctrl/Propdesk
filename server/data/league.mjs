@@ -97,14 +97,24 @@ export function injuryFor(injuries, player) {
  * Bookmaker rows for one player + stat, sorted, with the best over and under flagged.
  * "Best" for an over = lowest line, then highest price; for an under = highest line, then highest price.
  */
+const isPlayer = (r, player, n) => (r.playerId ? r.playerId === player.id : normName(r.player) === n);
+
 export function linesFor(rows, player, stat) {
   const n = normName(player.name);
-  const lines = rows.filter((r) => r.stat === stat && normName(r.player) === n)
-    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, line: r.line, over: r.over, under: r.under, updated: r.updated }))
+  const lines = rows.filter((r) => r.stat === stat && r.kind !== 'ms' && isPlayer(r, player, n))
+    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, line: r.line, over: r.over, under: r.under, open: r.open || null, updated: r.updated }))
     .sort((a, b) => a.line - b.line || a.bookTitle.localeCompare(b.bookTitle));
   const pick = (cmp) => lines.filter((l) => l.over && l.under).reduce((best, l) => (!best || cmp(l, best) ? l : best), null);
   const bestOver = pick((l, b) => l.line < b.line || (l.line === b.line && l.over > b.over));
   const bestUnder = pick((l, b) => l.line > b.line || (l.line === b.line && l.under > b.under));
   for (const l of lines) { l.bestOver = l === bestOver; l.bestUnder = l === bestUnder; }
   return lines;
+}
+
+/** One-sided "k or more" prices (e.g. DraftKings milestones) for one player + stat, by k. */
+export function ladderFor(rows, player, stat) {
+  const n = normName(player.name);
+  return rows.filter((r) => r.stat === stat && r.kind === 'ms' && isPlayer(r, player, n))
+    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, k: r.line, price: r.over }))
+    .sort((a, b) => a.k - b.k);
 }

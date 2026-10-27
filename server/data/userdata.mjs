@@ -57,8 +57,8 @@ export { grade };
 
 // ---------- odds snapshots ----------
 /** Append one fetch of an event's prop lines (live Odds API only). */
-export function recordOddsSnapshot({ date, eventId, gameId, tipoff, home, away, rows }) {
-  const line = JSON.stringify({ fetchedAt: new Date().toISOString(), date, eventId, gameId, tipoff, home, away, rows });
+export function recordOddsSnapshot({ date, eventId, gameId, tipoff, home, away, source = null, rows }) {
+  const line = JSON.stringify({ fetchedAt: new Date().toISOString(), date, eventId, gameId, tipoff, home, away, source, rows });
   appendFileSync(join(dir(), 'odds', `${date}.jsonl`), line + '\n');
 }
 

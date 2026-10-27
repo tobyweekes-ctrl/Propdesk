@@ -29,6 +29,8 @@ export const config = {
   oddsMarkets: (e.ODDS_MARKETS || '').split(',').map((x) => x.trim()).filter(Boolean),
   // Also fetch the game spread with the props (1 extra market per call) for the blowout model.
   // Off by default; without it the model estimates the margin from team ratings.
+  // DraftKings props from ESPN's public odds API (free; on by default with STATS_PROVIDER=espn)
+  espnProps: !/^(0|false|no)$/i.test(e.ESPN_PROPS || ''),
   oddsFetchSpreads: /^(1|true|yes)$/i.test(e.ODDS_FETCH_SPREADS || ''),
   cacheDir: e.CACHE_DIR || join(ROOT, 'cache'),
   userDataDir: e.USERDATA_DIR || null,

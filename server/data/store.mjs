@@ -8,12 +8,13 @@ import { balldontlieProvider } from '../providers/balldontlie.mjs';
 import { espnProvider } from '../providers/espn.mjs';
 import { espnInjuryProvider } from '../providers/espnInjuries.mjs';
 import { oddsApiProvider, quota } from '../providers/oddsApi.mjs';
+import { espnOddsProvider } from '../providers/espnOdds.mjs';
 import { demoProvider, demoInjuries, demoEventProps } from '../providers/demo.mjs';
 import { seasonOf, prevSeason, todayET } from '../util.mjs';
 import { recordOddsSnapshot } from './userdata.mjs';
-import { indexLeague, searchPlayers, averages, injuryFor, linesFor } from './league.mjs';
+import { indexLeague, searchPlayers, averages, injuryFor, linesFor, ladderFor } from './league.mjs';
 
-export { indexLeague, searchPlayers, averages, injuryFor, linesFor };
+export { indexLeague, searchPlayers, averages, injuryFor, linesFor, ladderFor };
 
 const HOUR = 3600;
 export const today = () => todayET(config.today);
@@ -110,30 +111,58 @@ async function getOddsEvents() {
   return cached('odds:events', 30 * 60, () => oddsApiProvider.events());
 }
 
-/** { rows, homeSpread } for a game. Live fetches are also saved as snapshots for the real-line backtest. */
-export async function eventProps(game) {
-  if (!game?.eventId) return { rows: [], homeSpread: null };
-  if (game.eventId.startsWith('demo:')) return { rows: demoEventProps(game.gameId, game.date), homeSpread: null };
-  return cached(`odds:props:${game.eventId}`, config.oddsTtlMin * 60, async () => {
-    const res = await oddsApiProvider.eventProps(game.eventId);
-    try {
-      recordOddsSnapshot({ date: game.date, eventId: game.eventId, gameId: game.gameId, tipoff: game.tipoff, home: game.home, away: game.away, rows: res.rows });
-    } catch (err) {
-      console.warn('[userdata] snapshot not saved:', err.message);
-    }
-    return res;
-  });
+const snapshot = (game, rows, source) => {
+  try {
+    recordOddsSnapshot({ date: game.date, eventId: game.eventId || game.gameId, gameId: game.gameId, tipoff: game.tipoff, home: game.home, away: game.away, source, rows });
+  } catch (err) {
+    console.warn('[userdata] snapshot not saved:', err.message);
+  }
+};
+
+/**
+ * { rows, homeSpread, sources } for a game, merging every line source:
+ *   - DraftKings via ESPN (free; needs ESPN game ids, i.e. STATS_PROVIDER=espn)
+ *   - The Odds API (needs ODDS_API_KEY; skipped when opts.oddsApi === false to save credits)
+ * Every live fetch is also saved as a snapshot for the real-line backtest.
+ */
+export async function eventProps(game, opts = {}) {
+  if (!game) return { rows: [], homeSpread: null, sources: [] };
+  if (game.eventId?.startsWith('demo:')) return { rows: demoEventProps(game.gameId, game.date), homeSpread: null, sources: ['demo'] };
+  const ttl = config.oddsTtlMin * 60;
+  const [dk, oa] = await Promise.all([
+    config.statsProvider === 'espn' && config.espnProps
+      ? cached(`odds:espn:${game.gameId}`, ttl, async () => {
+        const res = await espnOddsProvider.eventProps(game.gameId);
+        snapshot(game, res.rows, 'draftkings-espn');
+        return res;
+      }).catch((e) => (console.warn(`[espn odds] ${game.away}@${game.home}:`, e.message), null))
+      : null,
+    game.eventId && oddsApiProvider.enabled() && opts.oddsApi !== false
+      ? cached(`odds:props:${game.eventId}`, ttl, async () => {
+        const res = await oddsApiProvider.eventProps(game.eventId);
+        snapshot(game, res.rows, 'the-odds-api');
+        return res;
+      }).catch((e) => (console.warn(`[odds api] ${game.away}@${game.home}:`, e.message), null))
+      : null,
+  ]);
+  return {
+    rows: [...(dk?.rows || []), ...(oa?.rows || [])],
+    homeSpread: oa?.homeSpread ?? null,
+    sources: [dk?.rows?.length && 'DraftKings (ESPN)', oa?.rows?.length && 'The Odds API'].filter(Boolean),
+    check: dk?.check,
+  };
 }
 
-/** All bookmaker lines for one player + stat in tonight's game (best prices flagged, see linesFor). */
+/** Bookmaker O/U lines (best prices flagged) and milestone ladders for one player + stat tonight. */
 export async function getPlayerLines(player, stat, date = today()) {
   const game = await gameFor(player.team, date);
-  if (!game) return { game: null, lines: [], source: null };
-  const { rows, homeSpread } = await eventProps(game);
+  if (!game) return { game: null, lines: [], ladder: [], source: null };
+  const { rows, homeSpread, sources } = await eventProps(game);
   const lines = linesFor(rows, player, stat);
-  const source = game.eventId?.startsWith('demo:') ? 'demo' : oddsApiProvider.enabled() ? 'The Odds API' : null;
+  const ladder = ladderFor(rows, player, stat);
   const spread = homeSpread == null ? null : game.home === player.team ? homeSpread : -homeSpread;
-  return { game, lines, source, spread, cacheAgeSec: game.eventId ? cacheAge(`odds:props:${game.eventId}`) : null };
+  const age = cacheAge(`odds:espn:${game.gameId}`) ?? (game.eventId ? cacheAge(`odds:props:${game.eventId}`) : null);
+  return { game, lines, ladder, source: sources.join(' + ') || null, spread, cacheAgeSec: age };
 }
 
 export function status() {
@@ -141,7 +170,7 @@ export function status() {
     today: today(),
     statsProvider: statsProvider().name,
     injuryProvider: demo() ? 'demo' : config.injuryProvider,
-    odds: demo() ? 'demo' : oddsApiProvider.enabled() ? 'The Odds API' : 'disabled (no ODDS_API_KEY)',
+    odds: demo() ? 'demo' : [config.statsProvider === 'espn' && config.espnProps && 'DraftKings (ESPN)', oddsApiProvider.enabled() && 'The Odds API'].filter(Boolean).join(' + ') || 'none',
     oddsSpreads: config.oddsFetchSpreads,
     oddsQuota: quota,
     keys: { balldontlie: Boolean(config.balldontlieKey), oddsApi: Boolean(config.oddsKey) },
