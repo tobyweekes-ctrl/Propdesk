@@ -6,6 +6,9 @@ export const DEFAULTS = {
   requirePositiveEV: true,   // also require EV > 0 at the offered price
   devig: 'multiplicative',   // 'multiplicative' | 'power'
   assumedMargin: 0.05,       // bookmaker margin assumed when only one side's price is known
+  // Edges this big against a no-vig price usually mean the model is missing news (role, injury,
+  // minutes). Above this, confidence is capped at LOW and the pick is flagged.
+  marketDisagreement: 0.15,
 
   // Last season vs this season: weight on this season = n / (n + k), n = games this season
   blend: {
@@ -14,7 +17,7 @@ export const DEFAULTS = {
     minutesK: 5,             // role shows up quickly
     minutesKTraded: 2,       // changed team: last season's minutes barely count
     teamK: 15,               // team pace / defence, in team games
-    priorGames: 10,          // weight (in games) of a typical rotation player at his position, for thin samples
+    priorGames: 4,           // weight (in games) of a typical rotation player at his position; only matters for very thin samples
   },
 
   // Recent form on top of the season blend (weights sum to 1). Tuned on real 2025-26 games

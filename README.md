@@ -69,6 +69,26 @@ DEMO DATA tag whenever it is on.
 Run `npm run warm` once after install: it pulls last season's ~1,230 box scores (about 10 minutes, cached
 for good) so the first search is instant.
 
+## Lines, price checker and betslip
+
+- **Bookmaker lines:** DraftKings player props come free from ESPN's public odds API: over/unders for all 8
+  markets plus the "20+ points"-style ladders, with opening lines for movement. The feed doesn't label which
+  price is the over, so every build checks each pair against the one-sided milestone market at line + 0.5
+  ("12+ points" is the same bet as over 11.5) and logs how many it confirmed. The Odds API can run alongside
+  it if you add a key.
+- **Check a price:** type a threshold and your bookie's price ("20+ at 5/1"). You get the model's chance, the
+  fair price, expected value, VALUE / FAIR / AVOID, and DraftKings' price for the same threshold when it has
+  one. The ladder lists model fair prices next to DraftKings' for every threshold.
+- **Betslip:** Over / Under buttons, the verdict card and "+ Slip" buttons add selections. On the Slip page
+  you can edit each price to your bookie's, set stakes, and switch between singles and an acca. The analysis
+  covers each leg's value, expected profit, the chance of each number of winners, and for an acca the
+  combined chance. Legs on the same player are simulated together (one minutes and form draw shared by all
+  his stats), so correlated legs are priced properly. It flags overlapping legs, opposite sides, same-game
+  legs, thin data and injury returns. "Log as placed" puts the slip in the bet log, where accas settle leg by leg.
+- **Guard rails:** when the model differs from a bookmaker's no-vig price by more than 15 points, confidence
+  drops to LOW and the pick is flagged. Gaps that big usually mean news the model can't see.
+- **Odds format:** fractional by default; the button in the header switches to decimal.
+
 ## Using it
 
 - **Landing:** tonight's games with each team's main players; click one, or press `/` and search any player.

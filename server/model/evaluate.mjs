@@ -11,7 +11,8 @@ export function quality(ctx, minutes) {
   const notes = [];
   const n = ctx.logs.length;
   if (minutes.flags.includes('no-history')) { q -= 0.5; notes.push('no game history'); }
-  else if (n < 10) { q -= 0.3; notes.push(`only ${n} career games in data`); }
+  else if (n < 10) { q -= 0.3; notes.push(`only ${n} games in the last two seasons`); }
+  else if (n < 30) { q -= 0.15; notes.push(`only ${n} games in the last two seasons`); }
   if (ctx.curRows.length < 5) { q -= 0.1; notes.push(`${ctx.curRows.length} games this season (leaning on last season)`); }
   if (ctx.traded) { q -= 0.1; notes.push('changed team'); }
   if (minutes.restricted) { q -= 0.25; notes.push('minutes restriction risk after absence'); }
@@ -44,9 +45,10 @@ export function evaluateLine(sp, l, q, cfg) {
   const passes = best && edge[best] >= cfg.threshold && (!cfg.requirePositiveEV || ev[best] > 0);
   const side = passes ? best : null;
   let confidence = null;
+  const disagree = Boolean(side && fair && !fair.estimated && edge[side] > cfg.marketDisagreement);
   if (side) {
     const r = edge[side] / cfg.threshold;
-    confidence = r >= 2.5 && q.score >= 0.7 ? 'HIGH' : r >= 1.5 && q.score >= 0.5 ? 'MEDIUM' : 'LOW';
+    confidence = disagree ? 'LOW' : r >= 2.5 && q.score >= 0.7 ? 'HIGH' : r >= 1.5 && q.score >= 0.5 ? 'MEDIUM' : 'LOW';
   }
   return {
     id: l.id ?? null, book: l.book || null, bookTitle: l.bookTitle || l.book || null, source: l.source || null,
@@ -55,7 +57,7 @@ export function evaluateLine(sp, l, q, cfg) {
     model: { over: p.over, under: p.under, push: p.push },
     fair, edge, ev,
     verdict: side ? side.toUpperCase() : 'PASS',
-    side, confidence,
+    side, confidence, disagree,
     leanSide: best, leanEdge: best ? edge[best] : null,
   };
 }

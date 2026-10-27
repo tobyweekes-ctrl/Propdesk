@@ -1,32 +1,32 @@
-// App shell: status bar, slate, search with autocomplete, routing.
-import { $, esc, fmt, api, state } from './ui.js';
+// App shell: search with autocomplete, routing, slip counter, odds-format toggle, data note.
+import { $, esc, fmt, api, state, slip, oddsFormat, setOddsFormat, teamColour } from './ui.js';
 import { renderPlayer } from './player.js';
 import { renderBets } from './bets.js';
 import { renderLanding } from './landing.js';
+import { renderSlip } from './slip.js';
 
-// ---------- status + slate ----------
+// ---------- footer data note ----------
 async function loadStatus() {
   const s = await api('/api/health');
-  const demo = s.statsProvider === 'demo';
-  const q = s.oddsQuota || {};
-  const credits = q.remaining != null
-    ? ` · credits <b>${q.used}</b> used / <b class="${q.remaining < 50 ? 'low' : ''}">${q.remaining}</b> left${q.lastCost != null ? ` (last call ${q.lastCost})` : ''}`
-    : s.keys?.oddsApi ? ' · credits <b>–</b>' : '';
-  const asOf = s.dataAsOf
-    ? ` · data <b class="${s.stale ? 'low' : ''}">${new Date(s.dataAsOf).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</b>`
-    : '';
-  $('#status').innerHTML = `${demo ? '<span class="demo">DEMO DATA</span> ' : ''}stats <b>${esc(s.statsProvider)}</b>${asOf} · odds <b>${esc(s.odds)}</b>${credits} · inj <b>${esc(s.injuryProvider)}</b> · <b>${esc(s.today)}</b>`;
+  const asOf = s.dataAsOf ? ` · updated ${new Date(s.dataAsOf).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}` : '';
+  const demo = s.statsProvider === 'demo' ? 'DEMO DATA · ' : '';
+  $('#data-note').textContent = `${demo}Stats ${s.statsProvider}${asOf} · Lines ${s.odds} · Injuries ${s.injuryProvider}`;
 }
-async function loadSlate() {
-  try {
-    const games = await api('/api/slate');
-    $('#slate').innerHTML = games.length
-      ? games.map((g) => `<div class="g"><b>${g.away}</b> @ <b>${g.home}</b> ${g.tipoff ? new Date(g.tipoff).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : esc(g.status)}</div>`).join('')
-      : '<div class="g">No games today</div>';
-  } catch (e) {
-    $('#slate').innerHTML = `<div class="g err">slate: ${esc(e.message)}</div>`;
-  }
+
+// ---------- slip counter ----------
+function updateCount(bump) {
+  const n = slip.get().length;
+  const el = $('#slip-count');
+  el.hidden = n === 0;
+  el.textContent = n;
+  if (bump) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 }
+window.addEventListener('slip:change', () => updateCount(true));
+
+// ---------- odds format toggle ----------
+const toggle = $('#odds-toggle');
+const showFormat = () => { toggle.textContent = oddsFormat() === 'dec' ? '6.00' : '5/1'; };
+toggle.addEventListener('click', () => { setOddsFormat(oddsFormat() === 'dec' ? 'frac' : 'dec'); showFormat(); route(); });
 
 // ---------- search / autocomplete ----------
 const input = $('#q');
@@ -37,8 +37,8 @@ function renderAc() {
   ac.hidden = !results.length;
   input.setAttribute('aria-expanded', String(!ac.hidden));
   ac.innerHTML = results.map((p, i) => `<li role="option" data-i="${i}" aria-selected="${i === sel}">
-    <span>${esc(p.name)} <span class="meta">${p.team} · ${esc(p.pos)}</span></span>
-    <span class="meta">${fmt(p.pts)} / ${fmt(p.reb)} / ${fmt(p.ast)} · ${fmt(p.min)}m</span></li>`).join('');
+    <span><i class="dot" style="background:${teamColour(p.team)}"></i>${esc(p.name)} <span class="meta">${p.team} · ${esc(p.pos)}</span></span>
+    <span class="meta">${fmt(p.pts)} pts · ${fmt(p.reb)} reb · ${fmt(p.ast)} ast</span></li>`).join('');
 }
 input.addEventListener('input', () => {
   clearTimeout(timer);
@@ -59,6 +59,7 @@ ac.addEventListener('mousedown', (e) => {
   const li = e.target.closest('li');
   if (li) choose(results[Number(li.dataset.i)]);
 });
+input.addEventListener('blur', () => setTimeout(() => { results = []; renderAc(); }, 150));
 document.addEventListener('keydown', (e) => {
   const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName);
   if (e.key === '/' && !typing) { e.preventDefault(); input.focus(); input.select(); }
@@ -66,8 +67,8 @@ document.addEventListener('keydown', (e) => {
 
 function choose(p) {
   results = []; renderAc();
-  input.blur();
   input.value = '';
+  input.blur();
   const stat = location.hash.match(/^#\/p\/[^/]+\/(\w+)/)?.[1] || 'pts';
   location.hash = `#/p/${p.id}/${stat}`;
 }
@@ -76,18 +77,22 @@ function choose(p) {
 async function route() {
   const view = $('#view');
   view.onclick = null;
-  const m = location.hash.match(/^#\/p\/([^/]+)(?:\/(\w+))?/);
-  document.body.classList.toggle('is-landing', !m && !location.hash.startsWith('#/bets'));
-  for (const a of document.querySelectorAll('.nav a')) a.toggleAttribute('aria-current', a.getAttribute('href') === (location.hash.startsWith('#/bets') ? '#/bets' : '#/'));
-  if (location.hash.startsWith('#/bets')) return renderBets(view);
+  view.oninput = null;
+  const h = location.hash;
+  const page = h.startsWith('#/slip') ? '#/slip' : h.startsWith('#/bets') ? '#/bets' : null;
+  for (const a of document.querySelectorAll('.nav a')) a.toggleAttribute('aria-current', a.getAttribute('href') === page);
+  window.scrollTo(0, 0);
+  if (page === '#/slip') return renderSlip(view);
+  if (page === '#/bets') return renderBets(view);
+  const m = h.match(/^#\/p\/([^/]+)(?:\/(\w+))?/);
   if (!m) return renderLanding(view);
-  const stat = state.stats[m[2]] ? m[2] : 'pts';
-  return renderPlayer(view, m[1], stat);
+  return renderPlayer(view, m[1], state.stats[m[2]] ? m[2] : 'pts');
 }
 
 window.addEventListener('hashchange', route);
 window.addEventListener('status:refresh', () => loadStatus().catch(() => {}));
 state.stats = await api('/api/stats');
-loadStatus();
-loadSlate();
+showFormat();
+updateCount(false);
+loadStatus().catch(() => {});
 route();

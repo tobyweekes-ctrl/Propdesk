@@ -1,26 +1,26 @@
-// Player results view.
-//   left:  verdict · game-by-game chart with the selected line · hit rates · splits
-//   right: lines by bookie (click a row to put that line on the chart) · add a line · minutes · adjustments
-// The selected line drives the chart, hit rates and split hit rates, all computed client-side.
-import { $, $$, esc, fmt, pct, edge, signed, api, debounce, state, refreshStatus } from './ui.js';
+// Player page.
+//   verdict card (add the pick to the slip) · bookmaker lines with Over / Under buttons
+//   price checker ("20+ at 5/1") with the DraftKings ladder · last 10/20 chart · splits
+//   "Model details" drawer: minutes, adjustments, add-your-own O/U line, averages and game log
+import { $, $$, esc, fmt, pct, edge, signed, api, debounce, state, refreshStatus, odds, slip, toast, teamColour, parsePrice } from './ui.js';
 import { barChart } from './chart.js';
 
-const S = { id: null, stat: 'pts', profile: null, res: null, splits: null, minutes: null, preview: null, selLine: null, window: 20 };
-
+const S = { id: null, stat: 'pts', profile: null, res: null, splits: null, minutes: null, preview: null, selLine: null, window: 20, checks: null };
 const FLAG_LABEL = { returning: 'Return ramp', 'first-game-back': 'First game back', 'no-history': 'No history', 'manual-minutes': 'Manual minutes' };
-
 const statOf = (row) => state.stats[S.stat].parts.reduce((a, k) => a + (row[k] ?? 0), 0);
+const short = () => state.stats[S.stat].short;
 
 export async function renderPlayer(view, id, stat) {
-  if (S.id !== id) { S.minutes = null; S.preview = null; }
-  if (S.id !== id || S.stat !== stat) S.selLine = null;
+  if (S.id !== id) { S.minutes = null; S.preview = null; S.checks = null; }
+  if (S.id !== id || S.stat !== stat) { S.selLine = null; S.checks = null; }
   S.id = id; S.stat = stat;
   view.innerHTML = '<p class="empty">Loading…</p>';
   try {
     const [profile, res, splits] = await Promise.all([api(`/api/player/${id}`), fetchAnalysis(), api(`/api/player/${id}/splits?stat=${stat}`)]);
     S.profile = profile; S.res = res; S.splits = splits;
     view.innerHTML = shell(profile);
-    bindShell(view);
+    view.style.setProperty('--team', teamColour(profile.player.team));
+    $('.chips', view).onclick = (e) => { const b = e.target.closest('button'); if (b) location.hash = `#/p/${S.id}/${b.dataset.s}`; };
     renderModel();
     refreshStatus();
   } catch (e) {
@@ -34,39 +34,30 @@ function fetchAnalysis() {
   if (S.preview) for (const k of ['line', 'over', 'under', 'book']) if (S.preview[k] !== '' && S.preview[k] != null) q.set(k, S.preview[k]);
   return api(`/api/player/${S.id}/analysis?${q}`);
 }
-
 async function rerun() {
-  try {
-    S.res = await fetchAnalysis();
-    renderModel();
-  } catch (e) {
-    $('#verdict').innerHTML = `<p class="err">${esc(e.message)}</p>`;
-  }
+  try { S.res = await fetchAnalysis(); renderModel(); } catch (e) { $('#verdict').innerHTML = `<p class="err">${esc(e.message)}</p>`; }
 }
 
-// ---------- page skeleton ----------
+// ---------- skeleton ----------
 function flags(d) {
   const out = [];
   if (d.injury) out.push(`<span class="flag ${d.injury.status === 'Out' ? 'neg' : 'warn'}">${esc(d.injury.status)} · ${esc(d.injury.injury)}</span>`);
   const a = d.absence;
-  // single missed games (rest, illness) are common in real data; flag real absences only
   if (a.status === 'returned' && a.gamesMissed >= 3) out.push(`<span class="flag warn">Back ${a.gamesSinceReturn}g after missing ${a.gamesMissed}</span>`);
-  if (a.status === 'absent') out.push(`<span class="flag neg">Missed last ${a.gamesMissed} team games</span>`);
+  if (a.status === 'absent') out.push(`<span class="flag neg">Missed last ${a.gamesMissed} games</span>`);
   if (d.game?.restDays === 0) out.push('<span class="flag warn">Back-to-back</span>');
-  return out.join(' ');
+  return out.join('');
 }
 
 function shell(d) {
   const p = d.player, g = d.game;
   const keys = Object.keys(state.stats);
-  const avgRows = Object.entries(d.averages).map(([k, a]) => `<tr><td>${k}</td><td>${a.gp}</td><td>${fmt(a.min)}</td><td>${fmt(a.usg)}</td>${keys.map((s) => `<td>${fmt(a[s])}</td>`).join('')}</tr>`).join('');
-  const cols = ['date', 'opp', 'min', 'usg', 'pts', 'reb', 'ast', 'fg3m', 'fga', 'fta', 'tov', 'pm'];
-  const logRows = d.logs.map((r) => `<tr>${cols.map((c) => `<td>${c === 'opp' ? (r.home ? 'v ' : '@ ') + r.opp : c === 'min' || c === 'usg' ? fmt(r[c]) : esc(r[c])}</td>`).join('')}</tr>`).join('');
+  const tip = g?.tipoff ? ` · ${new Date(g.tipoff).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : '';
   return `
     <div class="ph">
       <h2>${esc(p.name)}</h2>
-      <span class="sub">${p.team} · ${esc(p.pos) || '–'} · ${g ? `${g.home ? 'vs' : '@'} <b>${g.opp}</b> tonight · rest ${g.restDays ?? '–'}d (opp ${g.oppRestDays ?? '–'}d)` : 'no game today'}</span>
-      ${flags(d)}
+      <span class="sub">${p.team} · ${esc(p.pos) || '–'} · ${g ? `${g.home ? 'vs' : '@'} <b>${g.opp}</b> tonight${tip}` : 'no game today'}</span>
+      <span class="flags">${flags(d)}</span>
     </div>
     <div class="statbar">
       <div class="chips" role="group" aria-label="Stat">${keys.map((s, i) => `<button aria-pressed="${s === S.stat}" data-s="${s}" title="${esc(state.stats[s].label)} (${i + 1})">${state.stats[s].short}</button>`).join('')}</div>
@@ -75,27 +66,15 @@ function shell(d) {
     <div class="result">
       <div class="col-a">
         <section id="verdict" class="o-verdict"></section>
-        <section id="chart-block" class="block o-chart"></section>
-        <section id="splits" class="block o-splits"></section>
+        <section id="chart-block" class="card o-chart"></section>
+        <section id="splits" class="card o-splits"></section>
       </div>
       <div class="col-b">
-        <section id="lines" class="block o-lines"></section>
-        <section id="addline" class="block o-add"></section>
-        <section id="minutes" class="block o-minutes"></section>
-        <section id="factors" class="block o-factors"></section>
+        <section id="lines" class="card o-lines"></section>
+        <section id="check" class="card o-check"></section>
       </div>
     </div>
-    <details class="block o-log"><summary><h3>Averages &amp; game log</h3></summary>
-      <div class="scroll"><table><tr><th>Split</th><th>GP</th><th>Min</th><th>Usg%</th>${keys.map((s) => `<th>${state.stats[s].short}</th>`).join('')}</tr>${avgRows}</table></div>
-      <div class="scroll"><table><tr>${cols.map((c) => `<th>${c}</th>`).join('')}</tr>${logRows}</table></div>
-    </details>`;
-}
-
-function bindShell(view) {
-  $('.chips', view).addEventListener('click', (e) => {
-    const b = e.target.closest('button');
-    if (b) location.hash = `#/p/${S.id}/${b.dataset.s}`;
-  });
+    <details class="more" id="details"><summary>Model details</summary><div class="inner" id="details-inner"></div></details>`;
 }
 
 // stat shortcuts 1-8 (bound once)
@@ -106,146 +85,197 @@ document.addEventListener('keydown', (e) => {
   if (i >= 0 && i < keys.length && S.id) location.hash = `#/p/${S.id}/${keys[i]}`;
 });
 let resizeT;
-window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if ($('#chart-block')) renderLineParts(); }, 120); });
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if ($('#chart-block') && S.res) renderLineParts(); }, 120); });
 
 // ---------- model-dependent parts ----------
 function renderModel() {
   const res = S.res;
   if (!res.game || res.analysis?.error) {
-    const msg = !res.game ? 'No game today, so there is nothing to price. History below.' : res.analysis.error;
-    $('#verdict').innerHTML = `<p class="empty">${esc(msg)}</p>`;
-    for (const id of ['#lines', '#addline', '#minutes', '#factors']) $(id).innerHTML = '';
+    $('#verdict').innerHTML = `<div class="verdict"><div class="v-main"><span class="v-word dim">${!res.game ? 'NO GAME' : 'NO DATA'}</span></div><p class="v-notes">${!res.game ? 'No game today, so there is nothing to price. History below.' : esc(res.analysis.error)}</p></div>`;
+    $('#lines').innerHTML = ''; $('#check').innerHTML = ''; $('#details-inner').innerHTML = detailsHtml(null);
     renderLineParts();
     return;
   }
   const a = res.analysis;
-  if (S.selLine == null || (S.preview && S.preview.line !== '')) {
-    S.selLine = S.preview?.line ? Number(S.preview.line) : a.headline?.line ?? a.consensus?.line ?? a.projection.modelLine;
+  if (S.selLine == null || S.preview?.line) S.selLine = S.preview?.line ? Number(S.preview.line) : a.headline?.line ?? a.consensus?.line ?? a.projection.modelLine;
+  if (!S.checks) {
+    const p = a.projection.mean;
+    S.checks = [{ k: Math.max(1, Math.round(p * 1.2)), price: '' }, { k: Math.max(2, Math.round(p * 1.5)), price: '' }];
   }
-  $('#verdict').innerHTML = verdictStrip(a);
-  $('#lines').innerHTML = linesBlock(a);
-  $('#addline').innerHTML = addLineBlock(a);
-  $('#minutes').innerHTML = minutesBlock(a);
-  $('#factors').innerHTML = factorsBlock(a);
-  bindModel();
+  $('#verdict').innerHTML = verdictCard(a);
+  $('#lines').innerHTML = linesCard(a);
+  $('#check').innerHTML = checkCard(a);
+  $('#details-inner').innerHTML = detailsHtml(a);
+  bind();
   renderLineParts();
 }
 
-function verdictStrip(a) {
+const legFrom = (e, side) => ({
+  playerId: S.id, playerName: S.profile.player.name, team: S.profile.player.team, stat: S.stat, kind: 'ou', side, line: e.line,
+  price: side === 'over' ? e.over : e.under, otherPrice: side === 'over' ? e.under : e.over, book: e.bookTitle,
+});
+
+function verdictCard(a) {
   const h = a.headline;
   const p = a.projection;
   const side = h?.side;
   const price = side ? (side === 'over' ? h.over : h.under) : null;
-  return `<div class="verdict">
-    <div class="v-main"><span class="v-word ${side ? 'pos' : 'dim'}">${h ? h.verdict : 'NO LINE'}</span>${h?.confidence ? `<span class="v-conf">${h.confidence}</span>` : ''}</div>
+  const word = side ? `${side.toUpperCase()} ${fmt(h.line)}` : h ? 'PASS' : 'NO LINE';
+  const sub = side ? `${esc(h.bookTitle)} · ${odds(price)} · ${h.confidence.toLowerCase()} confidence` : h ? `No side clears the ${pct(a.config.threshold, 0)} edge bar` : 'Add a price below to check it';
+  const style = side ? (h.confidence === 'LOW' ? 'lean' : 'bet') : '';
+  return `<div class="verdict ${style}">
+    <div class="v-main"><span class="v-word">${word}</span><span class="v-sub">${sub}</span></div>
     <dl>
-      ${h ? `<div><dt>${side ? 'Best bet' : 'Closest'}</dt><dd>${esc(h.bookTitle)} ${side ? side[0] : (h.leanSide || 'o')[0]}${fmt(h.line)}${price ? ` @ ${fmt(price, 2)}` : ''}</dd></div>
+      ${h ? `<div><dt>Model ${side || h.leanSide || 'over'}</dt><dd>${pct(side ? h.model[side] : h.model[h.leanSide || 'over'])}</dd></div>
       <div><dt>Edge</dt><dd>${edge(h.leanEdge)}</dd></div>
-      <div><dt>EV</dt><dd>${edge(side ? h.ev[side] : h.leanSide ? h.ev[h.leanSide] : null)}</dd></div>
-      <div><dt>Model O / U</dt><dd>${pct(h.model.over)} / ${pct(h.model.under)}</dd></div>` : ''}
-      <div><dt>Projection</dt><dd>${fmt(p.mean)} <span class="dim">±${fmt(p.sd)}</span></dd></div>
+      <div><dt>Value (EV)</dt><dd>${edge(side ? h.ev[side] : h.leanSide ? h.ev[h.leanSide] : null)}</dd></div>` : ''}
+      <div><dt>Projection</dt><dd>${fmt(p.mean)}</dd></div>
       <div><dt>Model line</dt><dd>${fmt(p.modelLine)}</dd></div>
-      <div><dt>Minutes</dt><dd>${fmt(p.minutes.proj)} <span class="dim">±${fmt(p.minutes.sd)}</span></dd></div>
+      <div><dt>Minutes</dt><dd>${fmt(p.minutes.proj)}</dd></div>
     </dl>
-    <p class="v-notes">Edge vs no-vig, threshold ${pct(a.config.threshold, 0)} · ${esc(p.family)} · data quality ${Math.round(a.quality.score * 100)}%${a.quality.notes.length ? `: ${a.quality.notes.map(esc).join('; ')}` : ''}${a.consensus ? ` · market ${pct(a.consensus.over)} over ${fmt(a.consensus.line)} (${a.consensus.books} books)` : ''}</p>
+    ${side ? `<div class="v-actions"><button class="btn" data-addh="1">+ Add ${side} ${fmt(h.line)} to slip</button></div>` : ''}
+    ${h?.disagree ? `<p class="v-notes"><b>Big disagreement with ${esc(h.bookTitle)}</b> (${pct(h.leanEdge, 0)} edge). Markets this far off are usually reacting to news the model can't see, like role, injury or minutes, so check before betting.</p>` : ''}
+    <p class="v-notes">Data quality ${Math.round(a.quality.score * 100)}%${a.quality.notes.length ? ` · ${a.quality.notes.map(esc).join(' · ')}` : ''}</p>
   </div>`;
 }
 
 function lineRow(e) {
-  const tag = e.source === 'manual' ? '<span class="tag">MANUAL</span>' : e.source === 'preview' ? '<span class="tag">PREVIEW</span>' : '';
+  const tag = e.source === 'manual' ? '<span class="tag">yours</span>' : '';
   const s = e.leanSide;
-  const actions = e.source === 'preview' ? '' : `<button class="mini" data-take="${esc(e.id)}">Take</button>${e.source === 'manual' ? `<button class="mini ghost" data-del="${esc(e.id)}" title="Delete line" aria-label="Delete line">×</button>` : ''}`;
-  return `<tr class="${e.side ? 'rec' : ''} ${e.line === S.selLine ? 'sel' : ''}" data-row="${esc(e.id)}" data-line="${e.line}" tabindex="0" title="Show this line on the chart">
-    <td class="l">${esc(e.bookTitle)}${tag}</td><td>${fmt(e.line)}</td>
-    <td class="${e.bestOver ? 'best' : ''}">${fmt(e.over, 2)}</td><td class="${e.bestUnder ? 'best' : ''}">${fmt(e.under, 2)}</td>
-    <td>${pct(e.model.over, 0)}</td>
-    <td>${s ? `<span class="dim">${s[0]}</span>${edge(e.edge[s])}` : '–'}${e.fair?.estimated ? '<span class="dim">*</span>' : ''}</td>
-    <td>${edge(s ? e.ev[s] : null)}</td>
-    <td class="verdict-cell ${e.side ? 'pos' : 'dim'}">${e.verdict}${e.confidence ? ` <span class="dim">${e.confidence[0]}</span>` : ''}</td>
-    <td class="actions">${actions}</td></tr>`;
+  const mv = e.open?.line != null && e.open.line !== e.line ? `opened ${fmt(e.open.line)}` : e.open?.over ? `opened ${odds(e.open.over)} / ${odds(e.open.under)}` : '';
+  const btn = (side) => `<button class="sbtn ${e.side === side ? 'pick' : ''} ${(side === 'over' ? e.bestOver : e.bestUnder) ? 'best' : ''}" data-add="${esc(e.id)}" data-side="${side}" aria-label="Add ${side} ${e.line} to slip">
+      <span>${side}</span><b>${odds(side === 'over' ? e.over : e.under)}</b><small>${pct(e.model[side], 0)}</small></button>`;
+  return `<div class="lrow ${e.side ? 'rec' : ''} ${e.line === S.selLine ? 'sel' : ''}" data-line="${e.line}" data-row="${esc(e.id)}" tabindex="0" title="Tap to chart this line">
+    <div class="who">${esc(e.bookTitle)}${tag}<small>${mv || '&nbsp;'}</small></div>
+    <div class="ln">${fmt(e.line)}</div>
+    <div class="side-btns">${btn('over')}${btn('under')}</div>
+    <div class="lmeta"><span>Pick <b class="${e.side ? 'pos' : 'dim'}">${e.verdict}</b></span><span>Edge ${s ? `${s} ${edge(e.edge[s])}` : '–'}</span><span>EV ${edge(s ? e.ev[s] : null)}</span>${e.source === 'manual' ? `<button class="mini ghost" data-del="${esc(e.id)}">remove</button>` : ''}</div>
+  </div>`;
 }
 
-const LINE_HEAD = '<tr><th class="l">Book</th><th>Line</th><th>Over</th><th>Under</th><th>Model O</th><th>Edge</th><th>EV</th><th>Pick</th><th></th></tr>';
-
-function linesBlock(a) {
+function linesCard(a) {
   const res = S.res;
   const evals = a.evals.filter((e) => e.source !== 'preview');
-  const head = `<h3>Lines · ${esc(state.stats[S.stat].label)}${res.linesSource ? ` · ${esc(res.linesSource)}` : ''}${res.oddsAgeSec != null ? ` · ${Math.round(res.oddsAgeSec / 60)}m old` : ''}</h3>`;
-  if (!evals.length) return `${head}<p class="empty">No lines for this market. Add your bookie's line below.</p>`;
-  return `${head}<div class="scroll"><table class="lines">${LINE_HEAD}${evals.map(lineRow).join('')}</table></div>
-    <p class="hint">Click a row to chart that line. Edge = model − no-vig probability on the better side. <span class="best-key">Best price</span>.${evals.some((e) => e.fair?.estimated) ? ' * one price only, margin assumed.' : ''}</p>`;
+  return `<div class="card-head"><h3>Lines · ${esc(state.stats[S.stat].label)}</h3><span class="hint" style="margin:0">${res.linesSource ? esc(res.linesSource) : 'no feed'}${res.oddsAgeSec != null ? ` · ${Math.round(res.oddsAgeSec / 60)}m ago` : ''}</span></div>
+    ${evals.length ? `<div class="lines-list">${evals.map(lineRow).join('')}</div>
+    <p class="hint">Tap Over or Under to add it to your slip. % = model chance. ★ best price. Tap a line to chart it.</p>`
+    : '<p class="empty">No bookmaker lines for this market yet. Use the price checker, or add your bookie\'s line under Model details.</p>'}`;
 }
 
-function addLineBlock(a) {
-  const p = S.preview || {};
+// ---------- price checker ----------
+function pAtLeast(pmf, k) { let s = 0; for (let x = Math.max(0, Math.ceil(k)); x < pmf.length; x++) s += pmf[x]; return s; }
+function judge(p, dec) {
+  const ev = p * dec - 1;
+  return { ev, verdict: ev >= 0.05 ? 'VALUE' : ev >= 0 ? 'FAIR' : 'AVOID' };
+}
+function checkRow(c, i, a) {
+  const pmf = a.projection.pmf;
+  const dec = parsePrice(c.price);
+  const p = c.k ? pAtLeast(pmf, Number(c.k)) : null;
+  let out = '<span class="dim">Enter a threshold and a price, e.g. 20+ at 5/1</span>';
+  if (p != null) {
+    const fair = p > 0 ? 1 / p : null;
+    out = `Model <b>${p < 0.001 ? '<0.1%' : pct(p)}</b> · fair <b>${fair && fair < 1000 ? odds(fair) : '1000/1+'}</b>`;
+    if (dec) {
+      const j = judge(p, dec);
+      const low = j.verdict === 'VALUE' && a.quality.score < 0.5 ? ' <span class="dim">(low confidence)</span>' : '';
+      out += ` · bookie ${pct(1 / dec)} · EV <b class="${j.ev >= 0 ? 'pos' : 'neg'}">${signed(j.ev * 100, 0)}%</b> <span class="chip ${j.verdict.toLowerCase()}">${j.verdict}</span>${low}`;
+    }
+    const dk = (S.res.ladder || []).find((l) => l.k === Number(c.k));
+    if (dk) out += `<br><span class="dim">DraftKings offers ${odds(dk.price)} for ${c.k}+${dec ? (dec > dk.price ? ', so your price beats it' : dec < dk.price ? ', so theirs is better' : ', the same') : ''}</span>`;
+  }
+  return `<div class="crow" data-i="${i}">
+    <label class="plus"><input name="k" inputmode="numeric" value="${esc(c.k)}" aria-label="Threshold">+</label>
+    <label class="price"><input name="price" placeholder="5/1" value="${esc(c.price)}" aria-label="Price"></label>
+    <div class="out">${out}</div>
+    <button class="mini" data-cadd="${i}" ${dec && c.k ? '' : 'disabled'} title="Add to slip">+ Slip</button>
+    <button class="mini ghost" data-cdel="${i}" aria-label="Remove row">×</button>
+  </div>`;
+}
+
+function checkCard(a) {
+  const pmf = a.projection.pmf;
+  const ladder = S.res.ladder || [];
+  const dk = new Map(ladder.map((l) => [l.k, l.price]));
+  // thresholds: everything DraftKings prices, plus a spread around the projection
+  const ks = new Set(ladder.map((l) => l.k));
+  for (let k = 1; k < pmf.length; k++) { const p = pAtLeast(pmf, k); if (p < 0.93 && p > 0.02) ks.add(k); }
+  const sorted = [...ks].sort((x, y) => x - y).filter((k, i, arr) => dk.has(k) || arr.length <= 14 || i % Math.ceil(arr.length / 14) === 0);
+  const rows = sorted.map((k) => {
+    const p = pAtLeast(pmf, k);
+    const price = dk.get(k);
+    const j = price ? judge(p, price) : null;
+    return `<tr class="${j?.verdict === 'VALUE' ? 'val' : ''}"><td class="k">${k}+</td><td>${pct(p, 0)}</td><td>${p > 0.001 ? odds(1 / p) : '–'}</td><td>${price ? odds(price) : '<span class="dim">–</span>'}</td>
+      <td>${j ? `<span class="chip ${j.verdict.toLowerCase()}">${j.verdict}</span>` : ''}</td><td>${price ? `<button class="mini" data-ladd="${k}" data-price="${price}">+ Slip</button>` : ''}</td></tr>`;
+  }).join('');
+  const thin = a.quality.score < 0.5 ? `<p class="hint neg">Thin data for this player (${a.quality.notes.map(esc).join('; ')}). Value calls here are low confidence.</p>` : '';
+  return `<div class="card-head"><h3>Check a price · ${short()}</h3></div>
+    <div class="check-rows">${S.checks.map((c, i) => checkRow(c, i, a)).join('')}</div>
+    <div class="slip-actions"><button class="mini" id="cmore">+ Add another price</button></div>
+    ${thin}
+    <h3 style="margin:18px 0 6px;font-size:13px;letter-spacing:.1em;color:var(--faint)">Ladder: model vs DraftKings</h3>
+    <div class="scroll"><table class="ladder"><tr><th class="l">${short()}</th><th>Model</th><th>Fair</th><th>DraftKings</th><th></th><th></th></tr>${rows}</table></div>
+    <p class="hint">"20+" means 20 or more. Fair = the price at which the model sees no edge. VALUE = at least 5% expected return.</p>`;
+}
+
+// ---------- details drawer ----------
+function detailsHtml(a) {
+  const d = S.profile;
+  const keys = Object.keys(state.stats);
+  const avgRows = Object.entries(d.averages).map(([k, x]) => `<tr><td>${k}</td><td>${x.gp}</td><td>${fmt(x.min)}</td><td>${fmt(x.usg)}</td>${keys.map((s) => `<td>${fmt(x[s])}</td>`).join('')}</tr>`).join('');
+  const cols = ['date', 'opp', 'min', 'pts', 'reb', 'ast', 'fg3m', 'fga', 'fta', 'tov', 'pm'];
+  const logRows = d.logs.map((r) => `<tr>${cols.map((c) => `<td>${c === 'opp' ? (r.home ? 'v ' : '@ ') + r.opp : c === 'min' ? fmt(r[c], 0) : esc(r[c])}</td>`).join('')}</tr>`).join('');
+  if (!a) return `<div class="scroll"><table><tr><th>Split</th><th>GP</th><th>Min</th><th>Usg%</th>${keys.map((s) => `<th>${state.stats[s].short}</th>`).join('')}</tr>${avgRows}</table></div>`;
+  const m = a.projection.minutes, p = a.projection;
   const prev = a.evals.find((e) => e.source === 'preview');
-  return `<h3>Add a line · any bookie</h3>
+  const pv = S.preview || {};
+  return `
+    <div class="sub-h">Minutes · ${fmt(m.proj)} ±${fmt(m.sd)}${m.flags.length ? ` · ${m.flags.map((f) => FLAG_LABEL[f] || f).join(', ')}` : ''}</div>
+    <div class="scroll"><table><tr><th class="l">Step</th><th>Min</th><th class="l">Why</th></tr>${m.steps.map((s) => `<tr><td class="l">${esc(s.label)}</td><td>${s.key === 'base' ? fmt(s.value) : signed(s.value)}</td><td class="why">${esc(s.note || '')}</td></tr>`).join('')}</table></div>
+    <form id="minform" class="inline"><label class="f">Your minutes<input name="min" inputmode="decimal" placeholder="${fmt(m.proj)}" value="${S.minutes ?? ''}"></label><button class="btn">Apply</button>${S.minutes != null ? '<button type="button" class="btn ghost" id="minreset">Reset</button>' : ''}</form>
+    <div class="sub-h">Rate per 36 · ${fmt(p.basePer36)} → ${fmt(p.per36)} · ${esc(p.family)}</div>
+    <div class="scroll"><table><tr><th class="l">Adjustment</th><th>Effect</th><th class="l">Note</th></tr>
+      <tr><td class="l">Season blend</td><td>–</td><td class="why">${Math.round(p.seasonWeight * 100)}% this season, rest last season; recent form on top</td></tr>
+      ${p.factors.map((f) => `<tr><td class="l">${esc(f.label)}</td><td>${edge(f.value - 1)}</td><td class="why">${esc(f.note || '')}</td></tr>`).join('')}</table></div>
+    <div class="sub-h">Add your bookie's over/under line</div>
     <form id="manual" class="manual" autocomplete="off">
-      <label>Bookie<input name="book" required maxlength="40" placeholder="Bet365" value="${esc(p.book || '')}"></label>
-      <label>Line<input name="line" required inputmode="decimal" placeholder="${fmt(S.selLine)}" value="${esc(p.line ?? '')}"></label>
-      <label>Over<input name="over" placeholder="10/11" value="${esc(p.over || '')}"></label>
-      <label>Under<input name="under" placeholder="5/6" value="${esc(p.under || '')}"></label>
-      <div class="manual-actions">
-        <button type="submit" class="btn">Save line</button>
-        <span class="betbox"><select name="side" aria-label="Bet side"><option value="">Side</option><option value="over">Over</option><option value="under">Under</option></select><input name="stake" inputmode="decimal" placeholder="Stake" aria-label="Stake"><button type="button" class="btn" id="save-bet">Save + bet</button></span>
-      </div>
+      <label class="f">Bookie<input name="book" required maxlength="40" placeholder="Bet365" value="${esc(pv.book || '')}"></label>
+      <label class="f">Line<input name="line" required inputmode="decimal" placeholder="${fmt(S.selLine)}" value="${esc(pv.line ?? '')}"></label>
+      <label class="f">Over<input name="over" placeholder="10/11" value="${esc(pv.over || '')}"></label>
+      <label class="f">Under<input name="under" placeholder="5/6" value="${esc(pv.under || '')}"></label>
+      <button type="submit" class="btn">Save line</button>
     </form>
-    ${prev ? `<div class="scroll"><table class="lines">${LINE_HEAD}${lineRow(prev)}</table></div>` : ''}
-    <p id="manual-msg" class="hint">Fractional (10/11), decimal (1.91) or American (-110). One side is enough. Saved on the server for the bet log and real-line backtest.</p>`;
+    ${prev ? `<div class="lines-list" style="margin-top:10px">${lineRow(prev)}</div>` : ''}
+    <p id="manual-msg" class="hint">Saved lines appear in the Lines card with Over / Under buttons.</p>
+    <div class="sub-h">Averages</div>
+    <div class="scroll"><table><tr><th>Split</th><th>GP</th><th>Min</th><th>Usg%</th>${keys.map((s) => `<th>${state.stats[s].short}</th>`).join('')}</tr>${avgRows}</table></div>
+    <div class="sub-h">Game log</div>
+    <div class="scroll"><table><tr>${cols.map((c) => `<th>${c}</th>`).join('')}</tr>${logRows}</table></div>`;
 }
 
-function minutesBlock(a) {
-  const m = a.projection.minutes;
-  return `<h3>Minutes · ${fmt(m.proj)} ±${fmt(m.sd)}${m.flags.length ? ` · ${m.flags.map((f) => FLAG_LABEL[f] || f).join(', ')}` : ''}</h3>
-    <div class="scroll"><table><tr><th class="l">Step</th><th>Min</th><th class="l">Why</th></tr>
-    ${m.steps.map((s) => `<tr><td class="l">${esc(s.label)}</td><td>${s.key === 'base' ? fmt(s.value) : signed(s.value)}</td><td class="why">${esc(s.note || '')}</td></tr>`).join('')}
-    </table></div>
-    <form id="minform" class="inline"><label>Your minutes<input name="min" inputmode="decimal" placeholder="${fmt(m.proj)}" value="${S.minutes ?? ''}"></label><button class="btn">Apply</button>${S.minutes != null ? '<button type="button" class="btn ghost" id="minreset">Reset</button>' : ''}</form>`;
-}
-
-function factorsBlock(a) {
-  const p = a.projection;
-  return `<h3>Rate per 36 · ${fmt(p.basePer36)} → ${fmt(p.per36)}</h3>
-    <div class="scroll"><table><tr><th class="l">Adjustment</th><th>×</th><th class="l">Note</th></tr>
-    <tr><td class="l">Season blend</td><td>–</td><td class="why">${Math.round(p.seasonWeight * 100)}% this season, rest last season; recent form on top</td></tr>
-    ${p.factors.map((f) => `<tr><td class="l">${esc(f.label)}</td><td>${edge(f.value - 1)}</td><td class="why">${esc(f.note || '')}</td></tr>`).join('')}
-    </table></div>`;
-}
-
-// ---------- line-dependent parts (client-side) ----------
+// ---------- chart, hit rates, splits (client-side, follow the selected line) ----------
 function hitOf(values, line) {
   const over = values.filter((v) => v > line).length;
-  const under = values.filter((v) => v < line).length;
-  return { n: values.length, over, under, push: values.length - over - under, rate: values.length ? over / values.length : null };
+  return { n: values.length, over, rate: values.length ? over / values.length : null };
 }
-
 function renderLineParts() {
   const line = S.selLine;
-  const logs = S.profile.logs; // newest first
+  const logs = S.profile.logs;
   const games = logs.slice(0, S.window).reverse().map((r) => ({ date: r.date, opp: r.opp, home: r.home, min: r.min, season: r.season, value: statOf(r) }));
   const proj = S.res.analysis?.projection?.mean ?? null;
   const vals = logs.map(statOf);
-  const cur = S.splits.find((x) => x.key === 'cur');
-  const prev = S.splits.find((x) => x.key === 'prev');
-  const hits = [['L5', vals.slice(0, 5)], ['L10', vals.slice(0, 10)], ['L20', vals.slice(0, 20)], ['Season', cur?.values || []], ['Last season', prev?.values || []]]
-    .map(([k, v]) => ({ k, ...hitOf(v, line) }));
-  const short = state.stats[S.stat].short;
-
+  const cur = S.splits.find((x) => x.key === 'cur'), prev = S.splits.find((x) => x.key === 'prev');
+  const hits = [['L5', vals.slice(0, 5)], ['L10', vals.slice(0, 10)], ['L20', vals.slice(0, 20)], ['Season', cur?.values || []], ['Last season', prev?.values || []]].map(([k, v]) => ({ k, ...hitOf(v, line) }));
   $('#chart-block').innerHTML = `
-    <div class="chart-head">
-      <h3>Last ${games.length} · ${short}${line != null ? ` vs ${fmt(line)}` : ''}</h3>
+    <div class="chart-head"><h3>Last ${games.length} · ${short()}${line != null ? ` vs ${fmt(line)}` : ''}</h3>
       <div class="legend"><span><i class="sw b-over"></i>Over</span><span><i class="sw b-under"></i>Under</span><span><i class="ln"></i>Line</span>${proj != null ? '<span><i class="ln proj"></i>Projection</span>' : ''}</div>
-      <div class="seg" role="group" aria-label="Games shown">${[10, 20].map((w) => `<button aria-pressed="${S.window === w}" data-w="${w}">L${w}</button>`).join('')}</div>
-    </div>
+      <div class="seg" role="group" aria-label="Games shown">${[10, 20].map((w) => `<button aria-pressed="${S.window === w}" data-w="${w}">L${w}</button>`).join('')}</div></div>
     <div id="chart"></div>
     <div class="hits">${hits.map((h) => `<div><dt>${h.k}</dt><dd>${h.n ? `${h.over}/${h.n} <span class="${h.rate >= 0.5 ? 'pos' : 'neg'}">${pct(h.rate, 0)}</span>` : '–'}</dd></div>`).join('')}</div>`;
-  barChart($('#chart'), games, { line, projection: proj, label: `${S.profile.player.name} ${short}` });
-  $('#chart-block .seg').onclick = (e) => {
-    const b = e.target.closest('button');
-    if (b) { S.window = Number(b.dataset.w); renderLineParts(); }
-  };
+  barChart($('#chart'), games, { line, projection: proj, label: `${S.profile.player.name} ${short()}` });
+  $('#chart-block .seg').onclick = (e) => { const b = e.target.closest('button'); if (b) { S.window = Number(b.dataset.w); renderLineParts(); } };
   renderSplits(line);
-  $$('#lines tr[data-line], #addline tr[data-line]').forEach((tr) => tr.classList.toggle('sel', Number(tr.dataset.line) === line));
+  $$('.lrow[data-line]').forEach((r) => r.classList.toggle('sel', Number(r.dataset.line) === line));
 }
 
 function renderSplits(line) {
@@ -254,122 +284,85 @@ function renderSplits(line) {
   let group = null;
   const rows = S.splits.filter((s) => s.n > 0 || s.group === 'Teammates').map((s) => {
     const h = hitOf(s.values, line);
-    const head = s.group !== group ? `<tr class="grp"><td colspan="6" class="l">${esc(s.group)}${s.group === 'Season' ? '' : ' <span class="dim">· 2 seasons</span>'}</td></tr>` : '';
+    const head = s.group !== group ? `<tr class="grp"><td colspan="5">${esc(s.group)}</td></tr>` : '';
     group = s.group;
     const delta = s.avg != null && base != null ? s.avg - base : null;
-    return `${head}<tr><td class="l">${esc(s.label)}${s.outTonight ? '<span class="tag neg-tag">OUT TONIGHT</span>' : ''}</td><td>${s.n}</td>
-      <td>${fmt(s.avg)}</td><td>${delta == null ? '–' : `<span class="${delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'dim'}">${signed(delta)}</span>`}</td>
-      <td>${fmt(s.min)}</td><td>${s.n ? `${h.over}-${h.under}${h.push ? `-${h.push}` : ''} <span class="dim">${pct(h.rate, 0)}</span>` : '–'}</td></tr>`;
+    return `${head}<tr><td class="l">${esc(s.label)}${s.outTonight ? '<span class="tag neg-tag">out tonight</span>' : ''}</td><td>${s.n}</td>
+      <td>${fmt(s.avg)} ${delta == null ? '' : `<span class="${delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'dim'}">${signed(delta)}</span>`}</td><td>${fmt(s.min, 0)}</td><td>${s.n ? `${h.over}/${h.n} <span class="dim">${pct(h.rate, 0)}</span>` : '–'}</td></tr>`;
   }).join('');
-  $('#splits').innerHTML = `<h3>Splits · ${state.stats[S.stat].short}${line != null ? ` · over ${fmt(line)}` : ''}</h3>
-    <div class="scroll"><table class="splits"><tr><th class="l">Split</th><th>GP</th><th>Avg</th><th>vs avg</th><th>Min</th><th>O-U</th></tr>${rows}</table></div>
-    <p class="hint">"vs avg" compares with his average over both seasons. Teammate splits only count seasons they shared a team.</p>`;
+  $('#splits').innerHTML = `<div class="card-head"><h3>Splits · ${short()}${line != null ? ` · over ${fmt(line)}` : ''}</h3></div>
+    <div class="scroll"><table class="splits"><tr><th class="l">Split</th><th>GP</th><th>Avg</th><th>Min</th><th>Over</th></tr>${rows}</table></div>`;
 }
 
 // ---------- interactions ----------
-function bindModel() {
+function bind() {
+  const view = $('#view');
+  view.onclick = async (e) => {
+    const t = e.target;
+    const addH = t.closest('[data-addh]');
+    if (addH) { const h = S.res.analysis.headline; return addLeg(legFrom(h, h.side)); }
+    const add = t.closest('[data-add]');
+    if (add) { const ev = S.res.analysis.evals.find((x) => x.id === add.dataset.add); return addLeg(legFrom(ev, add.dataset.side)); }
+    const del = t.closest('[data-del]');
+    if (del) { del.disabled = true; await api(`/api/entries/${del.dataset.del}`, { method: 'DELETE' }); return rerun(); }
+    const cadd = t.closest('[data-cadd]');
+    if (cadd) { const c = S.checks[Number(cadd.dataset.cadd)]; return addLeg(atLeastLeg(Number(c.k), c.price, 'Your price')); }
+    const ladd = t.closest('[data-ladd]');
+    if (ladd) return addLeg(atLeastLeg(Number(ladd.dataset.ladd), Number(ladd.dataset.price), 'DraftKings'));
+    const cdel = t.closest('[data-cdel]');
+    if (cdel) { S.checks.splice(Number(cdel.dataset.cdel), 1); if (!S.checks.length) S.checks.push({ k: '', price: '' }); return redrawCheck(); }
+    if (t.closest('#cmore')) { S.checks.push({ k: '', price: '' }); redrawCheck(); return $$('.crow input[name=k]').at(-1)?.focus(); }
+    if (t.closest('#minreset')) { S.minutes = null; return rerun(); }
+    const row = t.closest('.lrow[data-line]');
+    if (row && !t.closest('button')) { S.selLine = Number(row.dataset.line); renderLineParts(); }
+  };
+  // price checker inputs: recompute in place, keep focus
+  $('#check').oninput = debounce((e) => {
+    const r = e.target.closest('.crow');
+    if (!r) return;
+    const i = Number(r.dataset.i);
+    S.checks[i] = { ...S.checks[i], [e.target.name]: e.target.value };
+    const name = e.target.name, pos = e.target.selectionStart;
+    redrawCheck();
+    const again = $(`.crow[data-i="${i}"] input[name=${name}]`);
+    if (again) { again.focus(); again.setSelectionRange?.(pos, pos); }
+  }, 250);
+
   const form = $('#manual');
-  const readForm = () => Object.fromEntries(new FormData(form));
-  let lastFocus = null;
-  const preview = debounce(() => {
-    const f = readForm();
-    S.preview = f.line !== '' && (f.over || f.under) ? { line: f.line, over: f.over, under: f.under, book: f.book || 'Preview' } : null;
-    rerun().then(() => {
-      const again = $('#manual');
-      if (again && lastFocus) { const i = again.elements[lastFocus]; if (i) { i.focus(); i.setSelectionRange?.(i.value.length, i.value.length); } }
-    });
-  }, 400);
-  form.addEventListener('input', (e) => { lastFocus = e.target.name; if (e.target.name !== 'side' && e.target.name !== 'stake') preview(); });
-
-  async function save(withBet) {
-    const f = readForm();
-    const body = { playerId: S.id, stat: S.stat, line: f.line, over: f.over, under: f.under, book: f.book, source: 'manual' };
-    if (withBet) {
-      if (!f.side) return msg('Pick a side for the bet.', true);
-      body.bet = { side: f.side, stake: f.stake || 1 };
-    }
-    const buttons = [...form.querySelectorAll('button')];
-    buttons.forEach((b) => { b.disabled = true; });
-    try {
-      await api('/api/entries', { method: 'POST', body });
-      S.preview = null;
-      await rerun();
-      msg(withBet ? 'Line saved and bet logged.' : 'Line saved.');
-    } catch (e) {
-      buttons.forEach((b) => { b.disabled = false; });
-      msg(e.message, true);
-    }
+  if (form) {
+    const readForm = () => Object.fromEntries(new FormData(form));
+    form.oninput = debounce(() => {
+      const f = readForm();
+      S.preview = f.line !== '' && (f.over || f.under) ? { line: f.line, over: f.over, under: f.under, book: f.book || 'Your line' } : null;
+      const focused = document.activeElement?.name;
+      rerun().then(() => { $('#details').open = true; const i = $('#manual')?.elements[focused]; if (i) { i.focus(); i.setSelectionRange?.(i.value.length, i.value.length); } });
+    }, 450);
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const f = readForm();
+      try {
+        await api('/api/entries', { method: 'POST', body: { playerId: S.id, stat: S.stat, line: f.line, over: f.over, under: f.under, book: f.book, source: 'manual' } });
+        S.preview = null; await rerun(); $('#details').open = true; toast('Line saved');
+      } catch (err) { const m = $('#manual-msg'); m.textContent = err.message; m.className = 'hint neg'; }
+    };
   }
-  form.addEventListener('submit', (e) => { e.preventDefault(); save(false); });
-  $('#save-bet').addEventListener('click', () => save(true));
-
-  $('#minform').addEventListener('submit', (e) => {
+  $('#minform')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const v = new FormData(e.target).get('min');
     S.minutes = v === '' ? null : Number(v);
-    rerun();
+    rerun().then(() => { $('#details').open = true; });
   });
-  $('#minreset')?.addEventListener('click', () => { S.minutes = null; rerun(); });
-
-  const result = $('.result');
-  // onclick (not addEventListener): .result survives re-renders, so this must replace, not stack
-  result.onclick = async (e) => {
-    const del = e.target.closest('[data-del]');
-    if (del) { del.disabled = true; await api(`/api/entries/${del.dataset.del}`, { method: 'DELETE' }); return rerun(); }
-    const take = e.target.closest('[data-take]');
-    if (take) return openTake(take.dataset.take);
-    const ok = e.target.closest('[data-confirm]');
-    if (ok) { ok.disabled = true; return confirmTake(ok.dataset.confirm, ok.closest('tr')); }
-    if (e.target.closest('[data-cancel]')) return e.target.closest('tr').remove();
-    const row = e.target.closest('tr[data-line]');
-    if (row && !e.target.closest('button, input, select')) selectLine(Number(row.dataset.line));
-  };
-  result.onkeydown = (e) => {
-    const row = e.target.closest?.('tr[data-line]');
-    if (row && (e.key === 'Enter' || e.key === ' ') && e.target === row) { e.preventDefault(); selectLine(Number(row.dataset.line)); }
-  };
 }
 
-function selectLine(line) {
-  S.selLine = line;
-  const ph = $('#manual input[name=line]');
-  if (ph) ph.placeholder = fmt(line);
-  renderLineParts();
-}
+function redrawCheck() { $('#check').innerHTML = checkCard(S.res.analysis); }
 
-function msg(text, bad = false) {
-  const m = $('#manual-msg');
-  if (m) { m.textContent = text; m.className = `hint ${bad ? 'neg' : 'pos'}`; }
-}
+const atLeastLeg = (k, price, book) => ({
+  playerId: S.id, playerName: S.profile.player.name, team: S.profile.player.team, stat: S.stat,
+  kind: 'atleast', side: 'over', line: k - 0.5, price, book,
+});
 
-function openTake(id) {
-  $$('.take-row').forEach((r) => r.remove());
-  const e = S.res.analysis.evals.find((x) => x.id === id);
-  const tr = $(`tr[data-row="${CSS.escape(id)}"]`);
-  if (!e || !tr) return;
-  const side = e.side || e.leanSide || 'over';
-  const row = document.createElement('tr');
-  row.className = 'take-row';
-  row.innerHTML = `<td colspan="9" class="l"><span class="take">
-    <select name="side" aria-label="Side"><option value="over" ${side === 'over' ? 'selected' : ''}>Over ${fmt(e.line)} @ ${fmt(e.over, 2)}</option><option value="under" ${side === 'under' ? 'selected' : ''}>Under ${fmt(e.line)} @ ${fmt(e.under, 2)}</option></select>
-    <input name="stake" inputmode="decimal" value="1" size="5" aria-label="Stake">
-    <button class="mini" data-confirm="${esc(id)}">Log bet</button><button class="mini ghost" data-cancel>Cancel</button></span></td>`;
-  tr.after(row);
-  $('input', row).focus();
-}
-
-async function confirmTake(id, row) {
-  const e = S.res.analysis.evals.find((x) => x.id === id);
-  const side = $('select', row).value;
-  const stake = Number($('input', row).value) || 1;
-  try {
-    if (e.source === 'manual') {
-      await api(`/api/entries/${id}`, { method: 'PATCH', body: { bet: { side, stake } } });
-    } else {
-      await api('/api/entries', { method: 'POST', body: { playerId: S.id, stat: S.stat, line: e.line, over: e.over, under: e.under, book: e.bookTitle, source: 'api', bet: { side, stake } } });
-    }
-    row.innerHTML = `<td colspan="9" class="l pos">Bet logged: ${side} ${fmt(e.line)} @ ${fmt(side === 'over' ? e.over : e.under, 2)}, stake ${stake}. <a href="#/bets">Bet log</a></td>`;
-  } catch (err) {
-    row.innerHTML = `<td colspan="9" class="l neg">${esc(err.message)}</td>`;
-  }
+function addLeg(leg) {
+  const isNew = slip.add(leg);
+  const label = leg.kind === 'atleast' ? `${leg.line + 0.5}+ ${short()}` : `${leg.side} ${leg.line} ${short()}`;
+  toast(`${isNew ? 'Added' : 'Updated'}: ${leg.playerName.split(' ').at(-1)} ${label} @ ${odds(parsePrice(leg.price))}`);
 }

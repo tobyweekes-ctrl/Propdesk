@@ -3,7 +3,7 @@
 // and keeps manual lines + the bet log in this browser's storage. If the data is from an earlier
 // day, tonight's slate is fetched from ESPN directly as a fallback.
 import { createRoutes, dispatch } from '../server/routes.mjs';
-import { indexLeague, linesFor } from '../server/data/league.mjs';
+import { indexLeague, linesFor, ladderFor } from '../server/data/league.mjs';
 import { teamAbbr } from '../server/teams.mjs';
 import { todayET } from '../server/util.mjs';
 
@@ -95,16 +95,17 @@ async function backend() {
     getInjuries: async () => D.injuries,
     async getPlayerLines(player, stat) {
       const game = await B.gameFor(player.team);
-      if (!game) return { game: null, lines: [], source: null };
+      if (!game) return { game: null, lines: [], ladder: [], source: null };
       const o = D.odds.games?.[game.gameId];
       const lines = o ? linesFor(o.rows, player, stat) : [];
+      const ladder = o ? ladderFor(o.rows, player, stat) : [];
       const spread = o?.homeSpread == null ? null : game.home === player.team ? o.homeSpread : -o.homeSpread;
-      return { game, lines, source: o ? D.odds.source : null, spread, cacheAgeSec: D.odds.fetchedAt ? Math.round((Date.now() - Date.parse(D.odds.fetchedAt)) / 1000) : null };
+      return { game, lines, ladder, source: o?.sources?.join(' + ') || null, spread, cacheAgeSec: D.odds.fetchedAt ? Math.round((Date.now() - Date.parse(D.odds.fetchedAt)) / 1000) : null };
     },
     status: () => ({
       today: D.today, static: true, dataAsOf: D.meta.generated,
       statsProvider: D.meta.statsSource, injuryProvider: 'ESPN',
-      odds: D.meta.odds.enabled ? `The Odds API${D.meta.odds.fetchedAt ? '' : ' (not fetched yet)'}` : 'none (add ODDS_API_KEY secret)',
+      odds: D.meta.odds.sources?.length ? D.meta.odds.sources.join(' + ') : 'none',
       oddsQuota: D.meta.odds.quota || {}, keys: { oddsApi: D.meta.odds.enabled },
       stale: D.meta.today !== D.today,
     }),

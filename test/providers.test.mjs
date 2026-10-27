@@ -93,3 +93,24 @@ test('ESPN: "--" minutes and placeholder athletes are treated as DNP', async () 
   assert.deepEqual(rows.map((r) => r.playerId), ['2']);
   assert.deepEqual(dnps.map((d) => d.playerId), ['1']);
 });
+
+test('DraftKings (ESPN) props: sides identified via the milestone market, even when listed under-first', async () => {
+  const { normalisePropBets } = await import('../server/providers/espnOdds.mjs');
+  const ath = (id) => ({ $ref: `http://x/athletes/${id}?lang=en` });
+  const item = (id, type, target, american, decimal) => ({ athlete: ath(id), type: { name: type }, current: { target: { value: target } }, odds: { american: { value: american }, decimal: { value: decimal } } });
+  const items = [
+    // player 1: over listed first (matches 12+ milestone at -106)
+    item(1, 'Total Points', 11.5, '-108', '1.93'), item(1, 'Total Points', 11.5, '-117', '1.85'), item(1, 'Points Milestones', 12, '-106', '1.94'),
+    // player 2: under listed first; the milestone (+120) matches the second price
+    item(2, 'Total Rebounds', 7.5, '-158', '1.63'), item(2, 'Total Rebounds', 7.5, '+120', '2.20'), item(2, 'Rebounds Milestones', 8, '+121', '2.21'),
+    // player 3: no milestone -> feed order
+    item(3, 'Total Assists', 4.5, '+105', '2.05'), item(3, 'Total Assists', 4.5, '-135', '1.74'),
+  ];
+  const { rows, check } = normalisePropBets(items);
+  const ou = (id, stat) => rows.find((r) => r.playerId === String(id) && r.stat === stat && r.kind === 'ou');
+  assert.deepEqual([ou(1, 'pts').over, ou(1, 'pts').under], [1.93, 1.85]);
+  assert.deepEqual([ou(2, 'reb').over, ou(2, 'reb').under], [2.2, 1.63]);
+  assert.deepEqual([ou(3, 'ast').over, ou(3, 'ast').under], [2.05, 1.74]);
+  assert.deepEqual(check, { pairs: 3, confirmed: 1, contradicted: 1 });
+  assert.equal(rows.filter((r) => r.kind === 'ms').length, 2);
+});

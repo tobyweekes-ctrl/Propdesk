@@ -141,6 +141,7 @@ export function analyseSlip(players, legs, { sims = 20000, seed = 7, cfg, accaSt
   for (const l of ok) if (l.gameId) byGame.set(l.gameId, new Set([...(byGame.get(l.gameId) || []), l.playerId]));
   for (const [, set] of byGame) if (set.size > 1) flags.push({ level: 'info', text: `${set.size} players from the same game: game pace and blowouts affect them together, which the acca maths does not model.` });
   for (const l of ok) {
+    if (l.fairP != null && l.edge > cfg.marketDisagreement) flags.push({ level: 'warn', text: `${l.player} ${legLabel(l)}: the model is ${Math.round(l.edge * 100)} points away from the bookmaker's fair price. Gaps that big usually mean news the model can't see (role, injury, minutes); check before betting.` });
     if (l.ev < 0) flags.push({ level: 'bad', text: `${l.player} ${l.side === 'over' ? `${legLabel(l)}` : `under ${l.line}`}: negative expected value at ${l.price.toFixed(2)}.` });
   }
 

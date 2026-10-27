@@ -65,9 +65,12 @@ test('verdict respects the threshold and EV; confidence scales with edge', () =>
   const sp = { pmf: countPmf(25, 0.03, 120) }; // mean 25
   const q = { score: 1, notes: [] };
   const cfg = DEFAULTS;
-  const over = evaluateLine(sp, { line: 20.5, over: 1.91, under: 1.91 }, q, cfg);
+  const over = evaluateLine(sp, { line: 22.5, over: 1.91, under: 1.91 }, q, cfg);
   assert.equal(over.verdict, 'OVER');
   assert.equal(over.confidence, 'HIGH');
+  // an edge this large against a fair market is capped at LOW and flagged
+  const huge = evaluateLine(sp, { line: 20.5, over: 1.91, under: 1.91 }, q, cfg);
+  assert.deepEqual([huge.verdict, huge.confidence, huge.disagree], ['OVER', 'LOW', true]);
   const pass = evaluateLine(sp, { line: 24.5, over: 1.91, under: 1.91 }, q, cfg);
   assert.equal(pass.verdict, 'PASS');
   const under = evaluateLine(sp, { line: 30.5, over: '10/11', under: '10/11' }, q, cfg);

@@ -72,22 +72,20 @@ writeFileSync(join(DIST, 'data', 'slate.json'), JSON.stringify(slates));
 const injuries = await getInjuries().catch((e) => (console.warn('injuries:', e.message), []));
 writeFileSync(join(DIST, 'data', 'injuries.json'), JSON.stringify(injuries));
 
-const odds = { enabled: Boolean(config.oddsKey), fetchedAt: null, source: null, games: {} };
-if (config.oddsKey && process.env.FETCH_ODDS !== 'false') {
-  for (const g of slates[day]) {
-    if (!g.eventId) continue;
-    try {
-      const { rows, homeSpread } = await eventProps({ ...g, date: day });
-      odds.games[g.gameId] = { rows, homeSpread };
-    } catch (e) {
-      console.warn(`odds ${g.away}@${g.home}:`, e.message);
-    }
-  }
-  odds.fetchedAt = new Date().toISOString();
-  odds.source = 'The Odds API';
-  odds.quota = { ...quota };
-  console.log(`odds: ${Object.keys(odds.games).length} games, credits left ${quota.remaining}`);
+// Prop lines: DraftKings via ESPN on every build (free); The Odds API only when FETCH_ODDS allows (credits)
+const useOddsApi = Boolean(config.oddsKey) && process.env.FETCH_ODDS !== 'false';
+const odds = { fetchedAt: new Date().toISOString(), sources: [], games: {} };
+const sources = new Set();
+for (const g of slates[day]) {
+  const r = await eventProps({ ...g, date: day }, { oddsApi: useOddsApi });
+  if (!r.rows.length) continue;
+  odds.games[g.gameId] = { rows: r.rows, homeSpread: r.homeSpread, sources: r.sources };
+  r.sources.forEach((x) => sources.add(x));
+  const ou = r.rows.filter((x) => x.kind !== 'ms').length;
+  console.log(`lines ${g.away}@${g.home}: ${ou} O/U, ${r.rows.length - ou} ladder${r.check ? `; side check ${r.check.confirmed}/${r.check.pairs} confirmed, ${r.check.contradicted} swapped` : ''}`);
 }
+odds.sources = [...sources];
+if (useOddsApi) odds.quota = { ...quota };
 writeFileSync(join(DIST, 'data', 'odds.json'), JSON.stringify(odds));
 
 const meta = {
@@ -95,7 +93,7 @@ const meta = {
   today: day, current: cur, previous: prev,
   statsSource: config.statsProvider === 'demo' ? 'demo' : 'ESPN',
   seasons, stats: STATS,
-  odds: { enabled: odds.enabled, fetchedAt: odds.fetchedAt, games: Object.keys(odds.games).length, quota: odds.quota || null },
+  odds: { sources: odds.sources, fetchedAt: odds.fetchedAt, games: Object.keys(odds.games).length, quota: odds.quota || null },
 };
 writeFileSync(join(DIST, 'data', 'meta.json'), JSON.stringify(meta, null, 1));
 console.log(`built dist/ for ${day} in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
