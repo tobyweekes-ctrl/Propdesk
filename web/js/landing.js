@@ -1,11 +1,11 @@
 // Landing: tonight's games with each team's main players, one tap from their breakdown.
-import { esc, fmt, api, teamColour } from './ui.js';
+import { esc, fmt, api, teamColour, tipLabel } from './ui.js';
 
 export async function renderLanding(view) {
   view.innerHTML = '<p class="empty">Loading tonight\'s games…</p>';
   let games;
   try { games = await api('/api/slate/players'); } catch (e) { view.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
-  const time = (g) => (g.tipoff ? new Date(g.tipoff).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : esc(g.status || ''));
+  const time = (g) => (g.tipoff ? tipLabel(g.tipoff) : esc(g.status || ''));
   const team = (t) => `<span class="tm"><i style="background:${teamColour(t)}"></i>${t}</span>`;
   const side = (players) => `<div class="side">
     ${players.map((p) => `<a class="prow" href="#/p/${esc(p.id)}/pts"><span class="pn">${esc(p.name)}${p.injury ? ` <span class="tag ${/out/i.test(p.injury) ? 'neg-tag' : ''}">${esc(p.injury)}</span>` : ''}</span><span class="pm">${esc(p.pos)} · ${fmt(p.min, 0)}m</span><span class="ps"><b>${fmt(p.pts)}</b> pts · <b>${fmt(p.reb)}</b> reb · <b>${fmt(p.ast)}</b> ast</span></a>`).join('')}

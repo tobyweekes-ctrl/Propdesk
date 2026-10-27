@@ -12,6 +12,7 @@ import { computeSplits } from './data/splits.mjs';
 import { parsePrice } from './model/odds.mjs';
 
 const fail = (status, msg) => { throw Object.assign(new Error(msg), { status }); };
+const OUT_RE = /^(out|suspended)/i;
 
 /**
  * @param B backend: { getLeague, getSlate, gameFor, getInjuries, getPlayerLines, status, today,
@@ -47,7 +48,7 @@ export function createRoutes(B) {
         const recent = L.playerLogs(p.id).filter((r) => r.team === team).slice(-10);
         return { p, recent, min: recent.reduce((a, r) => a + r.min, 0) / Math.max(1, recent.length) };
       })
-      .filter((x) => x.recent.length >= 3)
+      .filter((x) => x.recent.length >= 3 && !OUT_RE.test(injuryFor(injuries, x.p)?.status || ''))
       .sort((a, b) => b.min - a.min)
       .slice(0, 5)
       .map(({ p, recent, min }) => {
@@ -129,6 +130,8 @@ export function createRoutes(B) {
     const { L, p, game } = await playerAndGame(id);
     if (!game) return { player: p, game: null, analysis: null };
     const [feed, injuries] = await Promise.all([B.getPlayerLines(p, stat), B.getInjuries().catch(() => [])]);
+    const inj = injuryFor(injuries, p);
+    if (inj && OUT_RE.test(inj.status)) return { player: p, game, out: inj, analysis: null, ladder: [] };
     const manual = (await B.entries.list()).filter((e) => e.source === 'manual' && e.playerId === id && e.stat === stat && e.date === L.today);
     const lines = [
       ...feed.lines.map((l) => ({ ...l, id: `api:${l.book}:${l.line}`, source: feed.source })),
@@ -205,6 +208,8 @@ export function createRoutes(B) {
     for (const id of new Set(legs.map((l) => l.playerId))) {
       const { L, p, game } = await playerAndGame(id);
       if (!game) continue;
+      const inj = injuryFor(injuries, p);
+      if (inj && OUT_RE.test(inj.status)) { out.set(id, { name: p.name, team: p.team, out: inj.status, sp: () => null }); continue; }
       const ctx = buildContext(L, id, game, { injuries });
       const pp = projectPlayer(ctx, DEFAULTS);
       const memo = {};

@@ -6,9 +6,10 @@ export const DEFAULTS = {
   requirePositiveEV: true,   // also require EV > 0 at the offered price
   devig: 'multiplicative',   // 'multiplicative' | 'power'
   assumedMargin: 0.05,       // bookmaker margin assumed when only one side's price is known
-  // Edges this big against a no-vig price usually mean the model is missing news (role, injury,
-  // minutes). Above this, confidence is capped at LOW and the pick is flagged.
-  marketDisagreement: 0.15,
+  // An edge this big against a two-sided no-vig price usually means the model is missing news (role,
+  // injury, minutes) rather than the bookmaker being wrong. Above it the line is flagged and never
+  // presented as the pick.
+  marketDisagreement: 0.08,
 
   // Last season vs this season: weight on this season = n / (n + k), n = games this season
   blend: {
@@ -35,7 +36,8 @@ export const DEFAULTS = {
     redistributeShare: 0.25, // share of an absent teammate's minutes credited to this player's group
     sameGroupWeight: 1.6,    // same position group absorbs more of those minutes
     restriction: { minMissed: 5, window: 5, firstGameFactor: 0.75, rampPerGame: 1.5, sdBoost: 2.5 },
-    blowout: { margin: 18, marginSd: 12.5, homeAdv: 1.5, starterRatio: 0.86, benchRatio: 1.12, k: 15, starterMin: 28 },
+    // ratingShrink: raw net-rating gaps overstate real margins; spreads rarely exceed ~15 points
+    blowout: { margin: 18, marginSd: 12.5, homeAdv: 1.5, starterRatio: 0.86, benchRatio: 1.12, k: 15, starterMin: 28, ratingShrink: 0.6, maxMargin: 15 },
     // Real minutes regress toward the middle (foul trouble, blowouts, rest, early exits). Final
     // projection = anchor + keep x (projection - anchor), fitted on real games by the backtest.
     regress: { anchor: 25, keep: 1 },
@@ -49,6 +51,7 @@ export const DEFAULTS = {
     defWeight: 0.5,          // how much of the opponent-vs-position factor to apply (estimates are noisy)
     h2hK: 15,                // head-to-head shrinkage in games (3 games -> 17% weight)
     h2hCap: 0.1,             // max ±10% from head-to-head
+    h2hMinGames: 3,          // fewer games than this vs the opponent: no head-to-head adjustment
     // per-minute usage bump when teammates are out: hurt real-data accuracy, so off by default
     // (shrinkage so strong it never moves). Lower it to experiment, e.g. --set adjust.teammateRateK=60
     teammateRateK: 1e6,

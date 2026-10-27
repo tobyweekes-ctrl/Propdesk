@@ -76,14 +76,20 @@ writeFileSync(join(DIST, 'data', 'injuries.json'), JSON.stringify(injuries));
 const useOddsApi = Boolean(config.oddsKey) && process.env.FETCH_ODDS !== 'false';
 const odds = { fetchedAt: new Date().toISOString(), sources: [], games: {} };
 const sources = new Set();
+const checks = { games: 0, teamMismatch: 0, duplicates: 0, nonMonotone: 0, futureTimestamps: 0, stale: 0, ladderDropped: 0, sidesSwapped: 0, sidePairs: 0 };
 for (const g of slates[day]) {
   const r = await eventProps({ ...g, date: day }, { oddsApi: useOddsApi });
   if (!r.rows.length) continue;
-  odds.games[g.gameId] = { rows: r.rows, homeSpread: r.homeSpread, sources: r.sources };
+  odds.games[g.gameId] = { rows: r.rows, homeSpread: r.homeSpread, sources: r.sources, fetchedAt: r.fetchedAt };
   r.sources.forEach((x) => sources.add(x));
+  const c = r.check || {};
+  checks.games++;
+  for (const k of ['teamMismatch', 'duplicates', 'nonMonotone', 'futureTimestamps', 'stale', 'ladderDropped']) checks[k] += c[k] || 0;
+  checks.sidesSwapped += c.contradicted || 0; checks.sidePairs += c.pairs || 0;
   const ou = r.rows.filter((x) => x.kind !== 'ms').length;
-  console.log(`lines ${g.away}@${g.home}: ${ou} O/U, ${r.rows.length - ou} ladder${r.check ? `; side check ${r.check.confirmed}/${r.check.pairs} confirmed, ${r.check.contradicted} swapped` : ''}`);
+  console.log(`lines ${g.away}@${g.home}: ${ou} O/U, ${r.rows.length - ou} ladder | checks ${JSON.stringify(c)}`);
 }
+console.log('line checks:', JSON.stringify(checks));
 odds.sources = [...sources];
 if (useOddsApi) odds.quota = { ...quota };
 writeFileSync(join(DIST, 'data', 'odds.json'), JSON.stringify(odds));
@@ -93,7 +99,7 @@ const meta = {
   today: day, current: cur, previous: prev,
   statsSource: config.statsProvider === 'demo' ? 'demo' : 'ESPN',
   seasons, stats: STATS,
-  odds: { sources: odds.sources, fetchedAt: odds.fetchedAt, games: Object.keys(odds.games).length, quota: odds.quota || null },
+  odds: { sources: odds.sources, fetchedAt: odds.fetchedAt, games: Object.keys(odds.games).length, quota: odds.quota || null, checks },
 };
 writeFileSync(join(DIST, 'data', 'meta.json'), JSON.stringify(meta, null, 1));
 console.log(`built dist/ for ${day} in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

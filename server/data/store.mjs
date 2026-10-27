@@ -10,7 +10,8 @@ import { espnInjuryProvider } from '../providers/espnInjuries.mjs';
 import { oddsApiProvider, quota } from '../providers/oddsApi.mjs';
 import { espnOddsProvider } from '../providers/espnOdds.mjs';
 import { demoProvider, demoInjuries, demoEventProps } from '../providers/demo.mjs';
-import { seasonOf, prevSeason, todayET } from '../util.mjs';
+import { seasonOf, prevSeason, todayET, normName } from '../util.mjs';
+import { checkLines } from './checks.mjs';
 import { recordOddsSnapshot } from './userdata.mjs';
 import { indexLeague, searchPlayers, averages, injuryFor, linesFor, ladderFor } from './league.mjs';
 
@@ -145,11 +146,20 @@ export async function eventProps(game, opts = {}) {
       }).catch((e) => (console.warn(`[odds api] ${game.away}@${game.home}:`, e.message), null))
       : null,
   ]);
+  // validate before anything uses the lines (see data/checks.mjs)
+  const L = await getLeague();
+  const nameTeam = new Map([...L.players.values()].map((p) => [normName(p.name), p.team]));
+  const { rows, issues } = checkLines([...(dk?.rows || []), ...(oa?.rows || [])], {
+    fetchedAt: dk?.fetchedAt || new Date().toISOString(),
+    teams: [game.home, game.away],
+    teamOf: (r) => (r.playerId ? L.players.get(r.playerId)?.team : nameTeam.get(normName(r.player || ''))) ?? null,
+  });
   return {
-    rows: [...(dk?.rows || []), ...(oa?.rows || [])],
+    rows,
     homeSpread: oa?.homeSpread ?? null,
     sources: [dk?.rows?.length && 'DraftKings (ESPN)', oa?.rows?.length && 'The Odds API'].filter(Boolean),
-    check: dk?.check,
+    check: dk?.check ? { ...dk.check, ...issues } : issues,
+    fetchedAt: dk?.fetchedAt || null,
   };
 }
 

@@ -65,22 +65,26 @@ test('verdict respects the threshold and EV; confidence scales with edge', () =>
   const sp = { pmf: countPmf(25, 0.03, 120) }; // mean 25
   const q = { score: 1, notes: [] };
   const cfg = DEFAULTS;
-  const over = evaluateLine(sp, { line: 22.5, over: 1.91, under: 1.91 }, q, cfg);
+  // an edge over the 8% disagreement bar against a fair two-sided market is a warning, not a pick
+  const huge = evaluateLine(sp, { line: 20.5, over: 1.91, under: 1.91 }, q, cfg);
+  assert.deepEqual([huge.verdict, huge.side, huge.disagree], ['CHECK', null, true]);
+  // between the threshold and the disagreement bar it is a pick
+  const loose = mergeConfig(cfg, { marketDisagreement: 0.5 });
+  const over = evaluateLine(sp, { line: 22.5, over: 1.91, under: 1.91 }, q, loose);
   assert.equal(over.verdict, 'OVER');
   assert.equal(over.confidence, 'HIGH');
-  // an edge this large against a fair market is capped at LOW and flagged
-  const huge = evaluateLine(sp, { line: 20.5, over: 1.91, under: 1.91 }, q, cfg);
-  assert.deepEqual([huge.verdict, huge.confidence, huge.disagree], ['OVER', 'LOW', true]);
+  // a stale price is never the pick
+  assert.equal(evaluateLine(sp, { line: 22.5, over: 1.91, under: 1.91, stale: true }, q, loose).side, null);
   const pass = evaluateLine(sp, { line: 24.5, over: 1.91, under: 1.91 }, q, cfg);
   assert.equal(pass.verdict, 'PASS');
-  const under = evaluateLine(sp, { line: 30.5, over: '10/11', under: '10/11' }, q, cfg);
+  const under = evaluateLine(sp, { line: 30.5, over: '10/11', under: '10/11' }, q, loose);
   assert.equal(under.verdict, 'UNDER');
   // big edge vs no-vig but a huge margin (1.25 both sides) -> EV < 0 -> no bet
-  const bad = evaluateLine(sp, { line: 20.5, over: 1.25, under: 1.25 }, q, cfg);
+  const bad = evaluateLine(sp, { line: 20.5, over: 1.25, under: 1.25 }, q, loose);
   assert.ok(bad.edge.over > 0.04 && bad.ev.over < 0);
   assert.equal(bad.verdict, 'PASS');
   // higher threshold turns a bet into a pass
-  assert.equal(evaluateLine(sp, { line: 22.5, over: 1.91, under: 1.91 }, q, mergeConfig(cfg, { threshold: 0.5 })).verdict, 'PASS');
+  assert.equal(evaluateLine(sp, { line: 22.5, over: 1.91, under: 1.91 }, q, mergeConfig(loose, { threshold: 0.5 })).verdict, 'PASS');
 });
 
 test('hit rates vs exact line', () => {
@@ -118,7 +122,7 @@ test('analyse: full output for a player on tonight\'s slate', async () => {
   const a = analyse({ L, playerId: p.id, game: { date: L.today, team, opp: slate[0].away, home: true }, stat: 'pra', lines });
   assert.ok(a.projection.mean > 5 && a.projection.minutes.proj > 10);
   assert.equal(a.evals.length, lines.length);
-  for (const e of a.evals) assert.ok(['OVER', 'UNDER', 'PASS'].includes(e.verdict));
+  for (const e of a.evals) assert.ok(['OVER', 'UNDER', 'PASS', 'CHECK'].includes(e.verdict));
   assert.ok(a.hitRates.last10.n === 10);
   assert.ok(Math.abs(a.projection.pmf.reduce((x, y) => x + y, 0) - 1) < 0.01);
 });

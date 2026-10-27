@@ -129,9 +129,14 @@ export function positionDefense(rows, groupOf, { priorMin = 600 } = {}) {
  */
 export function absenceInfo(playerRows, teamGameList, today) {
   const played = new Set(playerRows.map((r) => r.gameId));
-  const firstDate = playerRows[0]?.date;
-  const games = teamGameList.filter((g) => g.date < today && (!firstDate || g.date >= firstDate));
-  if (!games.length || !playerRows.length) return { status: playerRows.length ? 'active' : 'no-games' };
+  // Only this team's games since his first game FOR THIS TEAM. Otherwise a player who changed team
+  // would "miss" every one of his new team's games from before he arrived.
+  // (match on team too: a game id is shared by both teams, so a game AGAINST this team also matches)
+  const team = teamGameList[0]?.team;
+  const firstForTeam = playerRows.find((r) => r.team === team)?.date;
+  if (!firstForTeam) return { status: playerRows.length ? 'active' : 'no-games' };
+  const games = teamGameList.filter((g) => g.date < today && g.date >= firstForTeam);
+  if (!games.length) return { status: 'active' };
   const last = playerRows[playerRows.length - 1];
 
   // currently out: team games since last appearance
@@ -148,6 +153,7 @@ export function absenceInfo(playerRows, teamGameList, today) {
   if (missed === 0 || run > 10) return { status: 'active' };
   const since = playerRows.slice(-run);
   const before = playerRows.slice(0, -run).slice(-15);
+  // (missed games are counted only within this team's schedule, see above)
   return {
     status: 'returned',
     gamesMissed: missed,

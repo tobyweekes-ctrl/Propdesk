@@ -112,9 +112,9 @@ const isPlayer = (r, player, n) => (r.playerId ? r.playerId === player.id : norm
 export function linesFor(rows, player, stat) {
   const n = normName(player.name);
   const lines = rows.filter((r) => r.stat === stat && r.kind !== 'ms' && isPlayer(r, player, n))
-    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, line: r.line, over: r.over, under: r.under, open: r.open || null, updated: r.updated }))
+    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, line: r.line, over: r.over, under: r.under, open: r.open || null, updated: r.updated, ageMin: r.ageMin ?? null, stale: Boolean(r.stale) }))
     .sort((a, b) => a.line - b.line || a.bookTitle.localeCompare(b.bookTitle));
-  const pick = (cmp) => lines.filter((l) => l.over && l.under).reduce((best, l) => (!best || cmp(l, best) ? l : best), null);
+  const pick = (cmp) => lines.filter((l) => l.over && l.under && !l.stale).reduce((best, l) => (!best || cmp(l, best) ? l : best), null);
   const bestOver = pick((l, b) => l.line < b.line || (l.line === b.line && l.over > b.over));
   const bestUnder = pick((l, b) => l.line > b.line || (l.line === b.line && l.under > b.under));
   for (const l of lines) { l.bestOver = l === bestOver; l.bestUnder = l === bestUnder; }
@@ -124,7 +124,10 @@ export function linesFor(rows, player, stat) {
 /** One-sided "k or more" prices (e.g. DraftKings milestones) for one player + stat, by k. */
 export function ladderFor(rows, player, stat) {
   const n = normName(player.name);
-  return rows.filter((r) => r.stat === stat && r.kind === 'ms' && isPlayer(r, player, n))
-    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, k: r.line, price: r.over }))
+  const out = rows.filter((r) => r.stat === stat && r.kind === 'ms' && isPlayer(r, player, n))
+    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, k: r.line, price: r.over, updated: r.updated, ageMin: r.ageMin ?? null, stale: Boolean(r.stale) }))
     .sort((a, b) => a.k - b.k);
+  // safety net: a ladder whose prices don't rise with k (or with two prices for one k) is not trusted at all
+  const ok = out.every((x, i) => i === 0 || (x.k > out[i - 1].k && x.price > out[i - 1].price));
+  return ok ? out : [];
 }

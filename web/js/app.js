@@ -1,5 +1,5 @@
 // App shell: search with autocomplete, routing, slip counter, odds-format toggle, data note.
-import { $, esc, fmt, api, state, slip, oddsFormat, setOddsFormat, teamColour } from './ui.js';
+import { $, esc, fmt, api, state, slip, oddsFormat, setOddsFormat, teamColour, notFound } from './ui.js';
 import { renderPlayer } from './player.js';
 import { renderBets } from './bets.js';
 import { renderLanding } from './landing.js';
@@ -25,7 +25,11 @@ window.addEventListener('slip:change', () => updateCount(true));
 
 // ---------- odds format toggle ----------
 const toggle = $('#odds-toggle');
-const showFormat = () => { toggle.textContent = oddsFormat() === 'dec' ? '6.00' : '5/1'; };
+const showFormat = () => {
+  const dec = oddsFormat() === 'dec';
+  toggle.textContent = dec ? 'Odds 6.00' : 'Odds 5/1';
+  toggle.title = `Odds shown as ${dec ? 'decimal' : 'fractional'}: tap for ${dec ? 'fractional' : 'decimal'}`;
+};
 toggle.addEventListener('click', () => { setOddsFormat(oddsFormat() === 'dec' ? 'frac' : 'dec'); showFormat(); route(); });
 
 // ---------- search / autocomplete ----------
@@ -85,6 +89,7 @@ async function route() {
   if (page === '#/slip') return renderSlip(view);
   if (page === '#/bets') return renderBets(view);
   const m = h.match(/^#\/p\/([^/]+)(?:\/(\w+))?/);
+  if (!m && h && h !== '#' && h !== '#/') { view.innerHTML = notFound('There\'s no page at that address.'); return; }
   if (!m) return renderLanding(view);
   return renderPlayer(view, m[1], state.stats[m[2]] ? m[2] : 'pts');
 }

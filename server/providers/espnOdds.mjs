@@ -20,6 +20,25 @@ const MILESTONES = {
 };
 
 const athleteId = (x) => x.athlete?.$ref?.match(/athletes\/(\d+)/)?.[1] ?? null;
+
+/**
+ * A real "k or more" ladder gets longer as k rises. ESPN sometimes files a second, different market
+ * under the same name (e.g. a 2+..7+ series inside "Rebounds Milestones" next to the real 6+..20+),
+ * so keep the longest run with one price per k and prices strictly rising with k; drop the rest.
+ */
+export function cleanLadder(rows) {
+  const sorted = [...rows].sort((a, b) => a.line - b.line || a.over - b.over);
+  const best = new Array(sorted.length).fill(1), prev = new Array(sorted.length).fill(-1);
+  for (let i = 0; i < sorted.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (sorted[j].line < sorted[i].line && sorted[j].over < sorted[i].over && best[j] + 1 > best[i]) { best[i] = best[j] + 1; prev[i] = j; }
+    }
+  }
+  let end = best.indexOf(Math.max(0, ...best));
+  const keep = [];
+  while (end >= 0) { keep.unshift(sorted[end]); end = prev[end]; }
+  return { keep, dropped: rows.length - keep.length };
+}
 const dec = (x) => Number(x.odds?.decimal?.value) || null;
 const am = (x) => Number(x.odds?.american?.value);
 
@@ -31,15 +50,27 @@ const am = (x) => Number(x.odds?.american?.value);
  */
 export function normalisePropBets(items, updated = null) {
   const book = 'draftkings', bookTitle = 'DraftKings';
-  const ms = new Map(); // `${id}|${stat}|${k}` -> item
-  const rows = [];
+  const msGroups = new Map(); // `${id}|${stat}` -> [{ line: k, over, item }]
   for (const x of items) {
     const stat = MILESTONES[x.type?.name];
     const id = athleteId(x);
     const k = x.current?.target?.value;
     if (!stat || !id || k == null || !dec(x)) continue;
-    ms.set(`${id}|${stat}|${k}`, x);
-    rows.push({ playerId: id, stat, kind: 'ms', line: k, over: dec(x), under: null, book, bookTitle, updated: x.lastUpdated || updated });
+    const key = `${id}|${stat}`;
+    if (!msGroups.has(key)) msGroups.set(key, []);
+    msGroups.get(key).push({ line: k, over: dec(x), item: x });
+  }
+  const ms = new Map(); // `${id}|${stat}|${k}` -> item, cleaned ladders only
+  const rows = [];
+  let ladderDropped = 0;
+  for (const [key, list] of msGroups) {
+    const { keep, dropped } = cleanLadder(list);
+    ladderDropped += dropped;
+    const [id, stat] = key.split('|');
+    for (const r of keep) {
+      ms.set(`${id}|${stat}|${r.line}`, r.item);
+      rows.push({ playerId: id, stat, kind: 'ms', line: r.line, over: r.over, under: null, book, bookTitle, updated: r.item.lastUpdated || updated });
+    }
   }
   const groups = new Map();
   for (const x of items) {
@@ -51,7 +82,7 @@ export function normalisePropBets(items, updated = null) {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(x);
   }
-  const check = { pairs: 0, confirmed: 0, contradicted: 0 };
+  const check = { pairs: 0, confirmed: 0, contradicted: 0, ladderDropped };
   for (const [key, xs] of groups) {
     if (xs.length !== 2 || !dec(xs[0]) || !dec(xs[1])) continue;
     const [id, stat, lineStr] = key.split('|');
@@ -80,6 +111,6 @@ export const espnOddsProvider = {
     const first = (await fetchJson(url(1), { minGapMs: 200 })).json;
     const items = [...(first.items || [])];
     for (let p = 2; p <= (first.pageCount || 1); p++) items.push(...((await fetchJson(url(p), { minGapMs: 200 })).json.items || []));
-    return normalisePropBets(items);
+    return { ...normalisePropBets(items), fetchedAt: new Date().toISOString() };
   },
 };

@@ -65,7 +65,7 @@ function componentRate(ctx, s, cfg) {
 
   const h = ctx.h2hRows;
   const rh = rate(h, s), rAll = rate(ctx.logs, s);
-  if (rh != null && rAll) {
+  if (rh != null && rAll && h.length >= A.h2hMinGames) {
     const v = clamp(shrinkRatio(rh / rAll, h.length, A.h2hK), 1 - A.h2hCap, 1 + A.h2hCap);
     factors.push({ key: 'h2h', label: `vs ${ctx.game.opp} history`, value: v, note: `${h.length}g, weight ${Math.round(seasonWeight(h.length, A.h2hK) * 100)}%` });
   }

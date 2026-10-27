@@ -2,10 +2,11 @@
 //   verdict card (add the pick to the slip) · bookmaker lines with Over / Under buttons
 //   price checker ("20+ at 5/1") with the DraftKings ladder · last 10/20 chart · splits
 //   "Model details" drawer: minutes, adjustments, add-your-own O/U line, averages and game log
-import { $, $$, esc, fmt, pct, edge, signed, api, debounce, state, refreshStatus, odds, slip, toast, teamColour, parsePrice } from './ui.js';
+import { $, $$, esc, fmt, pct, edge, signed, api, debounce, state, refreshStatus, odds, slip, toast, teamColour, parsePrice, tipLabel, notFound } from './ui.js';
 import { barChart } from './chart.js';
 
 const S = { id: null, stat: 'pts', profile: null, res: null, splits: null, minutes: null, preview: null, selLine: null, window: 20, checks: null };
+const SMALL_N = 5;
 const FLAG_LABEL = { returning: 'Return ramp', 'first-game-back': 'First game back', 'no-history': 'No history', 'manual-minutes': 'Manual minutes' };
 const statOf = (row) => state.stats[S.stat].parts.reduce((a, k) => a + (row[k] ?? 0), 0);
 const short = () => state.stats[S.stat].short;
@@ -24,7 +25,7 @@ export async function renderPlayer(view, id, stat) {
     renderModel();
     refreshStatus();
   } catch (e) {
-    view.innerHTML = `<p class="err">${esc(e.message)}</p>`;
+    view.innerHTML = /not found/i.test(e.message) ? notFound('That player link doesn\'t match anyone in the data.') : `<p class="err">${esc(e.message)}</p>`;
   }
 }
 
@@ -52,11 +53,11 @@ function flags(d) {
 function shell(d) {
   const p = d.player, g = d.game;
   const keys = Object.keys(state.stats);
-  const tip = g?.tipoff ? ` · ${new Date(g.tipoff).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : '';
+  const tip = g?.tipoff ? ` · ${tipLabel(g.tipoff)}` : '';
   return `
     <div class="ph">
       <h2>${esc(p.name)}</h2>
-      <span class="sub">${p.team} · ${esc(p.pos) || '–'} · ${g ? `${g.home ? 'vs' : '@'} <b>${g.opp}</b> tonight${tip}` : 'no game today'}</span>
+      <span class="sub">${p.team} · ${esc(p.pos) || '–'} · ${g ? `${g.home ? 'vs' : '@'} <b>${g.opp}</b>${tip}` : 'no game today'}</span>
       <span class="flags">${flags(d)}</span>
     </div>
     <div class="statbar">
@@ -90,6 +91,13 @@ window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTi
 // ---------- model-dependent parts ----------
 function renderModel() {
   const res = S.res;
+  if (res.out) {
+    $('#verdict').innerHTML = outCard(res.out);
+    $('#lines').innerHTML = ''; $('#check').innerHTML = ''; $('#details-inner').innerHTML = detailsHtml(null);
+    S.selLine = null;
+    renderLineParts();
+    return;
+  }
   if (!res.game || res.analysis?.error) {
     $('#verdict').innerHTML = `<div class="verdict"><div class="v-main"><span class="v-word dim">${!res.game ? 'NO GAME' : 'NO DATA'}</span></div><p class="v-notes">${!res.game ? 'No game today, so there is nothing to price. History below.' : esc(res.analysis.error)}</p></div>`;
     $('#lines').innerHTML = ''; $('#check').innerHTML = ''; $('#details-inner').innerHTML = detailsHtml(null);
@@ -115,41 +123,56 @@ const legFrom = (e, side) => ({
   price: side === 'over' ? e.over : e.under, otherPrice: side === 'over' ? e.under : e.over, book: e.bookTitle,
 });
 
+const dur = (min) => (min == null ? 'an unknown time' : min < 60 ? `${min}m` : min < 48 * 60 ? `${Math.round(min / 60)}h` : `${Math.round(min / 1440)}d`);
+const ago = (min) => (min == null ? 'time unknown' : `${dur(min)} ago`);
+
 function verdictCard(a) {
   const h = a.headline;
   const p = a.projection;
   const side = h?.side;
   const price = side ? (side === 'over' ? h.over : h.under) : null;
-  const word = side ? `${side.toUpperCase()} ${fmt(h.line)}` : h ? 'PASS' : 'NO LINE';
-  const sub = side ? `${esc(h.bookTitle)} · ${odds(price)} · ${h.confidence.toLowerCase()} confidence` : h ? `No side clears the ${pct(a.config.threshold, 0)} edge bar` : 'Add a price below to check it';
-  const style = side ? (h.confidence === 'LOW' ? 'lean' : 'bet') : '';
+  const check = !side && h?.disagree;
+  const word = side ? `${side.toUpperCase()} ${fmt(h.line)}` : check ? 'NO PICK' : h ? 'PASS' : 'NO LINE';
+  const sub = side ? `${esc(h.bookTitle)} · ${odds(price)} · ${h.confidence.toLowerCase()} confidence`
+    : check ? `The model is ${pct(h.leanEdge, 0)} away from ${esc(h.bookTitle)}'s fair price, so something is probably missing`
+      : h?.stale ? `${esc(h.bookTitle)}'s price hasn't changed for ${dur(h.ageMin)}, too old to trust`
+        : h ? `No side clears the ${pct(a.config.threshold, 0)} edge bar` : 'Use the price checker below with your bookie\'s price';
+  const style = side ? (h.confidence === 'LOW' ? 'lean' : 'bet') : check ? 'warnv' : '';
   return `<div class="verdict ${style}">
     <div class="v-main"><span class="v-word">${word}</span><span class="v-sub">${sub}</span></div>
     <dl>
-      ${h ? `<div><dt>Model ${side || h.leanSide || 'over'}</dt><dd>${pct(side ? h.model[side] : h.model[h.leanSide || 'over'])}</dd></div>
+      ${h && !check ? `<div><dt>Model ${side || h.leanSide || 'over'}</dt><dd>${pct(side ? h.model[side] : h.model[h.leanSide || 'over'])}</dd></div>
       <div><dt>Edge</dt><dd>${edge(h.leanEdge)}</dd></div>
       <div><dt>Value (EV)</dt><dd>${edge(side ? h.ev[side] : h.leanSide ? h.ev[h.leanSide] : null)}</dd></div>` : ''}
       <div><dt>Projection</dt><dd>${fmt(p.mean)}</dd></div>
-      <div><dt>Model line</dt><dd>${fmt(p.modelLine)}</dd></div>
       <div><dt>Minutes</dt><dd>${fmt(p.minutes.proj)}</dd></div>
     </dl>
     ${side ? `<div class="v-actions"><button class="btn" data-addh="1">+ Add ${side} ${fmt(h.line)} to slip</button></div>` : ''}
-    ${h?.disagree ? `<p class="v-notes"><b>Big disagreement with ${esc(h.bookTitle)}</b> (${pct(h.leanEdge, 0)} edge). Markets this far off are usually reacting to news the model can't see, like role, injury or minutes, so check before betting.</p>` : ''}
+    ${check ? `<p class="v-notes">When the model disagrees with a two-sided bookmaker price by more than ${pct(a.config.marketDisagreement ?? 0.08, 0)}, the bookmaker is usually reacting to something the model can't see: a role change, an injury, a minutes limit. Check the news before treating it as value.</p>` : ''}
     <p class="v-notes">Data quality ${Math.round(a.quality.score * 100)}%${a.quality.notes.length ? ` · ${a.quality.notes.map(esc).join(' · ')}` : ''}</p>
   </div>`;
+}
+
+function outCard(inj) {
+  return `<div class="verdict warnv"><div class="v-main"><span class="v-word">OUT</span><span class="v-sub">${esc(inj.injury || inj.status)} · no projection</span></div>
+    <p class="v-notes">${esc(inj.status)} on the injury report${inj.note ? `: ${esc(inj.note)}` : ''}. His history is below; teammates' pages account for his absence.</p></div>`;
 }
 
 function lineRow(e) {
   const tag = e.source === 'manual' ? '<span class="tag">yours</span>' : '';
   const s = e.leanSide;
-  const mv = e.open?.line != null && e.open.line !== e.line ? `opened ${fmt(e.open.line)}` : e.open?.over ? `opened ${odds(e.open.over)} / ${odds(e.open.under)}` : '';
+  // line movement since the open
+  let mv = '';
+  if (e.open?.line != null && e.open.line !== e.line) mv = `${e.line > e.open.line ? '▲' : '▼'} from ${fmt(e.open.line)}`;
+  else if (e.open?.over && e.open.over !== e.over) mv = `${e.over < e.open.over ? '▲ over shortened' : '▼ over drifted'} from ${odds(e.open.over)}`;
+  const age = e.source === 'manual' || e.source === 'preview' ? '' : `changed ${ago(e.ageMin)}`;
   const btn = (side) => `<button class="sbtn ${e.side === side ? 'pick' : ''} ${(side === 'over' ? e.bestOver : e.bestUnder) ? 'best' : ''}" data-add="${esc(e.id)}" data-side="${side}" aria-label="Add ${side} ${e.line} to slip">
       <span>${side}</span><b>${odds(side === 'over' ? e.over : e.under)}</b><small>${pct(e.model[side], 0)}</small></button>`;
-  return `<div class="lrow ${e.side ? 'rec' : ''} ${e.line === S.selLine ? 'sel' : ''}" data-line="${e.line}" data-row="${esc(e.id)}" tabindex="0" title="Tap to chart this line">
-    <div class="who">${esc(e.bookTitle)}${tag}<small>${mv || '&nbsp;'}</small></div>
+  return `<div class="lrow ${e.side ? 'rec' : ''} ${e.stale ? 'stale' : ''} ${e.line === S.selLine ? 'sel' : ''}" data-line="${e.line}" data-row="${esc(e.id)}" tabindex="0" title="Tap to chart this line">
+    <div class="who">${esc(e.bookTitle)}${tag}${e.stale ? '<span class="tag">stale</span>' : ''}<small>${[mv, age].filter(Boolean).join(' · ') || '&nbsp;'}</small></div>
     <div class="ln">${fmt(e.line)}</div>
     <div class="side-btns">${btn('over')}${btn('under')}</div>
-    <div class="lmeta"><span>Pick <b class="${e.side ? 'pos' : 'dim'}">${e.verdict}</b></span><span>Edge ${s ? `${s} ${edge(e.edge[s])}` : '–'}</span><span>EV ${edge(s ? e.ev[s] : null)}</span>${e.source === 'manual' ? `<button class="mini ghost" data-del="${esc(e.id)}">remove</button>` : ''}</div>
+    <div class="lmeta"><span>Pick <b class="${e.side ? 'pos' : e.verdict === 'CHECK' ? 'warn' : 'dim'}">${e.verdict === 'CHECK' ? 'CHECK NEWS' : e.verdict}</b></span><span>Edge ${s ? `${s} ${edge(e.edge[s])}` : '–'}</span><span>EV ${edge(s ? e.ev[s] : null)}</span>${e.source === 'manual' ? `<button class="mini ghost" data-del="${esc(e.id)}">remove</button>` : ''}</div>
   </div>`;
 }
 
@@ -181,8 +204,9 @@ function checkRow(c, i, a) {
       const low = j.verdict === 'VALUE' && a.quality.score < 0.5 ? ' <span class="dim">(low confidence)</span>' : '';
       out += ` · bookie ${pct(1 / dec)} · EV <b class="${j.ev >= 0 ? 'pos' : 'neg'}">${signed(j.ev * 100, 0)}%</b> <span class="chip ${j.verdict.toLowerCase()}">${j.verdict}</span>${low}`;
     }
+    if (dec && p - 1 / dec > (a.config.marketDisagreement ?? 0.08)) out += '<br><span class="warn">Big gap between the model and this price: check team news before trusting it.</span>';
     const dk = (S.res.ladder || []).find((l) => l.k === Number(c.k));
-    if (dk) out += `<br><span class="dim">DraftKings offers ${odds(dk.price)} for ${c.k}+${dec ? (dec > dk.price ? ', so your price beats it' : dec < dk.price ? ', so theirs is better' : ', the same') : ''}</span>`;
+    if (dk) out += `<br><span class="dim">DraftKings: ${odds(dk.price)} for ${c.k}+${dk.stale ? ` (unchanged for ${dur(dk.ageMin)}, may be out of date)` : dec ? (dec > dk.price ? ', so your price beats it' : dec < dk.price ? ', so theirs is better' : ', the same') : ''}</span>`;
   }
   return `<div class="crow" data-i="${i}">
     <label class="plus"><input name="k" inputmode="numeric" value="${esc(c.k)}" aria-label="Threshold">+</label>
@@ -196,17 +220,22 @@ function checkRow(c, i, a) {
 function checkCard(a) {
   const pmf = a.projection.pmf;
   const ladder = S.res.ladder || [];
-  const dk = new Map(ladder.map((l) => [l.k, l.price]));
+  const dk = new Map(ladder.map((l) => [l.k, l]));
+  const gapBar = a.config.marketDisagreement ?? 0.08;
   // thresholds: everything DraftKings prices, plus a spread around the projection
   const ks = new Set(ladder.map((l) => l.k));
   for (let k = 1; k < pmf.length; k++) { const p = pAtLeast(pmf, k); if (p < 0.93 && p > 0.02) ks.add(k); }
   const sorted = [...ks].sort((x, y) => x - y).filter((k, i, arr) => dk.has(k) || arr.length <= 14 || i % Math.ceil(arr.length / 14) === 0);
   const rows = sorted.map((k) => {
     const p = pAtLeast(pmf, k);
-    const price = dk.get(k);
-    const j = price ? judge(p, price) : null;
-    return `<tr class="${j?.verdict === 'VALUE' ? 'val' : ''}"><td class="k">${k}+</td><td>${pct(p, 0)}</td><td>${p > 0.001 ? odds(1 / p) : '–'}</td><td>${price ? odds(price) : '<span class="dim">–</span>'}</td>
-      <td>${j ? `<span class="chip ${j.verdict.toLowerCase()}">${j.verdict}</span>` : ''}</td><td>${price ? `<button class="mini" data-ladd="${k}" data-price="${price}">+ Slip</button>` : ''}</td></tr>`;
+    const l = dk.get(k);
+    const price = l?.price;
+    let j = price && !l.stale ? judge(p, price) : null;
+    // one-sided prices carry a margin, so a gap beyond the bar after that is a warning, not value
+    if (j && p - 1 / price > gapBar) j = { ...j, verdict: 'CHECK' };
+    const tag = !price ? '' : l.stale ? `<span class="dim" title="price unchanged for ${dur(l.ageMin)}">stale</span>` : j ? `<span class="chip ${j.verdict === 'CHECK' ? 'fair' : j.verdict.toLowerCase()}">${j.verdict}</span>` : '';
+    return `<tr class="${j?.verdict === 'VALUE' ? 'val' : ''} ${l?.stale ? 'stale' : ''}"><td class="k">${k}+</td><td>${pct(p, 0)}</td><td>${p > 0.001 ? odds(1 / p) : '–'}</td><td>${price ? odds(price) : '<span class="dim">–</span>'}</td>
+      <td>${tag}</td><td>${price && !l.stale ? `<button class="mini" data-ladd="${k}" data-price="${price}">+ Slip</button>` : ''}</td></tr>`;
   }).join('');
   const thin = a.quality.score < 0.5 ? `<p class="hint neg">Thin data for this player (${a.quality.notes.map(esc).join('; ')}). Value calls here are low confidence.</p>` : '';
   return `<div class="card-head"><h3>Check a price · ${short()}</h3></div>
@@ -261,16 +290,21 @@ function hitOf(values, line) {
 function renderLineParts() {
   const line = S.selLine;
   const logs = S.profile.logs;
-  const games = logs.slice(0, S.window).reverse().map((r) => ({ date: r.date, opp: r.opp, home: r.home, min: r.min, season: r.season, value: statOf(r) }));
+  const team = S.profile.player.team;
+  const games = logs.slice(0, S.window).reverse().map((r) => ({ date: r.date, opp: r.opp, home: r.home, min: r.min, season: r.season, team: r.team, old: r.team !== team, value: statOf(r) }));
   const proj = S.res.analysis?.projection?.mean ?? null;
   const vals = logs.map(statOf);
   const cur = S.splits.find((x) => x.key === 'cur'), prev = S.splits.find((x) => x.key === 'prev');
-  const hits = [['L5', vals.slice(0, 5)], ['L10', vals.slice(0, 10)], ['L20', vals.slice(0, 20)], ['Season', cur?.values || []], ['Last season', prev?.values || []]].map(([k, v]) => ({ k, ...hitOf(v, line) }));
+  const withTeam = logs.filter((r) => r.team === team);
+  const changed = withTeam.length < logs.length;
+  const hits = [['L5', vals.slice(0, 5)], ['L10', vals.slice(0, 10)], ['L20', vals.slice(0, 20)], ['Season', cur?.values || []],
+    changed ? [`With ${team}`, withTeam.map(statOf)] : ['Last season', prev?.values || []]].map(([k, v]) => ({ k, ...hitOf(v, line) }));
   $('#chart-block').innerHTML = `
     <div class="chart-head"><h3>Last ${games.length} · ${short()}${line != null ? ` vs ${fmt(line)}` : ''}</h3>
       <div class="legend"><span><i class="sw b-over"></i>Over</span><span><i class="sw b-under"></i>Under</span><span><i class="ln"></i>Line</span>${proj != null ? '<span><i class="ln proj"></i>Projection</span>' : ''}</div>
       <div class="seg" role="group" aria-label="Games shown">${[10, 20].map((w) => `<button aria-pressed="${S.window === w}" data-w="${w}">L${w}</button>`).join('')}</div></div>
     <div id="chart"></div>
+    ${changed ? `<p class="hint">Faded bars are games for his previous team; "With ${team}" counts only games since he joined.</p>` : ''}
     <div class="hits">${hits.map((h) => `<div><dt>${h.k}</dt><dd>${h.n ? `${h.over}/${h.n} <span class="${h.rate >= 0.5 ? 'pos' : 'neg'}">${pct(h.rate, 0)}</span>` : '–'}</dd></div>`).join('')}</div>`;
   barChart($('#chart'), games, { line, projection: proj, label: `${S.profile.player.name} ${short()}` });
   $('#chart-block .seg').onclick = (e) => { const b = e.target.closest('button'); if (b) { S.window = Number(b.dataset.w); renderLineParts(); } };
@@ -287,8 +321,10 @@ function renderSplits(line) {
     const head = s.group !== group ? `<tr class="grp"><td colspan="5">${esc(s.group)}</td></tr>` : '';
     group = s.group;
     const delta = s.avg != null && base != null ? s.avg - base : null;
-    return `${head}<tr><td class="l">${esc(s.label)}${s.outTonight ? '<span class="tag neg-tag">out tonight</span>' : ''}</td><td>${s.n}</td>
-      <td>${fmt(s.avg)} ${delta == null ? '' : `<span class="${delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'dim'}">${signed(delta)}</span>`}</td><td>${fmt(s.min, 0)}</td><td>${s.n ? `${h.over}/${h.n} <span class="dim">${pct(h.rate, 0)}</span>` : '–'}</td></tr>`;
+    // under 5 games a split is mostly noise: show it greyed, without a verdict-like hit rate
+    const small = s.n < SMALL_N && s.group !== 'Season';
+    return `${head}<tr class="${small ? 'small' : ''}"><td class="l">${esc(s.label)}${s.outTonight ? '<span class="tag neg-tag">out tonight</span>' : ''}${small ? '<span class="small-n">small sample</span>' : ''}</td><td>${s.n}</td>
+      <td>${small ? fmt(s.avg) : `${fmt(s.avg)} ${delta == null ? '' : `<span class="${delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'dim'}">${signed(delta)}</span>`}`}</td><td>${fmt(s.min, 0)}</td><td>${small || !s.n ? '–' : `${h.over}/${h.n} <span class="dim">${pct(h.rate, 0)}</span>`}</td></tr>`;
   }).join('');
   $('#splits').innerHTML = `<div class="card-head"><h3>Splits · ${short()}${line != null ? ` · over ${fmt(line)}` : ''}</h3></div>
     <div class="scroll"><table class="splits"><tr><th class="l">Split</th><th>GP</th><th>Avg</th><th>Min</th><th>Over</th></tr>${rows}</table></div>`;

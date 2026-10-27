@@ -25,7 +25,9 @@ export function expectedMargin(ctx, cfg) {
   const a = net(ctx.team), b = net(ctx.opp);
   if (a == null || b == null) return { value: ctx.game.home ? cfg.minutes.blowout.homeAdv : -cfg.minutes.blowout.homeAdv, source: 'home edge only' };
   const pace = ((blendTeam(ctx.team, 'pace', k) || 100) + (blendTeam(ctx.opp, 'pace', k) || 100)) / 2;
-  return { value: ((a - b) * pace) / 100 + (ctx.game.home ? 1 : -1) * cfg.minutes.blowout.homeAdv, source: 'team ratings' };
+  const B = cfg.minutes.blowout;
+  const raw = (B.ratingShrink * (a - b) * pace) / 100 + (ctx.game.home ? 1 : -1) * B.homeAdv;
+  return { value: Math.max(-B.maxMargin, Math.min(B.maxMargin, raw)), source: 'team ratings' };
 }
 
 export function projectMinutes(ctx, cfg) {

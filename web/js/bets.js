@@ -1,5 +1,5 @@
 // Bet log: everything logged from the slip, settled automatically from box scores.
-import { esc, fmt, api, state, odds } from './ui.js';
+import { esc, fmt, api, state, odds, lastExport, markExported } from './ui.js';
 
 const money = (x) => `<span class="${x > 0 ? 'pos' : x < 0 ? 'neg' : ''}">${x > 0 ? '+' : ''}${fmt(x, 2)}</span>`;
 const roi = (x) => (x == null ? '–' : `<span class="${x > 0 ? 'pos' : x < 0 ? 'neg' : ''}">${x > 0 ? '+' : ''}${(x * 100).toFixed(1)}%</span>`);
@@ -39,6 +39,7 @@ export async function renderBets(view) {
         </tr>`).join('')}
       </table></div>` : '<p class="empty">No bets logged yet. Build a slip and press "Log as placed".</p>'}
     </section>
+    ${window.PROPDESK_STATIC && log.bets.some((b) => !lastExport() || b.createdAt > lastExport()) ? `<div class="verdict warnv" style="margin-top:14px"><div class="v-main"><span class="v-sub">${lastExport() ? `Bets logged since your last export (${new Date(lastExport()).toLocaleDateString()})` : 'These bets are only saved in this browser'}. Export a backup so you don't lose them.</span></div><div class="v-actions"><button class="btn" id="export-now">Export now</button></div></div>` : ''}
     ${window.PROPDESK_STATIC ? `<section class="card"><h3>Saved on this device</h3>
       <p class="hint" style="margin-top:0">On the web version your bets live in this browser. Export to back them up or move them to another device.</p>
       <div class="inline"><button class="btn" id="export">Export</button><label class="btn ghost" for="import-file">Import</label><input type="file" id="import-file" accept="application/json,.json" hidden></div>
@@ -55,13 +56,18 @@ export async function renderBets(view) {
 
 async function bindExport(view) {
   const { exportEntries, importEntries } = await import('./static.js');
-  view.querySelector('#export').onclick = () => {
+  const doExport = () => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([exportEntries()], { type: 'application/json' }));
     a.download = `propdesk-bets-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    markExported();
+    setTimeout(() => renderBets(view), 300);
   };
+  view.querySelector('#export').onclick = doExport;
+  const now = view.querySelector('#export-now');
+  if (now) now.onclick = doExport;
   view.querySelector('#import-file').onchange = async (e) => {
     const msg = view.querySelector('#io-msg');
     try {

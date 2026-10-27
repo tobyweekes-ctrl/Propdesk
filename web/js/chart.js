@@ -38,11 +38,14 @@ export function barChart(el, games, { line, projection = null, label = '' } = {}
     aria-label="${esc(label)}: last ${n} games${line != null ? `, line ${line}` : ''}. Use arrow keys for each game.">`;
   // grid
   for (const t of ticks) svg += `<line class="grid" x1="${m.l}" x2="${m.l + iw}" y1="${y(t)}" y2="${y(t)}"/><text class="tick" x="${m.l - 6}" y="${y(t) + 3.5}" text-anchor="end">${fmt(t, 0)}</text>`;
-  // season boundary
+  // season / team boundaries (games for a previous team are drawn faded)
   for (let i = 1; i < n; i++) {
-    if (games[i].season !== games[i - 1].season) {
+    const newSeason = games[i].season !== games[i - 1].season;
+    const newTeam = games[i].team && games[i].team !== games[i - 1].team;
+    if (newSeason || newTeam) {
       const x = m.l + i * band;
-      svg += `<line class="season" x1="${x}" x2="${x}" y1="${m.t - 6}" y2="${m.t + ih}"/><text class="season-label" x="${x + 4}" y="${m.t - 6}">${esc(games[i].season)}</text>`;
+      const label = [newSeason ? games[i].season : null, newTeam ? `now ${games[i].team}` : null].filter(Boolean).join(' · ');
+      svg += `<line class="season" x1="${x}" x2="${x}" y1="${m.t - 6}" y2="${m.t + ih}"/><text class="season-label strong" x="${x + 4}" y="${m.t - 6}">${esc(label)}</text>`;
     }
   }
   // bars (4px rounded top, square at the baseline)
@@ -54,7 +57,7 @@ export function barChart(el, games, { line, projection = null, label = '' } = {}
     const d = h <= 0
       ? `M${x},${base - 1}h${bw}v1h${-bw}z`
       : `M${x},${base}V${top + r}Q${x},${top} ${x + r},${top}H${x + bw - r}Q${x + bw},${top} ${x + bw},${top + r}V${base}Z`;
-    svg += `<path class="bar ${cls(g.value)}" data-i="${i}" d="${d}"/>`;
+    svg += `<path class="bar ${cls(g.value)} ${g.old ? 'old' : ''}" data-i="${i}" d="${d}"/>`;
     if (showValues) svg += `<text class="val" x="${x + bw / 2}" y="${top - 4}" text-anchor="middle">${fmt(g.value, 0)}</text>`;
     if (i % labelEvery === (n - 1) % labelEvery) {
       svg += `<text class="xl" x="${m.l + i * band + band / 2}" y="${m.t + ih + 13}" text-anchor="middle">${g.home ? '' : '@'}${esc(g.opp)}</text>`;
@@ -78,7 +81,7 @@ export function barChart(el, games, { line, projection = null, label = '' } = {}
     if (i < 0) { tip.hidden = true; root.querySelectorAll('.bar').forEach((b) => b.classList.remove('dimmed')); return; }
     const g = games[i];
     const res = line == null ? '' : g.value > line ? 'OVER' : g.value < line ? 'UNDER' : 'PUSH';
-    tip.innerHTML = `<b>${fmt(g.value, 0)}</b> ${res ? `<span class="${res === 'OVER' ? 'pos' : res === 'UNDER' ? 'neg' : 'dim'}">${res}</span>` : ''}<br>${g.home ? 'vs' : '@'} ${esc(g.opp)} · ${g.date}<br>${fmt(g.min)} min`;
+    tip.innerHTML = `<b>${fmt(g.value, 0)}</b> ${res ? `<span class="${res === 'OVER' ? 'pos' : res === 'UNDER' ? 'neg' : 'dim'}">${res}</span>` : ''}<br>${g.team ? `${esc(g.team)} ` : ''}${g.home ? 'vs' : '@'} ${esc(g.opp)} · ${g.date}<br>${fmt(g.min)} min${g.old ? ' · previous team' : ''}`;
     tip.hidden = false;
     const x = m.l + i * band + band / 2;
     const left = Math.min(W - 130, Math.max(0, x - 60));

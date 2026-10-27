@@ -102,3 +102,23 @@ export function parsePrice(input) {
   const d = Number(s);
   return Number.isFinite(d) && d > 1 ? d : null;
 }
+
+/** "Tue 28 Oct 00:00 · in 2h 10m" in the viewer's time zone (or "started" once tip-off has passed) */
+export function tipLabel(iso) {
+  if (!iso) return '';
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return '';
+  const when = t.toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const mins = Math.round((t - Date.now()) / 60000);
+  const until = mins <= 0 ? 'started' : mins < 60 ? `in ${mins}m` : mins < 24 * 60 ? `in ${Math.floor(mins / 60)}h ${mins % 60}m` : `in ${Math.round(mins / 1440)}d`;
+  return `${when} · ${until}`;
+}
+
+/** page for a bad link or an unknown route */
+export const notFound = (what) => `<section class="hero"><h1>Not <em>found</em></h1>
+  <p>${what} Search a player with the box above (or press <kbd>/</kbd>), or go back to <a href="#/">tonight's games</a>.</p></section>`;
+
+// export reminder for the browser-only bet log
+const EXPORTED = 'propdesk.lastExport';
+export const lastExport = () => { try { return localStorage.getItem(EXPORTED); } catch { return null; } };
+export const markExported = () => { try { localStorage.setItem(EXPORTED, new Date().toISOString()); } catch { /* ignore */ } };

@@ -57,6 +57,7 @@ export function analyseSlip(players, legs, { sims = 20000, seed = 7, cfg, accaSt
     const pl = players.get(leg.playerId);
     const price = parsePrice(leg.price);
     const sp = pl?.sp(leg.stat);
+    if (pl?.out) return { ...leg, player: pl.name, error: `ruled out (${pl.out})` };
     if (!pl || !sp || !price) return { ...leg, error: !pl ? 'no game today' : !price ? 'needs a price' : 'not enough data' };
     const p = lineProbs(sp.pmf, Number(leg.line));
     const pWin = leg.side === 'over' ? p.over : p.under;
@@ -66,7 +67,8 @@ export function analyseSlip(players, legs, { sims = 20000, seed = 7, cfg, accaSt
     const implied = 1 / price;
     const ev = expectedValue(pWin, p.push, price);
     const q = dataQuality(pl.ctx, pl.pp.minutes);
-    const verdict = ev >= 0.05 ? 'VALUE' : ev >= 0 ? 'FAIR' : 'AVOID';
+    const disagree = fairP != null && pWin - fairP > cfg.marketDisagreement;
+    const verdict = disagree ? 'CHECK' : ev >= 0.05 ? 'VALUE' : ev >= 0 ? 'FAIR' : 'AVOID';
     return {
       ...leg, price, player: pl.name, team: pl.team, opp: pl.opp, gameId: pl.game?.gameId,
       pWin, pPush: p.push, implied, fairP, edge: pWin - (fairP ?? implied), ev, verdict,

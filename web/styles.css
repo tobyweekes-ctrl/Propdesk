@@ -294,8 +294,8 @@ details.more .sub-h { font: 700 13px var(--cond); letter-spacing: .1em; text-tra
   .verdict { grid-template-columns: 1fr; padding: 16px; }
   .v-word { font-size: 44px; }
   .hits { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .crow { grid-template-columns: 80px minmax(0, 1fr) auto; }
-  .crow .out { grid-column: 1 / -1; }
+  .crow { grid-template-columns: 76px minmax(0, 1fr) auto auto; }
+  .crow .out { grid-column: 1 / -1; order: 5; }
   .leg { grid-template-columns: minmax(0, 1fr) 80px 64px 28px; }
   .manual { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .manual label:first-child { grid-column: 1 / -1; }
@@ -303,4 +303,26 @@ details.more .sub-h { font: 700 13px var(--cond); letter-spacing: .1em; text-tra
   .lrow .side-btns { grid-column: 1 / -1; }
   .sbtn { flex: 1; }
   .card { padding: 14px; }
+}
+
+/* review fixes */
+.verdict.warnv { border-color: var(--warn); }
+.verdict.warnv .v-word { color: var(--warn); }
+.lrow.stale { opacity: .55; }
+.lrow.stale .sbtn b { text-decoration: line-through; text-decoration-color: var(--faint); }
+.ladder tr.stale td { color: var(--faint); }
+tr.small td { color: var(--faint); }
+.small-n { font: 600 10px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .05em; margin-left: 6px; }
+svg .bar.old { opacity: .38; }
+svg .season-label.strong { fill: var(--dim); font-weight: 600; }
+@media (max-width: 720px) {
+  /* make tables fit a phone instead of relying on sideways scrolling */
+  table { font-size: 12px; }
+  th, td { padding: 6px 4px; }
+  table.splits td:first-child { white-space: normal; }
+  table.splits th:nth-child(4), table.splits td:nth-child(4) { display: none; }
+  .ladder .chip { padding: 2px 6px; font-size: 10px; }
+  .ladder .mini { padding: 2px 8px; font-size: 0; }
+  .ladder .mini::before { content: '+'; font-size: 14px; }
+  .small-n { display: block; margin: 2px 0 0; }
 }

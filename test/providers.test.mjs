@@ -111,6 +111,18 @@ test('DraftKings (ESPN) props: sides identified via the milestone market, even w
   assert.deepEqual([ou(1, 'pts').over, ou(1, 'pts').under], [1.93, 1.85]);
   assert.deepEqual([ou(2, 'reb').over, ou(2, 'reb').under], [2.2, 1.63]);
   assert.deepEqual([ou(3, 'ast').over, ou(3, 'ast').under], [2.05, 1.74]);
-  assert.deepEqual(check, { pairs: 3, confirmed: 1, contradicted: 1 });
+  assert.deepEqual(check, { pairs: 3, confirmed: 1, contradicted: 1, ladderDropped: 0 });
   assert.equal(rows.filter((r) => r.kind === 'ms').length, 2);
+});
+
+test('DraftKings ladders: a second market filed under the same name is removed', async () => {
+  const { cleanLadder } = await import('../server/providers/espnOdds.mjs');
+  const real = [6, 7, 8, 9, 10, 11, 12].map((k, i) => ({ line: k, over: [1.04, 1.08, 1.16, 1.27, 1.44, 1.68, 2.06][i] }));
+  const other = [2, 3, 4, 5, 6, 7].map((k, i) => ({ line: k, over: [1.13, 1.42, 2.02, 3.23, 5.75, 11][i] }));
+  const { keep, dropped } = cleanLadder([...other, ...real]);
+  assert.deepEqual(keep.map((r) => r.over), [1.04, 1.08, 1.16, 1.27, 1.44, 1.68, 2.06]);
+  assert.equal(dropped, 6);
+  const { ladderFor } = await import('../server/data/league.mjs');
+  const rows = [{ playerId: '1', stat: 'reb', kind: 'ms', line: 6, over: 2 }, { playerId: '1', stat: 'reb', kind: 'ms', line: 7, over: 1.5 }];
+  assert.deepEqual(ladderFor(rows, { id: '1', name: 'X' }, 'reb'), []); // non-monotone -> not shown at all
 });

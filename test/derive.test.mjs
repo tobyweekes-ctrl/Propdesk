@@ -25,8 +25,8 @@ test('teamGames aggregates and computes pace with opponent', () => {
 });
 
 test('absenceInfo: absent, returned, active', () => {
-  const tg = ['01', '03', '05', '07', '09', '11'].map((d, i) => ({ gameId: `g${i}`, date: `2026-11-${d}` }));
-  const r = (i) => ({ gameId: `g${i}`, date: tg[i].date, min: 20 + i });
+  const tg = ['01', '03', '05', '07', '09', '11'].map((d, i) => ({ gameId: `g${i}`, date: `2026-11-${d}`, team: 'T' }));
+  const r = (i) => ({ gameId: `g${i}`, date: tg[i].date, team: 'T', min: 20 + i });
   assert.equal(absenceInfo([0, 1, 2, 3, 4, 5].map(r), tg, '2026-11-20').status, 'active');
   const absent = absenceInfo([0, 1, 2].map(r), tg, '2026-11-20');
   assert.deepEqual([absent.status, absent.gamesMissed], ['absent', 3]);
@@ -49,4 +49,20 @@ test('positionDefense shrinks toward 1 and spots a soft defence', () => {
   const pd = positionDefense(rows, () => 'C', { priorMin: 600 });
   assert.ok(pd.SOFT.C.pts > 1.1 && pd.SOFT.C.pts < 4 / 3);
   assert.ok(pd.HARD.C.pts < 0.9 && pd.HARD.C.pts > 2 / 3);
+});
+
+test('absenceInfo: a player who changed team is not "missing" his new team\'s old games', () => {
+  const oldTeam = [{ gameId: 'o1', date: '2026-03-01' }, { gameId: 'o2', date: '2026-03-03' }];
+  const newTeam = [{ gameId: 'n0', date: '2026-03-02' }, { gameId: 'n00', date: '2026-03-04' }, // before he arrived
+    { gameId: 'n1', date: '2026-10-21' }, { gameId: 'n2', date: '2026-10-23' }, { gameId: 'n3', date: '2026-10-25' }];
+  for (const g of oldTeam) g.team = 'OLD';
+  for (const g of newTeam) g.team = 'NEW';
+  // his old team also played his new team once (shared game id 'n0')
+  const rows = [{ ...newTeam[0], team: 'OLD' }, ...oldTeam, ...newTeam.slice(2)].map((g, i) => ({ gameId: g.gameId, date: g.date, team: g.team, min: 30 + i }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  assert.equal(absenceInfo(rows, newTeam, '2026-10-27').status, 'active');
+  // a real absence with the new team still shows up
+  const missed = rows.filter((r) => r.gameId !== 'n2');
+  const a = absenceInfo(missed, newTeam, '2026-10-27');
+  assert.deepEqual([a.status, a.gamesMissed, a.gamesSinceReturn], ['returned', 1, 1]);
 });

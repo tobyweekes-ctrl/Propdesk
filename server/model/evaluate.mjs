@@ -42,13 +42,14 @@ export function evaluateLine(sp, l, q, cfg) {
 
   const sides = ['over', 'under'].filter((s) => edge[s] != null);
   const best = sides.sort((a, b) => edge[b] - edge[a])[0] || null;
-  const passes = best && edge[best] >= cfg.threshold && (!cfg.requirePositiveEV || ev[best] > 0);
-  const side = passes ? best : null;
+  // a price that hasn't changed for hours can't be trusted as tonight's price, so it can't be the pick
+  const passes = best && !l.stale && edge[best] >= cfg.threshold && (!cfg.requirePositiveEV || ev[best] > 0);
+  const disagree = Boolean(best && fair && !fair.estimated && edge[best] > cfg.marketDisagreement);
+  const side = passes && !disagree ? best : null;
   let confidence = null;
-  const disagree = Boolean(side && fair && !fair.estimated && edge[side] > cfg.marketDisagreement);
   if (side) {
     const r = edge[side] / cfg.threshold;
-    confidence = disagree ? 'LOW' : r >= 2.5 && q.score >= 0.7 ? 'HIGH' : r >= 1.5 && q.score >= 0.5 ? 'MEDIUM' : 'LOW';
+    confidence = r >= 2.5 && q.score >= 0.7 ? 'HIGH' : r >= 1.5 && q.score >= 0.5 ? 'MEDIUM' : 'LOW';
   }
   return {
     id: l.id ?? null, book: l.book || null, bookTitle: l.bookTitle || l.book || null, source: l.source || null,
@@ -56,7 +57,8 @@ export function evaluateLine(sp, l, q, cfg) {
     line, over, under,
     model: { over: p.over, under: p.under, push: p.push },
     fair, edge, ev,
-    verdict: side ? side.toUpperCase() : 'PASS',
+    verdict: side ? side.toUpperCase() : disagree ? 'CHECK' : 'PASS',
+    stale: Boolean(l.stale), ageMin: l.ageMin ?? null,
     side, confidence, disagree,
     leanSide: best, leanEdge: best ? edge[best] : null,
   };
@@ -68,8 +70,10 @@ export function evaluateMarket(sp, lines, q, cfg) {
   // a line being typed in (preview) is shown on its own; it never becomes the headline
   const real = evals.filter((e) => e.source !== 'preview');
   const recs = real.filter((e) => e.side);
+  // headline: the best genuine pick; otherwise the closest line (a CHECK line is shown as a warning)
   const headline = recs.sort((a, b) => b.ev[b.side] - a.ev[a.side])[0]
-    || real.slice().sort((a, b) => (b.leanEdge ?? -1) - (a.leanEdge ?? -1))[0] || null;
+    || real.filter((e) => !e.stale).sort((a, b) => (b.leanEdge ?? -1) - (a.leanEdge ?? -1))[0]
+    || real[0] || null;
   // market consensus at the most common line
   const counts = new Map();
   for (const e of real) counts.set(e.line, (counts.get(e.line) || 0) + 1);
