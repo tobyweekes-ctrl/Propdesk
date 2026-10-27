@@ -85,8 +85,19 @@ for good) so the first search is instant.
   combined chance. Legs on the same player are simulated together (one minutes and form draw shared by all
   his stats), so correlated legs are priced properly. It flags overlapping legs, opposite sides, same-game
   legs, thin data and injury returns. "Log as placed" puts the slip in the bet log, where accas settle leg by leg.
-- **Guard rails:** when the model differs from a bookmaker's no-vig price by more than 15 points, confidence
-  drops to LOW and the pick is flagged. Gaps that big usually mean news the model can't see.
+- **Guard rails:**
+  - when the model differs from a two-sided no-vig price by more than **8 points**, the line is marked CHECK
+    and never presented as the pick; gaps that big usually mean news the model can't see;
+  - prices unchanged for more than 6 hours are marked stale and can't be the pick or show VALUE;
+  - players ruled out get no projection;
+  - splits under 5 games are greyed out.
+- **Data checks** (`server/data/checks.mjs`) run on every line before it's used: the player is on one of the two
+  teams, one price per line, ladder prices rise with the line (ESPN sometimes files a second market under the same
+  name, e.g. a 2+..7+ series inside "Rebounds Milestones"), and future timestamps are treated as unknown. Each
+  build logs the counts.
+- **Track record** (Record page): every published pick is archived on the `data` branch with its first price
+  and closing price, then graded from box scores: hit rate against what the model predicted, ROI at flat stakes,
+  calibration buckets, and closing-line value (CLV).
 - **Odds format:** fractional by default; the button in the header switches to decimal.
 
 ## Using it
@@ -163,6 +174,7 @@ Mean absolute error, lower is better. The model beats every simple baseline on a
 | 3PM | **1.03** | 1.04 | 1.05 | 1.11 |
 | PRA | **6.55** | 6.77 | 6.72 | 6.65 |
 
+Per-stat uncertainty is calibrated so the predicted spread matches real outcomes (backtest "spread" 0.99–1.05).
 Calibration is close between 30% and 80%. Below 30% the model is still too confident: when it gives an over
 16–26%, overs actually landed 31–33% of the time, and this is worst late in the season (load management,
 tanking). Treat strong UNDER calls with care. What tuning on real data changed, settings chosen on

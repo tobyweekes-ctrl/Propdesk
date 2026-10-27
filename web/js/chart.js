@@ -61,7 +61,7 @@ export function barChart(el, games, { line, projection = null, label = '' } = {}
     if (showValues) svg += `<text class="val" x="${x + bw / 2}" y="${top - 4}" text-anchor="middle">${fmt(g.value, 0)}</text>`;
     if (i % labelEvery === (n - 1) % labelEvery) {
       svg += `<text class="xl" x="${m.l + i * band + band / 2}" y="${m.t + ih + 13}" text-anchor="middle">${g.home ? '' : '@'}${esc(g.opp)}</text>`;
-      if (band >= 30) svg += `<text class="xd" x="${m.l + i * band + band / 2}" y="${m.t + ih + 25}" text-anchor="middle">${g.date.slice(5).replace('-', '/')}</text>`;
+      if (band >= 40) svg += `<text class="xd" x="${m.l + i * band + band / 2}" y="${m.t + ih + 25}" text-anchor="middle">${g.date.slice(5).replace('-', '/')}</text>`;
     }
   });
   // projection (dashed, quiet) and line (solid, labelled)

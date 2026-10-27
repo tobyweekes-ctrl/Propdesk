@@ -115,9 +115,31 @@ async function backend() {
   return routes;
 }
 
+// ---------- light routes: answered from small files, without downloading the season data ----------
+let metaP;
+const meta = () => (metaP ||= getJson('data/meta.json'));
+const light = {
+  '/api/stats': async () => (await meta()).stats,
+  '/api/health': async () => {
+    const m = await meta();
+    return { ok: true, static: true, today: todayET(), dataAsOf: m.generated, statsProvider: m.statsSource, injuryProvider: 'ESPN',
+      odds: m.odds.sources?.length ? m.odds.sources.join(' + ') : 'none', oddsQuota: m.odds.quota || {}, stale: m.today !== todayET() };
+  },
+  '/api/slate/players': async () => {
+    const m = await meta();
+    const l = await getJson(`data/landing.json?v=${encodeURIComponent(m.generated)}`);
+    return l.date === todayET() ? Object.assign(l.games, { best: l.best }) : null; // a day old: fall through to the full data
+  },
+  '/api/record': async () => getJson(`data/record.json?v=${encodeURIComponent((await meta()).generated)}`),
+};
+
 /** Same contract as fetch('/api/...'): resolves with the JSON result or throws Error(message). */
 export async function staticApi(path, method = 'GET', body) {
   const url = new URL(path, location.href);
   const pathname = url.pathname.slice(url.pathname.indexOf('/api/'));
+  if (method === 'GET' && light[pathname]) {
+    const r = await light[pathname]().catch(() => null);
+    if (r != null) return r;
+  }
   return dispatch(await backend(), method, pathname, url.searchParams, body ? JSON.parse(JSON.stringify(body)) : {});
 }

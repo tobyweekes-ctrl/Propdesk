@@ -29,6 +29,9 @@ export function createRoutes(B) {
 
   get('/api/stats', async () => STATS);
 
+  // the public record is built by the scheduled job on the web version (see scripts/build-static.mjs)
+  get('/api/record', async () => ({ unavailable: true, overall: { settled: 0 }, calibration: [], recent: [], byConfidence: {}, clv: { n: 0 } }));
+
   get('/api/players/search', async (_p, q) => {
     const L = await B.getLeague();
     return searchPlayers(L, q.get('q') || '', Number(q.get('limit') || 10));

@@ -46,26 +46,29 @@ jobs:
 
       - run: npm test
 
+      # the "data" branch holds the archive: published picks (for the public record) and odds snapshots
+      - name: Restore archive
+        run: |
+          git config user.name "propdesk-bot"
+          git config user.email "propdesk-bot@users.noreply.github.com"
+          if git fetch -q origin data; then git worktree add -q -B data archive origin/data; else git worktree add -q --orphan -b data archive; fi
+
       - name: Build site
         run: node scripts/build-static.mjs
         env:
+          ARCHIVE_DIR: archive
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           ODDS_REGIONS: ${{ vars.ODDS_REGIONS || 'us' }}
           ODDS_MARKETS: ${{ vars.ODDS_MARKETS }}
           FETCH_ODDS: ${{ github.event.schedule == '23 22 * * *' || (github.event_name == 'workflow_dispatch' && inputs.fetch_odds) }}
 
-      # keep every fetched line for the real-line backtest (branch "data", folder odds/)
-      - name: Archive odds snapshots
-        if: hashFiles('userdata/live/odds/*.jsonl') != ''
+      - name: Save archive
         run: |
-          set -e
-          git config user.name "propdesk-bot"
-          git config user.email "propdesk-bot@users.noreply.github.com"
-          mkdir -p /tmp/snap && cp userdata/live/odds/*.jsonl /tmp/snap/
-          if git fetch origin data 2>/dev/null; then git checkout -q -B data origin/data; else git checkout -q --orphan data && git rm -rfq . ; fi
-          mkdir -p odds
-          for f in /tmp/snap/*.jsonl; do cat "$f" >> "odds/$(basename "$f")"; done
-          git add odds && git commit -qm "Odds snapshots $(date -u +%F' '%H:%M)" && git push -q origin data || echo "nothing to archive"
+          mkdir -p archive/odds
+          for f in userdata/live/odds/*.jsonl; do [ -e "$f" ] && cat "$f" >> "archive/odds/$(basename "$f")"; done
+          cd archive
+          git add -A
+          git commit -qm "Archive $(date -u +%F' '%H:%M)" && git push -q origin HEAD:data || echo "nothing new to archive"
 
       - uses: actions/upload-pages-artifact@v3
         with:

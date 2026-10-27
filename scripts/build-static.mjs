@@ -6,10 +6,12 @@
 //     ODDS_API_KEY is set (the key stays in the build environment, never in dist/)
 //
 //   node scripts/build-static.mjs            (FETCH_ODDS=false skips the Odds API call)
-import { mkdirSync, rmSync, readFileSync, writeFileSync, cpSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync, writeFileSync, cpSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname, relative, resolve } from 'node:path';
 import { ROOT, config } from '../server/env.mjs';
-import { loadSeason, getSlate, getInjuries, eventProps, today } from '../server/data/store.mjs';
+import { loadSeason, getSlate, getInjuries, eventProps, today, getLeague, linesFor, injuryFor, averages } from '../server/data/store.mjs';
+import { analyse } from '../server/model/index.mjs';
+import { mergePicks, gradeRecord } from '../server/model/record.mjs';
 import { quota } from '../server/providers/oddsApi.mjs';
 import { STATS } from '../server/stats.mjs';
 import { seasonOf, prevSeason, addDays } from '../server/util.mjs';
@@ -93,6 +95,72 @@ console.log('line checks:', JSON.stringify(checks));
 odds.sources = [...sources];
 if (useOddsApi) odds.quota = { ...quota };
 writeFileSync(join(DIST, 'data', 'odds.json'), JSON.stringify(odds));
+
+// ---------- tonight's picks (feeds "best value", the landing cards and the public record) ----------
+const L = await getLeague();
+const OUT = /^(out|suspended)/i;
+const picks = [];
+const minutesFor = new Map(); // playerId -> projected minutes
+for (const g of slates[day]) {
+  const o = odds.games[g.gameId];
+  if (!o) continue;
+  const byPlayer = new Map();
+  for (const r of o.rows) if (r.kind === 'ou' && r.playerId) byPlayer.set(r.playerId, true);
+  for (const id of byPlayer.keys()) {
+    const p = L.players.get(id);
+    if (!p || (p.team !== g.home && p.team !== g.away) || OUT.test(injuryFor(injuries, p)?.status || '')) continue;
+    const game = { date: day, gameId: g.gameId, team: p.team, opp: p.team === g.home ? g.away : g.home, home: p.team === g.home, tipoff: g.tipoff };
+    for (const stat of Object.keys(STATS)) {
+      const lines = linesFor(o.rows, p, stat).map((l) => ({ ...l, id: `dk:${l.line}`, source: 'DraftKings' }));
+      if (!lines.length) continue;
+      const a = analyse({ L, playerId: id, game, stat, lines, opts: { injuries } });
+      if (a.error) continue;
+      minutesFor.set(id, a.projection.minutes.proj);
+      const h = a.headline;
+      if (!h || h.stale) continue;
+      const side = h.side;
+      picks.push({
+        date: day, gameId: g.gameId, tipoff: g.tipoff, playerId: id, name: p.name, team: p.team, opp: game.opp, home: game.home,
+        stat, line: h.line, book: h.bookTitle, over: h.over, under: h.under, side,
+        verdict: h.verdict, confidence: h.confidence, pWin: side ? h.model[side] : null,
+        edge: h.leanEdge, ev: side ? h.ev[side] : null, minutes: a.projection.minutes.proj, projection: a.projection.mean,
+      });
+    }
+  }
+}
+const best = picks.filter((x) => x.side).sort((a, b) => b.ev - a.ev).slice(0, 12);
+console.log(`picks: ${picks.filter((x) => x.side).length} published (${picks.length} lines priced), ${picks.filter((x) => x.verdict === 'CHECK').length} flagged CHECK`);
+
+// ---------- archive + public record ----------
+// ARCHIVE_DIR is the checked-out "data" branch in CI; each day's picks keep their first price and closing price
+const ARCHIVE = process.env.ARCHIVE_DIR ? resolve(process.env.ARCHIVE_DIR) : null;
+const days = {};
+if (ARCHIVE) {
+  mkdirSync(join(ARCHIVE, 'picks'), { recursive: true });
+  for (const f of readdirSync(join(ARCHIVE, 'picks')).filter((x) => /^\d{4}-\d{2}-\d{2}\.json$/.test(x))) {
+    days[f.slice(0, 10)] = JSON.parse(readFileSync(join(ARCHIVE, 'picks', f), 'utf8'));
+  }
+  days[day] = mergePicks(days[day], picks.filter((x) => x.side), new Date().toISOString());
+  writeFileSync(join(ARCHIVE, 'picks', `${day}.json`), JSON.stringify(days[day], null, 1));
+}
+const record = gradeRecord(L, days);
+writeFileSync(join(DIST, 'data', 'record.json'), JSON.stringify({ ...record, archived: Boolean(ARCHIVE), generated: new Date().toISOString() }));
+console.log(`record: ${record.overall.settled} settled picks since ${record.since || 'n/a'}, hit ${record.overall.hitRate == null ? '–' : (record.overall.hitRate * 100).toFixed(1) + '%'}`);
+
+// ---------- landing (served without loading the season files, so the first visit is quick) ----------
+const top = (team) => [...L.players.values()]
+  .filter((p) => p.team === team && !OUT.test(injuryFor(injuries, p)?.status || ''))
+  .map((p) => ({ p, recent: L.playerLogs(p.id).filter((r) => r.team === team).slice(-10) }))
+  .filter((x) => x.recent.length >= 3)
+  .sort((a, b) => (minutesFor.get(b.p.id) ?? b.recent.reduce((s, r) => s + r.min, 0) / b.recent.length) - (minutesFor.get(a.p.id) ?? a.recent.reduce((s, r) => s + r.min, 0) / a.recent.length))
+  .slice(0, 5)
+  .map(({ p, recent }) => {
+    const av = averages(recent);
+    return { id: p.id, name: p.name, pos: p.pos, min: av.min, minProj: minutesFor.get(p.id) ?? null, pts: av.pts, reb: av.reb, ast: av.ast, injury: injuryFor(injuries, p)?.status || null };
+  });
+writeFileSync(join(DIST, 'data', 'landing.json'), JSON.stringify({
+  date: day, games: slates[day].map((g) => ({ ...g, awayPlayers: top(g.away), homePlayers: top(g.home) })), best,
+}));
 
 const meta = {
   generated: new Date().toISOString(),

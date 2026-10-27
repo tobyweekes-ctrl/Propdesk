@@ -60,13 +60,14 @@ export const DEFAULTS = {
 
   dispersion: {
     // prior for 1/k of the negative binomial (0 = Poisson), per stat
-    prior: { pts: 0.03, reb: 0.04, ast: 0.05, fg3m: 0.03, pra: 0.02, pr: 0.025, pa: 0.025, ra: 0.03 },
+    prior: { pts: 0.03, reb: 0.02, ast: 0.05, fg3m: 0.03, pra: 0.02, pr: 0.025, pa: 0.025, ra: 0.015 },
     k: 20,                   // games of evidence needed to move halfway from the prior
     window: 60,
     // Uncertainty in the projected mean itself, added on top of game-to-game noise:
     //   sampling error of the rate (shrinks as games accumulate) + modelCv^2 for adjustment error.
-    // Calibrate modelCv with the backtest's "spread" column (target 1.00).
-    modelCv: 0.16,
+    // Calibrated per stat on real 2025-26 games so the backtest's "spread" column sits near 1.00
+    // (a single 0.16 made combos and rebounds too wide, which skewed them toward unders).
+    modelCv: { pts: 0.14, reb: 0.05, ast: 0.10, fg3m: 0.22, pra: 0.07, pr: 0.09, pa: 0.10, ra: 0.05 },
     maxGamesForSampling: 40,
   },
 };

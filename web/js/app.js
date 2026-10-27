@@ -4,6 +4,7 @@ import { renderPlayer } from './player.js';
 import { renderBets } from './bets.js';
 import { renderLanding } from './landing.js';
 import { renderSlip } from './slip.js';
+import { renderRecord } from './record.js';
 
 // ---------- footer data note ----------
 async function loadStatus() {
@@ -83,11 +84,12 @@ async function route() {
   view.onclick = null;
   view.oninput = null;
   const h = location.hash;
-  const page = h.startsWith('#/slip') ? '#/slip' : h.startsWith('#/bets') ? '#/bets' : null;
+  const page = h.startsWith('#/slip') ? '#/slip' : h.startsWith('#/bets') ? '#/bets' : h.startsWith('#/record') ? '#/record' : null;
   for (const a of document.querySelectorAll('.nav a')) a.toggleAttribute('aria-current', a.getAttribute('href') === page);
   window.scrollTo(0, 0);
   if (page === '#/slip') return renderSlip(view);
   if (page === '#/bets') return renderBets(view);
+  if (page === '#/record') return renderRecord(view);
   const m = h.match(/^#\/p\/([^/]+)(?:\/(\w+))?/);
   if (!m && h && h !== '#' && h !== '#/') { view.innerHTML = notFound('There\'s no page at that address.'); return; }
   if (!m) return renderLanding(view);

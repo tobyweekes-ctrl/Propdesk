@@ -126,7 +126,8 @@ export function projectStat(pp, ctx, stat, cfg) {
   const D = cfg.dispersion;
   const nEff = Math.max(1, Math.min(D.maxGamesForSampling, ctx.logs.length));
   const perGame = ratePerMin * Math.max(1, pp.minutes.proj);
-  const meanCv2 = (1 / Math.max(0.5, perGame) + invK) / nEff + D.modelCv ** 2;
+  const cv = typeof D.modelCv === 'number' ? D.modelCv : D.modelCv[stat] ?? 0.16;
+  const meanCv2 = (1 / Math.max(0.5, perGame) + invK) / nEff + cv ** 2;
   const { pmf, mean, sd } = mixturePmf({ ratePerMin, minMean: pp.minutes.proj, minSd: pp.minutes.sd, invK: invK + meanCv2 });
 
   // combined factors, weighted by each component's share of the stat
