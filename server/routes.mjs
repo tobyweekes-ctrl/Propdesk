@@ -6,7 +6,8 @@ import { STATS } from './stats.mjs';
 import { round } from './util.mjs';
 import { searchPlayers, averages, injuryFor } from './data/league.mjs';
 import { grade, summariseBets } from './data/entries.mjs';
-import { analyse } from './model/index.mjs';
+import { analyse, buildContext, projectPlayer, projectStat, DEFAULTS } from './model/index.mjs';
+import { analyseSlip, legLabel } from './model/slip.mjs';
 import { computeSplits } from './data/splits.mjs';
 import { parsePrice } from './model/odds.mjs';
 
@@ -135,7 +136,7 @@ export function createRoutes(B) {
       ...(preview ? [{ ...preview, id: 'preview', bookTitle: preview.book || 'Preview', source: 'preview' }] : []),
     ];
     const analysis = analyse({ L, playerId: id, game, stat, lines, opts: { injuries, spread: feed.spread, minutesOverride } });
-    return { player: p, game: { ...game, spread: feed.spread }, linesSource: feed.source, oddsAgeSec: feed.cacheAgeSec, analysis, manual };
+    return { player: p, game: { ...game, spread: feed.spread }, linesSource: feed.source, oddsAgeSec: feed.cacheAgeSec, analysis, manual, ladder: feed.ladder || [] };
   }
 
   get('/api/player/:id/analysis', async ({ id }, q) => {
@@ -195,6 +196,70 @@ export function createRoutes(B) {
   });
 
   get('/api/bets', async () => summariseBets(await B.getLeague(), await B.entries.list()));
+
+  // ---------- betslip ----------
+  /** Model inputs for every player on a slip (one context per player, distributions per stat). */
+  async function slipPlayers(legs) {
+    const injuries = await B.getInjuries().catch(() => []);
+    const out = new Map();
+    for (const id of new Set(legs.map((l) => l.playerId))) {
+      const { L, p, game } = await playerAndGame(id);
+      if (!game) continue;
+      const ctx = buildContext(L, id, game, { injuries });
+      const pp = projectPlayer(ctx, DEFAULTS);
+      const memo = {};
+      out.set(id, { name: p.name, team: p.team, opp: game.opp, home: game.home, game, ctx, pp, sp: (stat) => (memo[stat] ||= projectStat(pp, ctx, stat, DEFAULTS)) });
+    }
+    return out;
+  }
+  const cleanLegs = (legs) => {
+    if (!Array.isArray(legs) || !legs.length) fail(400, 'slip is empty');
+    if (legs.length > 15) fail(400, 'at most 15 legs');
+    return legs.map((l, i) => {
+      if (!STATS[l.stat]) fail(400, `unknown stat ${l.stat}`);
+      if (!['over', 'under'].includes(l.side)) fail(400, 'side must be over or under');
+      const line = Number(l.line);
+      if (!Number.isFinite(line)) fail(400, 'line must be a number');
+      return { ...l, id: String(l.id ?? i), line };
+    });
+  };
+
+  post('/api/slip/analyse', async (_p, _q, body) => {
+    const legs = cleanLegs(body.legs);
+    return analyseSlip(await slipPlayers(legs), legs, { cfg: DEFAULTS, accaStake: Number(body.accaStake) || 1 });
+  });
+
+  // log the slip in the bet log: one entry per single, or one acca entry holding its legs
+  post('/api/slip/place', async (_p, _q, body) => {
+    const legs = cleanLegs(body.legs);
+    const players = await slipPlayers(legs);
+    const a = analyseSlip(players, legs, { cfg: DEFAULTS, sims: 4000, accaStake: Number(body.accaStake) || 1 });
+    const bad = a.legs.find((l) => l.error);
+    if (bad) fail(400, `${bad.player || 'a leg'}: ${bad.error}`);
+    const base = (l) => {
+      const pl = players.get(l.playerId);
+      return { date: pl.game.date, gameId: pl.game.gameId, playerId: l.playerId, playerName: pl.name, team: pl.team, opp: pl.opp, home: pl.home, stat: l.stat, line: l.line, kind: l.kind || 'ou', book: String(l.book || 'Slip').slice(0, 40) };
+    };
+    if (body.mode === 'acca') {
+      if (legs.length < 2) fail(400, 'an acca needs at least 2 legs');
+      const stake = Number(body.accaStake) || 1;
+      return [await B.entries.add({
+        source: 'slip', kind: 'acca', date: base(a.legs[0]).date, playerName: `Acca · ${legs.length} legs`, stat: 'acca', line: null,
+        legs: a.legs.map((l) => ({ ...base(l), side: l.side, price: l.price, label: legLabel(l) })),
+        model: { pWin: a.acca.pWin, ev: a.acca.ev, verdict: a.acca.ev > 0 ? 'VALUE' : 'AVOID' },
+        bet: { side: 'acca', stake, price: a.acca.price, takenAt: new Date().toISOString() },
+      })];
+    }
+    const out = [];
+    for (const l of a.legs) {
+      out.push(await B.entries.add({
+        source: 'slip', ...base(l), over: l.side === 'over' ? l.price : null, under: l.side === 'under' ? l.price : null,
+        model: { pWin: l.pWin, ev: l.ev, verdict: l.ev > 0 ? l.side.toUpperCase() : 'PASS', edgeOver: l.side === 'over' ? l.edge : null, edgeUnder: l.side === 'under' ? l.edge : null },
+        bet: { side: l.side, stake: Number(l.stake) || 1, price: l.price, takenAt: new Date().toISOString() },
+      }));
+    }
+    return out;
+  });
 
   return routes;
 }

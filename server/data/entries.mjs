@@ -7,6 +7,7 @@ import { statValue } from '../stats.mjs';
  * @returns {status:'pending'|'settled'|'void', actual?, outcome?:'over'|'under'|'push', betResult?, profit?}
  */
 export function grade(L, e) {
+  if (e.kind === 'acca') return gradeAcca(L, e);
   if (e.date >= L.today) return { status: 'pending' };
   const row = L.playerLogs(e.playerId).find((r) => r.date === e.date);
   if (!row) {
@@ -40,7 +41,8 @@ export function summariseBets(L, entries) {
       staked, profit, roi: staked ? profit / staked : null,
     };
   };
-  const withModel = settled.filter((b) => b.model?.verdict && b.model.verdict.toLowerCase() === b.bet.side);
+  // "with the model" = the model priced the bet as positive expected value (or recommended that side)
+  const withModel = settled.filter((b) => (b.model?.ev != null ? b.model.ev > 0 : b.model?.verdict?.toLowerCase() === b.bet.side));
   const againstModel = settled.filter((b) => !withModel.includes(b));
   return {
     bets,
@@ -55,3 +57,16 @@ export function summariseBets(L, entries) {
   };
 }
 
+
+/** An acca wins if no leg loses; pushed or void legs drop out at price 1. */
+function gradeAcca(L, e) {
+  const legs = e.legs.map((l) => ({ ...l, result: grade(L, { ...l, bet: { side: l.side, stake: 1, price: l.price } }) }));
+  const out = { status: 'pending', legs: legs.map((l) => l.result) };
+  if (legs.some((l) => l.result.betResult === 'loss')) Object.assign(out, { status: 'settled', betResult: 'loss', profit: -e.bet.stake });
+  else if (legs.every((l) => l.result.status !== 'pending')) {
+    const price = legs.reduce((a, l) => a * (l.result.betResult === 'win' ? l.price : 1), 1);
+    const allVoid = legs.every((l) => l.result.status === 'void' || l.result.betResult === 'push');
+    Object.assign(out, { status: 'settled', betResult: allVoid ? 'push' : 'win', profit: allVoid ? 0 : e.bet.stake * (price - 1) });
+  }
+  return out;
+}

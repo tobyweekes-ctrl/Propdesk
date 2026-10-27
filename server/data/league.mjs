@@ -34,12 +34,22 @@ export function indexLeague({ current, previous, seasons, today: asOf, source })
     }
   }
   for (const l of logs.values()) l.sort((a, b) => a.date.localeCompare(b.date));
+  // per-minute production of rotation players (20+ min) by position group: the prior for thin samples
+  const groupRate = {};
+  for (const s of [previous, current]) {
+    for (const r of bySeason[s].rows) {
+      if (r.min < 20) continue;
+      const g = (groupRate[groupOf(r.playerId)] ||= { min: 0, pts: 0, reb: 0, ast: 0, fg3m: 0 });
+      g.min += r.min; g.pts += r.pts; g.reb += r.reb; g.ast += r.ast; g.fg3m += r.fg3m;
+    }
+  }
   const tgIndex = new Map();
   for (const s of Object.values(bySeason)) for (const t of s.teamGames) tgIndex.set(`${t.gameId}|${t.team}`, t);
 
   return {
     today: asOf, current, previous, source, players, logs, bySeason, teamDates, teamGameList, tgIndex,
     groupOf,
+    priorRate: (group, stat) => (groupRate[group]?.min ? groupRate[group][stat] / groupRate[group].min : null),
     playerLogs: (id) => logs.get(id) || [],
     /** players who appeared for `team` in that game (for with/without splits) */
     lineup: (gameId, team) => new Set(tgIndex.get(`${gameId}|${team}`)?.players || []),

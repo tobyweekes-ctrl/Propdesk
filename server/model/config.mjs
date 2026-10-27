@@ -14,6 +14,7 @@ export const DEFAULTS = {
     minutesK: 5,             // role shows up quickly
     minutesKTraded: 2,       // changed team: last season's minutes barely count
     teamK: 15,               // team pace / defence, in team games
+    priorGames: 10,          // weight (in games) of a typical rotation player at his position, for thin samples
   },
 
   // Recent form on top of the season blend (weights sum to 1). Tuned on real 2025-26 games

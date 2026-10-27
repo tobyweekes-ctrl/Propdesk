@@ -25,10 +25,15 @@ function componentRate(ctx, s, cfg) {
   const k = s === 'fg3m' ? cfg.blend.fg3mRateK : cfg.blend.rateK;
   const rc = rate(ctx.curRows, s), rp = rate(ctx.prevRows, s);
   const w = rp == null ? 1 : rc == null ? 0 : seasonWeight(ctx.curRows.length, k);
-  const seasonRate = rc == null && rp == null ? rate(ctx.logs, s) : w * (rc ?? 0) + (1 - w) * (rp ?? 0);
+  let seasonRate = rc == null && rp == null ? rate(ctx.logs, s) : w * (rc ?? 0) + (1 - w) * (rp ?? 0);
   if (seasonRate == null) return null;
+  // thin samples (injuries, rookies, short stints) lean on a typical rotation player at his position
+  const prior = ctx.priorRate(s);
+  const n = ctx.logs.length;
+  if (prior != null && cfg.blend.priorGames > 0) seasonRate = (n * seasonRate + cfg.blend.priorGames * prior) / (n + cfg.blend.priorGames);
 
-  const parts = [[cfg.recency.season, seasonRate], [cfg.recency.last10, rate(ctx.logs.slice(-10), s)], [cfg.recency.last5, rate(ctx.logs.slice(-5), s)]]
+  // recent-form windows only count once there are more games than the window itself
+  const parts = [[cfg.recency.season, seasonRate], [n > 10 ? cfg.recency.last10 : 0, rate(ctx.logs.slice(-10), s)], [n > 5 ? cfg.recency.last5 : 0, rate(ctx.logs.slice(-5), s)]]
     .filter(([, v]) => v != null);
   const wsum = parts.reduce((a, [wt]) => a + wt, 0);
   const base = parts.reduce((a, [wt, v]) => a + wt * v, 0) / wsum;

@@ -99,6 +99,7 @@ export function buildContext(L, playerId, game, opts = {}) {
     h2hRows: logs.filter((r) => r.opp === game.opp),
     team: teamStat(game.team), opp: teamStat(game.opp), league: leagueStat,
     posDef, marginOf,
+    priorRate: (s) => T.priorRate?.(L.groupOf(playerId), s) ?? null,
     lineup: (r) => L.lineup(r.gameId, r.team),
     mateSeasons: (id) => new Set(L.playerLogs(id).filter((r) => r.date < game.date).map((r) => `${r.season}|${r.team}`)),
     spread: opts.spread ?? null,
