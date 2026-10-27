@@ -157,3 +157,25 @@ test('config override can set one element of an array', () => {
   assert.ok(Array.isArray(c.adjust.teammateRateCap));
   assert.deepEqual(c.adjust.teammateRateCap, [DEFAULTS.adjust.teammateRateCap[0], 1.08]);
 });
+
+test('context notes: every section present, tones valid, matchup facts match the context', () => {
+  const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'C');
+  const game = { date: L.today, team: p.team, opp: p.team === 'BOS' ? 'NYK' : 'BOS', home: false };
+  const ctx0 = buildContext(L, p.id, game);
+  const mate = ctx0.availableMates.sort((a, b) => b.min - a.min)[0];
+  const a = analyse({ L, playerId: p.id, game, stat: 'reb', opts: { teammatesOut: [mate.id] } });
+  const n = a.notes;
+  assert.deepEqual(n.sections.map((s) => s.title), ['Availability', `History vs ${game.opp}`, `${game.opp} defence`, 'Game script']);
+  for (const s of n.sections) {
+    assert.ok(s.notes.length, `${s.title} has notes`);
+    for (const x of s.notes) { assert.ok(['up', 'down', 'flat'].includes(x.tone)); assert.ok(x.title && x.text && !/undefined|NaN/.test(x.title + x.text), x.text); }
+  }
+  assert.ok(n.sections[0].notes.some((x) => x.key === `mate:${mate.id}` && x.title.includes(mate.name)));
+  const h2h = n.sections[1].notes[0];
+  assert.ok(ctx0.h2hRows.length ? h2h.text.startsWith(`${ctx0.h2hRows.length} game`) : h2h.key === 'h2h-none');
+  assert.ok(/^Context moves the projection/.test(n.summary.text));
+  // an absent player gets a first-game-back note
+  const ret = demoInternals.storyPlayer(demoInternals.STORY.find((s) => s[2] === 'returning'));
+  const r = analyse({ L, playerId: ret.id, game: { date: L.today, team: ret.team, opp: 'BOS', home: true }, stat: 'pts' });
+  assert.ok(r.notes.sections[0].notes.some((x) => x.key === 'returned' || x.key === 'absent'));
+});

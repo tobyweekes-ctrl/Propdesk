@@ -114,6 +114,12 @@ for good) so the first search is instant.
 - **Splits:** this season / last season, home / away, vs tonight's opponent, rest days, and with / without each
   key teammate (seasons they shared a team only; teammates out tonight are flagged).
 - **Minutes and adjustments:** every step behind the projection, plus a box to enter your own minutes.
+- **Context (`c`):** plain-English notes built from the data, each marked ▲ helps the over / ▼ helps the under:
+  availability (questionable tag, games missed, return ramp, teammates out, new team), history against tonight's
+  opponent and how much the model trusts it, the opponent's defence against the player's position and its style
+  from box scores (rim protection, threes allowed, pressure, defensive rebounding, fouling), and the game script
+  (pace, blowout risk, back-to-backs, home/away). Scheme words like "drop" or "switching" are inferred from
+  box-score numbers, not tracking data, and the panel says so.
 
 ## Model (`server/model/`)
 
@@ -202,13 +208,13 @@ server/
   routes.mjs           API routes, shared by the server and the in-browser (Pages) backend
   env.mjs, cache.mjs, http.mjs, teams.mjs, stats.mjs, util.mjs
   providers/           espn, nbaStats, balldontlie, oddsApi, espnInjuries, demo
-  data/derive.mjs      pure derivations (pace, usage, position defence, absences)
+  data/derive.mjs      pure derivations (pace, usage, position defence, defensive profile, absences)
   data/store.mjs       provider selection, caching, live fetching (Node only)
   data/league.mjs      indexed League, search, averages, lines (pure, also runs in the browser)
   data/entries.mjs     grading and bet-log summary (pure)
   data/splits.mjs      home/away, opponent, rest, with/without teammates
   data/userdata.mjs    manual lines, bet log, odds snapshots, grading
-  model/               config, context, minutes, projection, distributions, odds, evaluate
+  model/               config, context, minutes, projection, distributions, odds, evaluate, notes, slip, record
 web/                   index.html, styles.css, js/ (app, landing, player, chart, bets, ui, static)
 scripts/               warm-cache.mjs, backtest.mjs, build-static.mjs (GitHub Pages build)
 userdata/, reports/    created at runtime, gitignored

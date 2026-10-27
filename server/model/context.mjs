@@ -99,6 +99,9 @@ export function buildContext(L, playerId, game, opts = {}) {
     h2hRows: logs.filter((r) => r.opp === game.opp),
     team: teamStat(game.team), opp: teamStat(game.opp), league: leagueStat,
     posDef, marginOf,
+    // every team's summary (league ranks for the context notes)
+    teams: { cur: T.bySeason[cur]?.summary.teams || {}, prev: T.bySeason[prev]?.summary.teams || {} },
+    ownInjury: (opts.injuries || []).find((i) => i.team === game.team && normName(i.name) === normName(player?.name || '')) || null,
     priorRate: (s) => T.priorRate?.(L.groupOf(playerId), s) ?? null,
     lineup: (r) => L.lineup(r.gameId, r.team),
     mateSeasons: (id) => new Set(L.playerLogs(id).filter((r) => r.date < game.date).map((r) => `${r.season}|${r.team}`)),

@@ -6,12 +6,14 @@
 //   distributions.mjs negative binomial / Poisson, minutes mixture
 //   odds.mjs          price parsing, no-vig, EV
 //   evaluate.mjs      edge, verdict, confidence, hit rates
+//   notes.mjs         plain-English context notes (the Context panel)
 import { DEFAULTS, mergeConfig } from './config.mjs';
 import { buildContext } from './context.mjs';
 import { projectPlayer, projectStat } from './projection.mjs';
 import { evaluateMarket, quality, hitRates } from './evaluate.mjs';
+import { contextNotes } from './notes.mjs';
 
-export { DEFAULTS, mergeConfig, buildContext, projectPlayer, projectStat, evaluateMarket, quality, hitRates };
+export { DEFAULTS, mergeConfig, buildContext, projectPlayer, projectStat, evaluateMarket, quality, hitRates, contextNotes };
 
 /**
  * One-call analysis for a player, stat and set of lines.
@@ -38,6 +40,7 @@ export function analyse({ L, playerId, game, stat, lines = [], opts = {}, config
     quality: q,
     ...market,
     hitRates: { line: mainLine, ...hitRates(ctx.logs, stat, mainLine, ctx.cur) },
+    notes: contextNotes(ctx, pp, sp, cfg, mainLine),
   };
 }
 

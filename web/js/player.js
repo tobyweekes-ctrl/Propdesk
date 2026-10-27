@@ -2,6 +2,7 @@
 //   verdict card (add the pick to the slip) · bookmaker lines with Over / Under buttons
 //   price checker ("20+ at 5/1") with the DraftKings ladder · last 10/20 chart · splits
 //   "Model details" drawer: minutes, adjustments, add-your-own O/U line, averages and game log
+//   Context panel (c): plain-English notes on availability, the matchup and the game script
 import { $, $$, esc, fmt, pct, edge, signed, api, debounce, state, refreshStatus, odds, slip, toast, teamColour, parsePrice, tipLabel, notFound } from './ui.js';
 import { barChart } from './chart.js';
 
@@ -62,7 +63,8 @@ function shell(d) {
     </div>
     <div class="statbar">
       <div class="chips" role="group" aria-label="Stat">${keys.map((s, i) => `<button aria-pressed="${s === S.stat}" data-s="${s}" title="${esc(state.stats[s].label)} (${i + 1})">${state.stats[s].short}</button>`).join('')}</div>
-      <span class="kbd-hint"><kbd>1</kbd>–<kbd>8</kbd> stat · <kbd>/</kbd> search</span>
+      <button class="btn ctx-btn" id="ctxbtn" disabled aria-haspopup="dialog">Context</button>
+      <span class="kbd-hint"><kbd>1</kbd>–<kbd>8</kbd> stat · <kbd>c</kbd> context · <kbd>/</kbd> search</span>
     </div>
     <div class="result">
       <div class="col-a">
@@ -82,6 +84,7 @@ function shell(d) {
 document.addEventListener('keydown', (e) => {
   if (!location.hash.startsWith('#/p/') || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
   const keys = Object.keys(state.stats);
+  if (e.key === 'c' && !$('#ctx')?.open) { openContext(); return; }
   const i = Number(e.key) - 1;
   if (i >= 0 && i < keys.length && S.id) location.hash = `#/p/${S.id}/${keys[i]}`;
 });
@@ -91,6 +94,7 @@ window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTi
 // ---------- model-dependent parts ----------
 function renderModel() {
   const res = S.res;
+  contextButton(res.analysis?.notes);
   if (res.out) {
     $('#verdict').innerHTML = outCard(res.out);
     $('#lines').innerHTML = ''; $('#check').innerHTML = ''; $('#details-inner').innerHTML = detailsHtml(null);
@@ -245,6 +249,49 @@ function checkCard(a) {
     <h3 style="margin:18px 0 6px;font-size:13px;letter-spacing:.1em;color:var(--faint)">Ladder: model vs DraftKings</h3>
     <div class="scroll"><table class="ladder"><tr><th class="l">${short()}</th><th>Model</th><th>Fair</th><th>DraftKings</th><th></th><th></th></tr>${rows}</table></div>
     <p class="hint">"20+" means 20 or more. Fair = the price at which the model sees no edge. VALUE = at least 5% expected return.</p>`;
+}
+
+// ---------- context panel ----------
+const TONE = { up: ['▲', 'pos', 'helps the over'], down: ['▼', 'neg', 'helps the under'], flat: ['•', 'dim', 'neutral'] };
+
+function contextButton(n) {
+  const b = $('#ctxbtn');
+  if (!b) return;
+  b.disabled = !n;
+  if (!n) { b.textContent = 'Context'; return; }
+  const all = n.sections.flatMap((x) => x.notes);
+  const up = all.filter((x) => x.tone === 'up').length, down = all.filter((x) => x.tone === 'down').length;
+  b.innerHTML = `Context <span class="pos">▲${up}</span> <span class="neg">▼${down}</span>`;
+  b.onclick = openContext;
+}
+
+function openContext() {
+  const n = S.res?.analysis?.notes;
+  if (!n) return;
+  let d = $('#ctx');
+  if (!d) {
+    d = document.createElement('dialog');
+    d.id = 'ctx';
+    d.className = 'ctx';
+    d.setAttribute('aria-labelledby', 'ctx-title');
+    document.body.append(d);
+    // click on the backdrop closes
+    d.addEventListener('click', (e) => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  }
+  const p = S.profile.player, g = S.res.game;
+  const note = (x) => {
+    const [icon, cls, label] = TONE[x.tone] || TONE.flat;
+    return `<li class="cnote ${x.tone}"><span class="ci ${cls}" title="${label}" aria-label="${label}">${icon}</span><div><b>${esc(x.title)}</b><p>${esc(x.text)}</p></div></li>`;
+  };
+  d.innerHTML = `<div class="ctx-in">
+    <header><div><h2 id="ctx-title">${esc(p.name)} · ${short()}</h2><span class="sub">${g.home ? 'vs' : '@'} ${esc(g.opp)}${g.tipoff ? ` · ${tipLabel(g.tipoff)}` : ''}</span></div>
+      <button class="mini ghost" data-close aria-label="Close">Esc ×</button></header>
+    <p class="ctx-sum ${TONE[n.summary.tone]?.[1] || ''}">${esc(n.summary.text)}</p>
+    ${n.sections.map((sec) => `<section><h3>${esc(sec.title)}</h3><ul>${sec.notes.map(note).join('')}</ul></section>`).join('')}
+    <p class="hint">▲ helps the over · ▼ helps the under · • neutral. ${esc(n.basis)}</p>
+  </div>`;
+  d.showModal();
+  d.querySelector('[data-close]').focus();
 }
 
 // ---------- details drawer ----------

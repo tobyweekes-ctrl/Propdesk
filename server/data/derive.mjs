@@ -13,7 +13,7 @@ export function posGroup(pos) {
   return 'F';
 }
 
-const SUM_KEYS = ['min', 'pts', 'reb', 'ast', 'fg3m', 'fg3a', 'fgm', 'fga', 'ftm', 'fta', 'oreb', 'dreb', 'tov'];
+const SUM_KEYS = ['min', 'pts', 'reb', 'ast', 'fg3m', 'fg3a', 'fgm', 'fga', 'ftm', 'fta', 'oreb', 'dreb', 'tov', 'stl', 'blk'];
 
 /** Aggregate player rows into one row per (game, team) with the opponent's totals attached. */
 export function teamGames(rows) {
@@ -41,20 +41,31 @@ export function teamGames(rows) {
   return [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/** Per-team season summary: pace, offensive/defensive rating, points for/against. */
+/** Defensive profile keys: what a team allows or forces, from box scores only. */
+export const DEF_KEYS = ['blkPer100', 'stlPer100', 'tovForcedPer100', 'opp3paRate', 'opp3pPct', 'oppOrebPct', 'oppAstRate', 'oppFtRate'];
+
+/**
+ * Per-team season summary: pace, offensive/defensive rating, points for/against, and a defensive
+ * profile (rim protection, pressure, three-point and rebounding numbers allowed).
+ */
 export function teamSummaries(tgs) {
+  const oppOf = new Map(tgs.map((t) => [`${t.gameId}|${t.team}`, t]));
+  const OPP = ['fg3m', 'fg3a', 'fga', 'fgm', 'fta', 'oreb', 'ast', 'tov'];
   const by = new Map();
   for (const t of tgs) {
-    if (t.oppPts == null) continue;
-    const s = by.get(t.team) || { team: t.team, games: 0, pts: 0, oppPts: 0, poss: 0, pace: 0, fg3mAllowed: 0 };
-    s.games++; s.pts += t.pts; s.oppPts += t.oppPts; s.poss += t.poss; s.pace += t.pace;
-    by.set(t.team, s);
-  }
-  const oppOf = new Map(tgs.map((t) => [`${t.gameId}|${t.team}`, t]));
-  for (const t of tgs) {
     const o = oppOf.get(`${t.gameId}|${t.opp}`);
-    if (o && by.has(t.team)) by.get(t.team).fg3mAllowed += o.fg3m;
+    if (t.oppPts == null || !o) continue;
+    let s = by.get(t.team);
+    if (!s) {
+      s = { team: t.team, games: 0, pts: 0, oppPts: 0, poss: 0, pace: 0, blk: 0, stl: 0, dreb: 0 };
+      for (const k of OPP) s[`o_${k}`] = 0;
+      by.set(t.team, s);
+    }
+    s.games++; s.pts += t.pts; s.oppPts += t.oppPts; s.poss += t.poss; s.pace += t.pace;
+    s.blk += t.blk || 0; s.stl += t.stl || 0; s.dreb += t.dreb || 0;
+    for (const k of OPP) s[`o_${k}`] += o[k] || 0;
   }
+  const ratio = (a, b) => (b > 0 ? a / b : null);
   const out = {};
   for (const s of by.values()) {
     out[s.team] = {
@@ -65,13 +76,23 @@ export function teamSummaries(tgs) {
       drtg: (100 * s.oppPts) / s.poss,
       ppg: s.pts / s.games,
       oppPpg: s.oppPts / s.games,
-      fg3mAllowed: s.fg3mAllowed / s.games,
+      fg3mAllowed: s.o_fg3m / s.games,
+      blkPer100: ratio(100 * s.blk, s.poss),
+      stlPer100: ratio(100 * s.stl, s.poss),
+      tovForcedPer100: ratio(100 * s.o_tov, s.poss),
+      opp3paRate: ratio(s.o_fg3a, s.o_fga),
+      opp3pPct: ratio(s.o_fg3m, s.o_fg3a),
+      oppOrebPct: ratio(s.o_oreb, s.o_oreb + s.dreb),
+      oppAstRate: ratio(s.o_ast, s.o_fgm),
+      oppFtRate: ratio(s.o_fta, s.o_fga),
     };
   }
   const vals = Object.values(out);
-  const lg = vals.length
-    ? { pace: mean(vals.map((v) => v.pace)), ortg: mean(vals.map((v) => v.ortg)), drtg: mean(vals.map((v) => v.drtg)), fg3mAllowed: mean(vals.map((v) => v.fg3mAllowed)) }
-    : null;
+  let lg = null;
+  if (vals.length) {
+    lg = {};
+    for (const k of ['pace', 'ortg', 'drtg', 'fg3mAllowed', ...DEF_KEYS]) lg[k] = mean(vals.map((v) => v[k]).filter((x) => x != null));
+  }
   return { teams: out, league: lg };
 }
 
