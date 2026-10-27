@@ -12,7 +12,10 @@ async function loadStatus() {
   const credits = q.remaining != null
     ? ` · credits <b>${q.used}</b> used / <b class="${q.remaining < 50 ? 'low' : ''}">${q.remaining}</b> left${q.lastCost != null ? ` (last call ${q.lastCost})` : ''}`
     : s.keys?.oddsApi ? ' · credits <b>–</b>' : '';
-  $('#status').innerHTML = `${demo ? '<span class="demo">DEMO DATA</span> ' : ''}stats <b>${esc(s.statsProvider)}</b> · odds <b>${esc(s.odds)}</b>${credits} · inj <b>${esc(s.injuryProvider)}</b> · <b>${esc(s.today)}</b>`;
+  const asOf = s.dataAsOf
+    ? ` · data <b class="${s.stale ? 'low' : ''}">${new Date(s.dataAsOf).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</b>`
+    : '';
+  $('#status').innerHTML = `${demo ? '<span class="demo">DEMO DATA</span> ' : ''}stats <b>${esc(s.statsProvider)}</b>${asOf} · odds <b>${esc(s.odds)}</b>${credits} · inj <b>${esc(s.injuryProvider)}</b> · <b>${esc(s.today)}</b>`;
 }
 async function loadSlate() {
   try {

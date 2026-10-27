@@ -25,6 +25,8 @@ export const config = {
   oddsKey: e.ODDS_API_KEY || '',
   oddsRegions: e.ODDS_REGIONS || 'us',
   oddsTtlMin: Number(e.ODDS_TTL_MIN || 10),
+  // stat keys to request (each market costs 1 credit per region per game); empty = all 8
+  oddsMarkets: (e.ODDS_MARKETS || '').split(',').map((x) => x.trim()).filter(Boolean),
   // Also fetch the game spread with the props (1 extra market per call) for the blowout model.
   // Off by default; without it the model estimates the margin from team ratings.
   oddsFetchSpreads: /^(1|true|yes)$/i.test(e.ODDS_FETCH_SPREADS || ''),

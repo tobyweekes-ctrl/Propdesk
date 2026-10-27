@@ -117,6 +117,11 @@ export function projectMinutes(ctx, cfg) {
     steps.push({ key: 'b2b', label: 'Back-to-back', value: proj - b, note: `x${C.b2bFactor}` });
   }
 
+  if (C.regress.keep !== 1) {
+    const b = proj;
+    proj = C.regress.anchor + C.regress.keep * (proj - C.regress.anchor);
+    steps.push({ key: 'regress', label: 'Regression to typical', value: proj - b, note: `real minutes drift toward ${C.regress.anchor}; keeps ${Math.round(C.regress.keep * 100)}% of the gap` });
+  }
   proj = clamp(proj, 0, C.max);
   if (ctx.minutesOverride != null) {
     steps.push({ key: 'override', label: 'Manual minutes', value: ctx.minutesOverride - proj, note: 'user override' });

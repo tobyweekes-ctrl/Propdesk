@@ -144,3 +144,9 @@ test('a teammate out since opening night is not treated as new information', asy
   const ctx = buildContext(L, star.id, { date: L.today, team: star.team, opp: 'BOS', home: true }, { injuries });
   assert.ok(!ctx.teammatesOut.some((m) => m.id === mate.id));
 });
+
+test('config override can set one element of an array', () => {
+  const c = mergeConfig(DEFAULTS, parseOverride('adjust.teammateRateCap.1=1.08'));
+  assert.ok(Array.isArray(c.adjust.teammateRateCap));
+  assert.deepEqual(c.adjust.teammateRateCap, [DEFAULTS.adjust.teammateRateCap[0], 1.08]);
+});

@@ -33,12 +33,38 @@ export async function renderBets(view) {
         <td class="actions"><button class="mini ghost" data-untake="${esc(b.id)}" title="Remove from bet log (keeps the line)">Untake</button></td>
       </tr>`).join('')}
     </table></div>` : '<p class="empty">No bets yet. Open a player and press Take on a line, or add your bookie\'s line and use Save + bet.</p>'}
-    <p class="hint">Edge shown is the model's edge on your side when you logged it. Bets settle from box scores once the game date has passed; a DNP is void.</p>`;
+    <p class="hint">Edge shown is the model's edge on your side when you logged it. Bets settle from box scores once the game date has passed; a DNP is void.</p>
+    ${window.PROPDESK_STATIC ? `<div class="block"><h3>Saved on this device</h3>
+      <p class="hint">On the web version your lines and bets live in this browser only. Export to keep a backup or move them to another device.</p>
+      <div class="inline"><button class="btn" id="export">Export</button><label class="btn ghost" for="import-file">Import</label><input type="file" id="import-file" accept="application/json,.json" hidden></div>
+      <p class="hint" id="io-msg"></p></div>` : ''}`;
+  if (window.PROPDESK_STATIC) bindExport(view);
   view.onclick = async (e) => {
     const u = e.target.closest('[data-untake]');
     if (!u) return;
     u.disabled = true;
     await api(`/api/entries/${u.dataset.untake}`, { method: 'PATCH', body: { bet: null } });
     renderBets(view);
+  };
+}
+
+async function bindExport(view) {
+  const { exportEntries, importEntries } = await import('./static.js');
+  view.querySelector('#export').onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([exportEntries()], { type: 'application/json' }));
+    a.download = `propdesk-bets-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  view.querySelector('#import-file').onchange = async (e) => {
+    const msg = view.querySelector('#io-msg');
+    try {
+      const n = importEntries(await e.target.files[0].text());
+      msg.textContent = `Imported ${n} new entr${n === 1 ? 'y' : 'ies'}.`;
+      renderBets(view);
+    } catch (err) {
+      msg.textContent = `Import failed: ${err.message}`;
+    }
   };
 }

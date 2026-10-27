@@ -50,11 +50,13 @@ export function normaliseSummary(json, game) {
     const num = (k, s) => Number(s[idx[k]]) || 0;
     for (const a of block.athletes || []) {
       const ath = a.athlete || {};
+      if (ath.id == null) continue; // team placeholder rows
       const id = String(ath.id);
       players.push({ id, name: ath.displayName, team, pos: ath.position?.abbreviation || '' });
       const s = a.stats || [];
       const min = parseMinutes(s[idx.minutes]);
-      if (a.didNotPlay || !s.length || min === 0) {
+      // ESPN sometimes lists a player with "--" minutes and all zeros: treat as DNP
+      if (a.didNotPlay || !s.length || !(min > 0)) {
         dnps.push({ playerId: id, gameId: game.gameId, date: game.date, team, reason: a.reason || '' });
         continue;
       }
@@ -92,7 +94,8 @@ export const espnProvider = {
     let done = 0;
     for (const g of games) {
       const box = await boxscore(g);
-      rows.push(...box.rows);
+      // re-check rows from older cache entries (written before the "--" minutes fix)
+      rows.push(...box.rows.filter((r) => r.min > 0 && r.playerId !== 'undefined'));
       dnps.push(...box.dnps);
       for (const p of box.players) players.set(p.id, { ...players.get(p.id), ...p, pos: p.pos || players.get(p.id)?.pos || '' });
       if (++done % 100 === 0) console.log(`[espn] ${season}: ${done}/${games.length} box scores`);

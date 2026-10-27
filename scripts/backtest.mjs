@@ -76,8 +76,10 @@ for (const date of testDates) {
   for (const rows of games.values()) {
     const { team, opp, home } = rows[0];
     const lineup = new Set(rows.map((r) => r.playerId));
-    // anyone who played for this team this season but not tonight = out (proxy for the injury report)
-    const out = [...new Set(full.bySeason[season].rows.filter((r) => r.team === team && r.date < date).map((r) => r.playerId))].filter((id) => !lineup.has(id));
+    // out = on this team's roster (his latest game before tonight was for this team) but not in
+    // tonight's box score: a proxy for the injury report. Players traded away are not "out".
+    const out = [...new Set(full.bySeason[season].rows.filter((r) => r.team === team && r.date < date).map((r) => r.playerId))]
+      .filter((id) => !lineup.has(id) && full.playerLogs(id).filter((r) => r.date < date).at(-1)?.team === team);
     for (const row of rows) {
       const prior = full.playerLogs(row.playerId).filter((r) => r.date < date);
       if (prior.length < MIN_PRIOR_GAMES || mean(prior.slice(-5).map((r) => r.min)) < MIN_RECENT_MIN) continue;
@@ -193,7 +195,7 @@ async function realLineBacktest() {
 
 // ---------- output ----------
 mkdirSync(join(ROOT, 'reports'), { recursive: true });
-const file = join(ROOT, 'reports', `backtest-${season}-${S1.source}.json`);
+const file = opt('report', join(ROOT, 'reports', `backtest-${season}-${S1.source}.json`));
 writeFileSync(file, JSON.stringify(report, null, 1));
 if (args.includes('--dump')) {
   // every prediction as CSV, for your own analysis

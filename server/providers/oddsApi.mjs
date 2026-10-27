@@ -82,7 +82,8 @@ export const oddsApiProvider = {
   },
   /** All prop markets for one game in one call (+ the spread if ODDS_FETCH_SPREADS is on). */
   async eventProps(eventId) {
-    const markets = Object.values(STATS).map((s) => s.market);
+    const keys = config.oddsMarkets.length ? config.oddsMarkets.filter((k) => STATS[k]) : Object.keys(STATS);
+    const markets = keys.map((k) => STATS[k].market);
     if (config.oddsFetchSpreads) markets.push('spreads');
     const json = await call(`/events/${eventId}/odds`, {
       regions: config.oddsRegions, markets: markets.join(','), oddsFormat: 'decimal', dateFormat: 'iso',

@@ -49,7 +49,8 @@ function flags(d) {
   const out = [];
   if (d.injury) out.push(`<span class="flag ${d.injury.status === 'Out' ? 'neg' : 'warn'}">${esc(d.injury.status)} · ${esc(d.injury.injury)}</span>`);
   const a = d.absence;
-  if (a.status === 'returned') out.push(`<span class="flag warn">Back ${a.gamesSinceReturn}g after missing ${a.gamesMissed}</span>`);
+  // single missed games (rest, illness) are common in real data; flag real absences only
+  if (a.status === 'returned' && a.gamesMissed >= 3) out.push(`<span class="flag warn">Back ${a.gamesSinceReturn}g after missing ${a.gamesMissed}</span>`);
   if (a.status === 'absent') out.push(`<span class="flag neg">Missed last ${a.gamesMissed} team games</span>`);
   if (d.game?.restDays === 0) out.push('<span class="flag warn">Back-to-back</span>');
   return out.join(' ');

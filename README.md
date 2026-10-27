@@ -3,6 +3,25 @@
 Search a player, pick a stat, and get tonight's lines by bookmaker, a modelled over/under
 probability, the no-vig edge and a verdict. For analysis only. Gamble responsibly. 18+.
 
+## Web version (GitHub Pages)
+
+**https://tobyweekes-ctrl.github.io/Propdesk/** works on any device, including iPad, and needs no server.
+
+A scheduled GitHub Action (`.github/workflows/pages.yml`) pulls real NBA data and rebuilds the site three
+times a day (UTC 13:17 box scores, 19:47 injuries, 22:23 injuries plus prop lines), and on every push to `main`.
+The model runs in your browser on that data. Run it by hand any time: **Actions → Build and deploy → Run workflow**.
+
+One-time setup:
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+2. For bookmaker lines: **Settings → Secrets and variables → Actions → New repository secret** named
+   `ODDS_API_KEY`. The key lives only in GitHub's secret store and is never published. Only the 22:23 run and
+   manual runs spend credits: about 1 credit per market per game (8 markets by default). To spend less, add
+   a variable `ODDS_MARKETS`, e.g. `pts,reb,ast,pra`.
+
+On the web version, manual lines and the bet log are saved **in your browser**. Use Export / Import on the
+Bets page to back them up or move them between devices. Every fetched bookmaker line is archived to the
+`data` branch for the real-line backtest.
+
 ## Stack
 
 - **Node 22, zero npm dependencies.** The server uses `node:http` and built-in `fetch`; tests use `node:test`.
@@ -112,6 +131,29 @@ Only data from before each game is used (team stats come from a weekly snapshot)
 3. **ROI vs REAL lines**: every Odds API fetch is saved (`userdata/live/odds/`) and graded at the latest
    pre-tip-off price, together with your manual lines. This starts empty and grows as you use the app.
 
+### Results on real games (2025-26, 131,688 predictions)
+
+Mean absolute error, lower is better. The model beats every simple baseline on all 8 stats:
+
+| Stat | Model | Season avg | Last 10 | Est. line |
+|---|---|---|---|---|
+| PTS | **5.17** | 5.30 | 5.29 | 5.23 |
+| REB | **2.01** | 2.05 | 2.07 | 2.06 |
+| AST | **1.54** | 1.57 | 1.59 | 1.59 |
+| 3PM | **1.03** | 1.04 | 1.05 | 1.11 |
+| PRA | **6.55** | 6.77 | 6.72 | 6.65 |
+
+Calibration is close between 30% and 80%. Below 30% the model is still too confident: when it gives an over
+16–26%, overs actually landed 31–33% of the time, and this is worst late in the season (load management,
+tanking). Treat strong UNDER calls with care. What tuning on real data changed, settings chosen on
+Dec–Jan and checked on Oct–Nov and Feb–Apr:
+- the teammates-out adjustment at full strength made projections worse, so it now applies gently
+  (25% minutes redistribution, heavy shrinkage) and the per-minute usage bump is off;
+- recent form gets more weight (55% season, 30% last 10, 15% last 5).
+
+Beating these baselines is necessary, not sufficient: bookmaker lines are sharper than any of them. The
+real-line section is the test that matters, and it fills in as lines are archived.
+
 ### Manual lines and bet log
 
 Add any bookie's line (fractional `10/11`, decimal or American; one side is enough) on the player page. It is
@@ -124,16 +166,19 @@ Demo and live data are stored separately.
 
 ```
 server/
-  index.mjs            HTTP server + API routes
+  index.mjs            HTTP server
+  routes.mjs           API routes, shared by the server and the in-browser (Pages) backend
   env.mjs, cache.mjs, http.mjs, teams.mjs, stats.mjs, util.mjs
   providers/           espn, nbaStats, balldontlie, oddsApi, espnInjuries, demo
   data/derive.mjs      pure derivations (pace, usage, position defence, absences)
-  data/store.mjs       provider selection, caching, indexed League, search, lines
+  data/store.mjs       provider selection, caching, live fetching (Node only)
+  data/league.mjs      indexed League, search, averages, lines (pure, also runs in the browser)
+  data/entries.mjs     grading and bet-log summary (pure)
   data/splits.mjs      home/away, opponent, rest, with/without teammates
   data/userdata.mjs    manual lines, bet log, odds snapshots, grading
   model/               config, context, minutes, projection, distributions, odds, evaluate
-web/                   index.html, styles.css, js/ (app, landing, player, chart, bets, ui)
-scripts/               warm-cache.mjs, backtest.mjs
+web/                   index.html, styles.css, js/ (app, landing, player, chart, bets, ui, static)
+scripts/               warm-cache.mjs, backtest.mjs, build-static.mjs (GitHub Pages build)
 userdata/, reports/    created at runtime, gitignored
 test/
 ```

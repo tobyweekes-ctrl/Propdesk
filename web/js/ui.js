@@ -12,6 +12,11 @@ export const edge = (x, d = 1) => (x == null ? '<span class="dim">–</span>' : 
 export const signed = (x, d = 1) => (x == null ? '–' : `${x > 0 ? '+' : ''}${Number(x).toFixed(d)}`);
 
 export async function api(path, { method = 'GET', body } = {}) {
+  if (window.PROPDESK_STATIC) {
+    // GitHub Pages build: same routes, run in the browser over prebuilt data
+    const { staticApi } = await import('./static.js');
+    return staticApi(path, method, body);
+  }
   const res = await fetch(path, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,

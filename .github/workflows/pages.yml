@@ -1,0 +1,82 @@
+# Builds the static site with fresh real data and deploys it to GitHub Pages.
+# One-time setup: Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+# Optional: Settings -> Secrets and variables -> Actions -> New secret ODDS_API_KEY (prop lines).
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      fetch_odds:
+        description: Fetch prop lines from The Odds API (uses credits)
+        type: boolean
+        default: true
+  schedule:
+    # times are UTC; NBA tip-offs are ~23:00-03:00 UTC
+    - cron: '17 13 * * *'   # morning: last night's box scores, new injury report
+    - cron: '47 19 * * *'   # afternoon: injury updates
+    - cron: '23 22 * * *'   # pre-tip: injuries + prop lines (the only scheduled run that spends Odds API credits)
+
+permissions:
+  contents: write   # push the odds archive to the data branch
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ESPN box scores are cached per game, so only new games are fetched each run
+      - uses: actions/cache@v4
+        with:
+          path: cache
+          key: espn-${{ github.run_id }}
+          restore-keys: espn-
+
+      - run: npm test
+
+      - name: Build site
+        run: node scripts/build-static.mjs
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_REGIONS: ${{ vars.ODDS_REGIONS || 'us' }}
+          ODDS_MARKETS: ${{ vars.ODDS_MARKETS }}
+          FETCH_ODDS: ${{ github.event.schedule == '23 22 * * *' || (github.event_name == 'workflow_dispatch' && inputs.fetch_odds) }}
+
+      # keep every fetched line for the real-line backtest (branch "data", folder odds/)
+      - name: Archive odds snapshots
+        if: hashFiles('userdata/live/odds/*.jsonl') != ''
+        run: |
+          set -e
+          git config user.name "propdesk-bot"
+          git config user.email "propdesk-bot@users.noreply.github.com"
+          mkdir -p /tmp/snap && cp userdata/live/odds/*.jsonl /tmp/snap/
+          if git fetch origin data 2>/dev/null; then git checkout -q -B data origin/data; else git checkout -q --orphan data && git rm -rfq . ; fi
+          mkdir -p odds
+          for f in /tmp/snap/*.jsonl; do cat "$f" >> "odds/$(basename "$f")"; done
+          git add odds && git commit -qm "Odds snapshots $(date -u +%F' '%H:%M)" && git push -q origin data || echo "nothing to archive"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

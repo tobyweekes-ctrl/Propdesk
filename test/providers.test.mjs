@@ -80,3 +80,16 @@ test('ESPN box score (real game, trimmed) -> rows and DNPs', async () => {
   assert.deepEqual([ad.team, ad.opp, ad.home, ad.min, ad.pts, ad.reb, ad.fg3m, ad.fg3a, ad.fta, ad.pm, ad.starter], ['WAS', 'CHA', false, 36, 29, 10, 3, 6, 4, 6, true]);
   for (const r of rows) assert.ok(r.home === (r.team === 'CHA'));
 });
+
+test('ESPN: "--" minutes and placeholder athletes are treated as DNP', async () => {
+  const { normaliseSummary } = await import('../server/providers/espn.mjs');
+  const keys = ['minutes', 'points', 'rebounds', 'assists'];
+  const json = { boxscore: { players: [{ team: { abbreviation: 'NYK' }, statistics: [{ keys, athletes: [
+    { athlete: { id: 1, displayName: 'A' }, stats: ['--', '0', '0', '0'] },
+    { athlete: {}, stats: ['12', '4', '1', '1'] },
+    { athlete: { id: 2, displayName: 'B' }, stats: ['30', '20', '5', '5'] },
+  ] }] }] } };
+  const { rows, dnps } = normaliseSummary(json, { gameId: 'g', date: '2026-10-23', home: 'BOS', away: 'NYK' });
+  assert.deepEqual(rows.map((r) => r.playerId), ['2']);
+  assert.deepEqual(dnps.map((d) => d.playerId), ['1']);
+});
