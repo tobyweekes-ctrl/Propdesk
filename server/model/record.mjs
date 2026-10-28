@@ -74,11 +74,29 @@ export function gradeRecord(L, days) {
     if (xs.length) buckets.push({ range: `${Math.round(lo * 100)}–${Math.min(100, Math.round(hi * 100))}%`, n: xs.length, predicted: sum(xs, (g) => g.pWin) / xs.length, actual: xs.filter((g) => g.result === 'win').length / xs.length });
   }
   const withClv = graded.filter((g) => g.clv != null && g.close && g.close.at !== g.firstSeen);
+  const groupBy = (key) => {
+    const m = new Map();
+    for (const g of graded) { const k = key(g); if (k != null) (m.get(k) || m.set(k, []).get(k)).push(g); }
+    return m;
+  };
+  const byStat = Object.fromEntries([...groupBy((g) => g.stat)].map(([k, xs]) => [k, summarise(xs)]));
+  const bySide = Object.fromEntries([...groupBy((g) => g.side)].map(([k, xs]) => [k, summarise(xs)]));
+  // a game is one date and matchup, labelled AWAY @ HOME like the rest of the site
+  const byGame = [...groupBy((g) => (g.opp ? `${g.date}|${g.home ? `${g.opp} @ ${g.team}` : `${g.team} @ ${g.opp}`}` : null))]
+    .map(([k, xs]) => ({ date: k.slice(0, 10), label: k.slice(11), ...summarise(xs), profit: sum(xs, (g) => g.profit || 0) }))
+    .sort((a, b) => b.date.localeCompare(a.date) || b.picks - a.picks);
+  let run = 0;
+  const byDay = [...groupBy((g) => g.date)].sort(([a], [b]) => a.localeCompare(b)).map(([date, xs]) => {
+    const profit = sum(xs, (g) => g.profit || 0);
+    run += profit;
+    return { date, ...summarise(xs), profit, cumProfit: run };
+  });
   return {
     since: Object.keys(days).sort()[0] || null,
     overall: summarise(graded),
     byConfidence: Object.fromEntries(['HIGH', 'MEDIUM', 'LOW'].map((c) => [c, summarise(graded.filter((g) => g.confidence === c))])),
     calibration: buckets,
+    byStat, bySide, byGame, byDay,
     clv: { n: withClv.length, avg: withClv.length ? sum(withClv, (g) => g.clv) / withClv.length : null, positive: withClv.length ? withClv.filter((g) => g.clv > 0).length / withClv.length : null },
     pending: Object.entries(days).filter(([d]) => d >= L.today).reduce((a, [, ps]) => a + Object.values(ps).filter((p) => p.side).length, 0),
     recent: graded.slice(0, 150),

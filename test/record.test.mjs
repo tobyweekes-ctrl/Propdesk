@@ -41,3 +41,25 @@ test('gradeRecord settles picks, computes hit rate, ROI, calibration and CLV', (
   assert.equal(r.calibration.length, 1);
   assert.equal(r.since, '2026-11-01');
 });
+
+test('gradeRecord breaks results down by stat, side, game and day, with running profit', () => {
+  const L = {
+    today: '2026-11-03',
+    playerLogs: (id) => ({ p1: [{ date: '2026-11-01', pts: 25, reb: 3 }, { date: '2026-11-02', pts: 10, reb: 9 }] }[id] || []),
+    teamDates: new Map([['AAA', ['2026-11-01', '2026-11-02']]]),
+  };
+  const g = { opp: 'BBB', home: true };
+  const r = gradeRecord(L, {
+    '2026-11-01': { a: pick({ ...g, line: 20.5 }), b: pick({ ...g, stat: 'reb', line: 5.5, side: 'under' }) }, // win, win
+    '2026-11-02': { c: pick({ ...g, line: 15.5 }), d: pick({ ...g, stat: 'reb', line: 5.5, side: 'under' }) }, // loss, loss
+  });
+  assert.deepEqual(r.byStat.pts && [r.byStat.pts.settled, r.byStat.pts.won], [2, 1]);
+  assert.deepEqual([r.bySide.over.won, r.bySide.under.won], [1, 1]);
+  assert.equal(r.byGame.length, 2);
+  assert.equal(r.byGame[0].label, 'BBB @ AAA');
+  assert.equal(r.byGame[0].date, '2026-11-02');
+  assert.deepEqual(r.byDay.map((d) => [d.date, d.won, d.settled]), [['2026-11-01', 2, 2], ['2026-11-02', 0, 2]]);
+  const up = 2 * 0.91;
+  assert.ok(Math.abs(r.byDay[0].cumProfit - up) < 1e-9);
+  assert.ok(Math.abs(r.byDay[1].cumProfit - (up - 2)) < 1e-9);
+});

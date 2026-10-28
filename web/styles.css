@@ -411,3 +411,12 @@ svg .season-label.strong { fill: var(--dim); font-weight: 600; }
   .ctx-in { padding: 16px; }
   .ctx-btn { margin-left: 0; }
 }
+
+/* record: profit chart */
+#profit svg { display: block; width: 100%; height: auto; }
+svg .zero { stroke: var(--line-strong); stroke-width: 1; }
+svg .run { fill: none; stroke: var(--text); stroke-width: 2; stroke-linejoin: round; }
+svg .run-dot { fill: var(--text); stroke: var(--panel); stroke-width: 2; }
+table.split td:first-child { white-space: normal; }
+.more-rows > summary { cursor: pointer; padding: 10px 8px; font: 600 12px var(--sans); color: var(--dim); }
+.more-rows > summary:hover { color: var(--text); }
