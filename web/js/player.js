@@ -196,7 +196,7 @@ function verdictCard(a) {
       const likely = ls === 'over' ? 'under' : 'over';
       const pl = h.model[likely], likelyPrice = likely === 'over' ? h.over : h.under;
       const needLikely = valueAt(pl, a);
-      word = `${likely.toUpperCase()} ${fmt(h.line)} LIKELY`;
+      word = pl < 0.53 ? `COIN FLIP AT ${fmt(h.line)}` : `${likely.toUpperCase()} ${fmt(h.line)} LIKELY`;
       sub = `No bet: ${esc(h.bookTitle)} ${odds(likelyPrice)} for the ${likely} is too short${needLikely ? ` (value from ${odds(needLikely, 'up')})` : ''}${need ? `; the ${ls} would be value from ${odds(need, 'up')}` : ''}`;
       stats = `<div><dt>Model ${likely}</dt><dd>${pct(pl)}</dd></div><div><dt>Fair price</dt><dd>${odds(1 / pl, 'up')}</dd></div><div><dt>Bet ${likely} at</dt><dd class="pos">${needLikely ? `${odds(needLikely, 'up')}+` : '–'}</dd></div><div><dt>Bet ${ls} at</dt><dd class="pos">${need ? `${odds(need, 'up')}+` : '–'}</dd></div>`;
       note = underdogNote(ls, h, price, need);
