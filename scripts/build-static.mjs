@@ -226,15 +226,26 @@ const codeFiles = [];
 const walk = (dir) => {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, e.name);
-    if (e.isDirectory() && e.name !== 'data') walk(full);
+    if (e.isDirectory() && full !== join(DIST, 'data')) walk(full); // skip the data files, not server/data
     else if (/\.(m?js)$/.test(e.name)) codeFiles.push(relative(DIST, full).split('\\').join('/'));
   }
 };
 walk(DIST);
+// Every code file gets the build id in its address, imports included: Pages lets browsers keep files for
+// 10 minutes, so without this a visit right after a deploy runs the old code.
+const v = meta.generated.replace(/\D/g, '');
+const IMPORT_RE = /(\bfrom\s+|\bimport\s*\(\s*)(['"])(\.{1,2}\/[^'"?]+?\.m?js)\2/g;
+for (const f of codeFiles) {
+  const full = join(DIST, f);
+  writeFileSync(full, readFileSync(full, 'utf8').replace(IMPORT_RE, (_, kw, q, spec) => `${kw}${q}${spec}?v=${v}${q}`));
+}
 const head = [
   `<script>window.PROPDESK_META = ${JSON.stringify(meta).replace(/</g, '\\u003c')};</script>`,
-  ...codeFiles.sort().map((f) => `<link rel="modulepreload" href="${f}">`),
+  ...codeFiles.sort().map((f) => `<link rel="modulepreload" href="${f}?v=${v}">`),
 ].join('\n');
-writeFileSync(join(DIST, 'index.html'), readFileSync(join(DIST, 'index.html'), 'utf8').replace('</head>', `${head}\n</head>`));
-console.log(`page head: build info inline, ${codeFiles.length} modules preloaded`);
+writeFileSync(join(DIST, 'index.html'), readFileSync(join(DIST, 'index.html'), 'utf8')
+  .replace('href="styles.css"', `href="styles.css?v=${v}"`)
+  .replace('src="js/app.js"', `src="js/app.js?v=${v}"`)
+  .replace('</head>', `${head}\n</head>`));
+console.log(`page head: build info inline, ${codeFiles.length} modules preloaded, build id ${v}`);
 console.log(`built dist/ for ${day} in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

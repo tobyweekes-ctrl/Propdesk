@@ -98,6 +98,27 @@ async function route() {
 
 window.addEventListener('hashchange', route);
 window.addEventListener('status:refresh', () => loadStatus().catch(() => {}));
+
+// web version: the page itself may be a cached copy (Pages allows 10 minutes), so check quietly for a newer
+// build and offer a refresh rather than run old code
+if (window.PROPDESK_META) {
+  const check = async () => {
+    try {
+      const r = await fetch('data/meta.json', { cache: 'no-store' });
+      const m = await r.json();
+      if (m.generated && m.generated !== window.PROPDESK_META.generated && !document.querySelector('.update-bar')) {
+        const bar = document.createElement('div');
+        bar.className = 'update-bar';
+        bar.setAttribute('role', 'status');
+        bar.innerHTML = '<span>A newer version of Prop Desk is available.</span><button class="mini">Refresh</button>';
+        bar.querySelector('button').onclick = () => location.reload();
+        document.body.append(bar);
+      }
+    } catch { /* offline: try again later */ }
+  };
+  setTimeout(check, 4000);
+  setInterval(check, 10 * 60 * 1000);
+}
 state.stats = await api('/api/stats');
 showFormat();
 updateCount(false);

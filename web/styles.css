@@ -438,3 +438,7 @@ table.split td:first-child { white-space: normal; }
   .bf-open .bf.extra { display: block; }
   .bf-more { display: inline-block; }
 }
+
+/* newer build available */
+.update-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 55; display: flex; gap: 12px; align-items: center;
+  background: var(--raise); border: 1px solid var(--pos); border-radius: 999px; padding: 8px 10px 8px 16px; font: 600 13px var(--sans); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); max-width: calc(100vw - 32px); }
