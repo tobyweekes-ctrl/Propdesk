@@ -38,6 +38,12 @@ export const DEFAULTS = {
     // Full backtest at 0.15: error lower on every stat (pts 5.175 -> 5.162, PRA 6.560 -> 6.540), bias smaller,
     // Brier 0.242 -> 0.241, log loss 0.676 -> 0.674.
     recentMix: 0.15,
+    // Changed team: the recent results mixed in are his games for the new team only, from 3 of them. Backtest
+    // 2025-26, traded players in games 3-15 with the new team: points error 4.949 -> 4.914, PRA 6.243 ->
+    // 6.211, Brier 0.2309 -> 0.2303; overall a hair better. Tried and rejected: a bigger share for them (better
+    // means, worse probabilities: players whose new-team rate ran 20%+ hot went over 47%, the model already
+    // says 49%), trusting the new-team rate harder (tradedRateScale 0.1 / 0.05), a new-team-only home/away split.
+    tradedMixMinGames: 3,
     minutesK: 5,             // role shows up quickly
     minutesKTraded: 2,       // changed team: last season's minutes barely count
     teamK: 15,               // team pace / defence, in team games

@@ -47,6 +47,7 @@ function componentRate(ctx, s, cfg, minutes) {
   const base = parts.reduce((a, [wt, v]) => a + wt * v, 0) / wsum;
 
   // home / away: the player's own split, shrunk toward the league-wide effect
+  // (all games, old team included: a new-team-only split made the backtest worse)
   const venue = ctx.logs.filter((r) => r.home === ctx.game.home);
   const own = rate(venue, s) != null && rate(ctx.logs, s) ? rate(venue, s) / rate(ctx.logs, s) : 1;
   const sv = seasonWeight(venue.length, A.personalHomeK);
@@ -163,8 +164,8 @@ export function fitDispersion(logs, stat, cfg) {
 }
 
 /** (1 - share) x model distribution + share x the empirical distribution of recent values (10+ games). */
-export function mixRecent(dist, values, share) {
-  if (!share || values.length < 10) return dist;
+export function mixRecent(dist, values, share, minGames = 10) {
+  if (!share || values.length < minGames) return dist;
   const len = Math.max(dist.pmf.length, Math.max(...values) + 1);
   const pmf = Array.from({ length: len }, (_, x) => (1 - share) * (dist.pmf[x] || 0));
   for (const v of values) pmf[Math.max(0, Math.round(v))] += share / values.length;
@@ -190,8 +191,10 @@ export function projectStat(pp, ctx, stat, cfg) {
   const mixed = mixturePmf({ ratePerMin, minMean: pp.minutes.proj, minSd: pp.minutes.sd, invK: invK + meanCv2 });
   // A share of the player's actual last 20 results is mixed in: when recent hit rates and the model disagree,
   // reality landed about a third of the way toward the hit rates in the backtest (see cfg.blend.recentMix)
-  // (all recent games, old team included: new-team-only made no difference in the backtest)
-  const { pmf, mean, sd } = mixRecent(mixed, ctx.logs.slice(-20).map((r) => statValue(r, stat)), cfg.blend.recentMix || 0);
+  // (changed team: his games for the new team only, from cfg.blend.tradedMixMinGames of them)
+  const newTeam = ctx.traded && cfg.blend.tradedMixMinGames;
+  const mixFrom = newTeam ? ctx.teamRows : ctx.logs;
+  const { pmf, mean, sd } = mixRecent(mixed, mixFrom.slice(-20).map((r) => statValue(r, stat)), cfg.blend.recentMix || 0, newTeam ? cfg.blend.tradedMixMinGames : 10);
 
   // combined factors, weighted by each component's share of the stat
   const byKey = new Map();
