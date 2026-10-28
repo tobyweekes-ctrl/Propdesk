@@ -77,11 +77,16 @@ export const DEFAULTS = {
     // rotation picks up per minute, split by each player's own production, same position weighted up.
     // Backtest 2025-26: with 40+ pts of teammates out, points bias -1.23 -> -0.67; centres with another
     // centre out, rebounds -0.56 -> -0.23; overall accuracy unchanged or slightly better.
-    absorb: { pts: 0.2, reb: 0.25, ast: 0.2, fg3m: 0 },
+    // Relative version (absorbRelative), backtest 2025-26: the old version left points bias running from +0.46
+    // with nobody out to -1.01 with 45+ points of teammates missing (rates learned from past games already hold
+    // their usual absences). Now +0.10 to -0.05; points error 5.139 -> 5.116 (Oct-Jan) and 5.183 -> 5.162
+    // (Jan-Apr), PRA 6.503 -> 6.476 and 6.575 -> 6.549, assists and Brier better in both halves.
+    absorb: { pts: 0.3, reb: 0.25, ast: 0.3, fg3m: 0 },
     absorbSameGroup: 4,
-    replacementLevel: 0.85,  // a replacement produces this share of a typical player at the position
+    replacementLevel: 0.25,  // a replacement produces this share of a typical player at the position
     absorbFrom: { reb: ['C'] }, // rebounds only shift when a centre is missing (forwards: no effect in the backtest)
     absorbCap: 0.25,         // max +25% per-minute from absences
+    absorbRelative: true,    // measure tonight's absences against those his recent games already include
     // Opponent players out: share of what they produced (above a replacement) that goes to this team.
     // Off: for rebounds it moved centres' bias the right way (-0.19 -> -0.11) but made accuracy
     // slightly worse in the 2025-26 backtest. The Context panel still reports opponent absences.

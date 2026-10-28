@@ -76,6 +76,14 @@ export function buildContext(L, playerId, game, opts = {}) {
   };
 
   const activeMates = rotationOf(game.team, playerId);
+  // how often each of them was missing in this player's recent games for the team (while on the team):
+  // the absences his recent numbers already reflect
+  const recentTeam = logs.filter((r) => r.team === game.team).slice(-20);
+  for (const m of activeMates) {
+    const first = L.playerLogs(m.id).find((r) => r.team === game.team)?.date;
+    const eligible = first ? recentTeam.filter((r) => r.date >= first) : [];
+    m.missRate = eligible.length ? eligible.filter((r) => !L.lineup(r.gameId, r.team).has(m.id)).length / eligible.length : 0;
+  }
   const teammatesOut = outFrom(activeMates, game.team, opts.teammatesOut);
   const outIds = new Set(teammatesOut.map((m) => m.id));
   const availableMates = activeMates.filter((m) => !outIds.has(m.id));

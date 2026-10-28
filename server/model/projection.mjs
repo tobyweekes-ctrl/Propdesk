@@ -90,19 +90,29 @@ function componentRate(ctx, s, cfg, minutes) {
     return Math.max(0, (m.avg?.[s] || 0) - repl);
   };
   const absorb = A.absorb[s] || 0;
-  if (ctx.teammatesOut.length && absorb > 0 && myGame > 0) {
-    const vacated = ctx.teammatesOut.reduce((a, m) => a + excess(m), 0);
-    if (vacated > 0) {
-      let mine = 0;
-      for (const m of ctx.teammatesOut) {
-        const v = excess(m);
-        if (!v) continue;
-        const w = (x, g) => x * (g === m.group ? A.absorbSameGroup : 1);
-        const pool = ctx.availableMates.reduce((a, x) => a + w(x.avg?.[s] || 0, x.group), 0) + w(myGame, ctx.group);
-        if (pool > 0) mine += absorb * v * (w(myGame, ctx.group) / pool);
-      }
-      const f = clamp(1 + mine / myGame, 1, 1 + A.absorbCap);
-      if (f > 1.001) factors.push({ key: 'mates', label: 'Teammates out', value: f, note: `+${mine.toFixed(1)} of the ${vacated.toFixed(1)} ${s} a game they produce above a replacement` });
+  if (absorb > 0 && myGame > 0) {
+    const w = (x, g, m) => x * (g === m.group ? A.absorbSameGroup : 1);
+    // his share of what m leaves, among the given teammates plus himself
+    const shareOf = (m, mates) => {
+      const pool = mates.reduce((a, x) => a + w(x.avg?.[s] || 0, x.group, m), 0) + w(myGame, ctx.group, m);
+      return pool > 0 ? w(myGame, ctx.group, m) / pool : 0;
+    };
+    let tonight = 0, vacated = 0;
+    for (const m of ctx.teammatesOut) { const v = excess(m); vacated += v; tonight += absorb * v * shareOf(m, ctx.availableMates); }
+    // relative to the absences his recent numbers already include (cfg.adjust.absorbRelative): a night with
+    // more out than usual adds, a night with everyone back takes away
+    let usual = 0;
+    if (A.absorbRelative) {
+      const all = [...ctx.availableMates, ...ctx.teammatesOut];
+      for (const m of all) if (m.missRate) usual += m.missRate * absorb * excess(m) * shareOf(m, all.filter((x) => x !== m));
+    }
+    const diff = tonight - usual;
+    const f = clamp(1 + diff / myGame, A.absorbRelative ? 1 - A.absorbCap : 1, 1 + A.absorbCap);
+    if (Math.abs(f - 1) >= 0.005) { // smaller moves are noise, not worth a line in the breakdown
+      factors.push({ key: 'mates', label: diff >= 0 ? 'Teammates out' : 'Teammates back', value: f,
+        note: A.absorbRelative
+          ? `${diff >= 0 ? '+' : ''}${diff.toFixed(1)} ${s}: ${tonight.toFixed(1)} from tonight's absences (${vacated.toFixed(1)} above a replacement) against ${usual.toFixed(1)} his recent games already include`
+          : `+${tonight.toFixed(1)} of the ${vacated.toFixed(1)} ${s} a game they produce above a replacement` });
     }
   }
 
