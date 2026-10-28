@@ -155,7 +155,8 @@ function verdictCard(a) {
   let word, sub, style = '', stats = '', note = '';
   if (side) {
     const price = side === 'over' ? h.over : h.under;
-    word = `${side.toUpperCase()} ${fmt(h.line)}`;
+    // a bet on the less likely side is a price call: the headline says VALUE so it doesn't read as a forecast
+    word = `${h.model[side] < 0.5 ? 'VALUE ' : ''}${side.toUpperCase()} ${fmt(h.line)}`;
     sub = `${esc(h.bookTitle)} · ${odds(price)} · ${h.confidence.toLowerCase()} confidence`;
     style = h.confidence === 'LOW' ? 'lean' : 'bet';
     stats = `<div><dt>Model ${side}</dt><dd>${pct(h.model[side])}</dd></div><div><dt>Edge</dt><dd>${edge(h.leanEdge)}</dd></div><div><dt>Value (EV)</dt><dd>${edge(h.ev[side])}</dd></div>`;
@@ -173,8 +174,18 @@ function verdictCard(a) {
         : fairish ? `${esc(h.bookTitle)} have priced it right: no side clears the ${bar} edge bar`
           : `${esc(h.bookTitle)} ${odds(price)} is too short to bet${need ? `. Value from ${odds(need, 'up')}` : ''}`;
     style = check ? 'warnv' : 'soft';
-    if (!check && !h.stale && !fairish && pm < 0.5) note = underdogNote(ls, h, price, need);
     stats = `<div><dt>Model ${ls}</dt><dd>${pct(pm)}</dd></div><div><dt>Fair price</dt><dd>${odds(1 / pm, 'up')}</dd></div>${check ? '' : `<div><dt>Bet ${ls} at</dt><dd class="pos">${need ? `${odds(need, 'up')}+` : '–'}</dd></div>`}`;
+    if (!check && !h.stale && !fairish && pm < 0.5) {
+      // the value side is the less likely one and there's no bet: lead with the likely side, so the headline
+      // and the numbers agree, and give the price that would make either side a bet
+      const likely = ls === 'over' ? 'under' : 'over';
+      const pl = h.model[likely], likelyPrice = likely === 'over' ? h.over : h.under;
+      const needLikely = valueAt(pl, a);
+      word = `${likely.toUpperCase()} ${fmt(h.line)} LIKELY`;
+      sub = `No bet: ${esc(h.bookTitle)} ${odds(likelyPrice)} for the ${likely} is too short${needLikely ? ` (value from ${odds(needLikely, 'up')})` : ''}${need ? `; the ${ls} would be value from ${odds(need, 'up')}` : ''}`;
+      stats = `<div><dt>Model ${likely}</dt><dd>${pct(pl)}</dd></div><div><dt>Fair price</dt><dd>${odds(1 / pl, 'up')}</dd></div><div><dt>Bet ${likely} at</dt><dd class="pos">${needLikely ? `${odds(needLikely, 'up')}+` : '–'}</dd></div><div><dt>Bet ${ls} at</dt><dd class="pos">${need ? `${odds(need, 'up')}+` : '–'}</dd></div>`;
+      note = underdogNote(ls, h, price, need);
+    }
     if (check) note = `When the model disagrees with a two-sided bookmaker price by more than ${pct(a.config.marketDisagreement ?? 0.08, 0)}, the bookmaker is usually reacting to something the model can't see: a role change, an injury, a minutes limit. Check the news before treating it as value.`;
   } else {
     // no bookmaker line: the model's own line and the prices that would be value either side
@@ -220,7 +231,7 @@ function lineRow(e) {
     <div class="who">${esc(e.bookTitle)}${tag}${e.stale ? '<span class="tag">stale</span>' : ''}<small>${[mv, age].filter(Boolean).join(' · ') || '&nbsp;'}</small></div>
     <div class="ln">${fmt(e.line)}</div>
     <div class="side-btns">${btn('over')}${btn('under')}</div>
-    <div class="lmeta"><span>Pick <b class="${e.side ? 'pos' : e.verdict === 'CHECK' ? 'warn' : 'dim'}">${e.side ? e.verdict : e.verdict === 'CHECK' ? 'CHECK NEWS' : s && (e.edge[s] ?? 0) >= 0.01 ? `lean ${s}` : 'fair'}</b></span><span>Edge ${s ? `${s} ${edge(e.edge[s])}` : '–'}</span><span>EV ${edge(s ? e.ev[s] : null)}</span>${e.source === 'manual' ? `<button class="mini ghost" data-del="${esc(e.id)}">remove</button>` : ''}</div>
+    <div class="lmeta"><span>Pick <b class="${e.side ? 'pos' : e.verdict === 'CHECK' ? 'warn' : 'dim'}">${e.side ? (e.model[e.side] < 0.5 ? `value ${e.side}` : e.verdict) : e.verdict === 'CHECK' ? 'CHECK NEWS' : s && (e.edge[s] ?? 0) >= 0.01 ? (e.model[s] < 0.5 ? 'no bet' : `lean ${s}`) : 'fair'}</b></span><span>Edge ${s ? `${s} ${edge(e.edge[s])}` : '–'}</span><span>EV ${edge(s ? e.ev[s] : null)}</span>${e.source === 'manual' ? `<button class="mini ghost" data-del="${esc(e.id)}">remove</button>` : ''}</div>
   </div>`;
 }
 
