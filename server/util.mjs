@@ -14,9 +14,11 @@ export const prevSeason = (season) => {
 };
 
 /** Today's date in US Eastern (the NBA's calendar), as YYYY-MM-DD. */
+let etFormat; // building the formatter is the slow part, so build it once
 export function todayET(override) {
   if (override) return override;
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  etFormat ||= new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' });
+  return etFormat.format(new Date());
 }
 
 export const daysBetween = (a, b) =>

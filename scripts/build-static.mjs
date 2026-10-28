@@ -218,4 +218,23 @@ const meta = {
   odds: { sources: odds.sources, fetchedAt: odds.fetchedAt, games: Object.keys(odds.games).length, quota: odds.quota || null, checks },
 };
 writeFileSync(join(DIST, 'data', 'meta.json'), JSON.stringify(meta, null, 1));
+
+// ---------- page head: build info inline and every code file preloaded ----------
+// Without this the browser finds each module only after its parent arrives (a chain of ~25 round
+// trips), then fetches meta.json before any data. Measured on a throttled phone: ~1.5 s of waiting.
+const codeFiles = [];
+const walk = (dir) => {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, e.name);
+    if (e.isDirectory() && e.name !== 'data') walk(full);
+    else if (/\.(m?js)$/.test(e.name)) codeFiles.push(relative(DIST, full).split('\\').join('/'));
+  }
+};
+walk(DIST);
+const head = [
+  `<script>window.PROPDESK_META = ${JSON.stringify(meta).replace(/</g, '\\u003c')};</script>`,
+  ...codeFiles.sort().map((f) => `<link rel="modulepreload" href="${f}">`),
+].join('\n');
+writeFileSync(join(DIST, 'index.html'), readFileSync(join(DIST, 'index.html'), 'utf8').replace('</head>', `${head}\n</head>`));
+console.log(`page head: build info inline, ${codeFiles.length} modules preloaded`);
 console.log(`built dist/ for ${day} in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

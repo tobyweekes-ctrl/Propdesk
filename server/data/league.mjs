@@ -19,7 +19,9 @@ export function indexLeague({ current, previous, seasons, today: asOf, source })
   const teamDates = new Map();
   const teamGameList = new Map();
   for (const s of [previous, current]) {
-    const rows = seasons[s].games.filter((g) => g.date < asOf).map((g) => ({ ...g, season: s }));
+    // rows already tagged with this season (the browser's) are used as they are; others are copied, so
+    // shared data (the Node store's cached seasons) is never changed
+    const rows = seasons[s].games.filter((g) => g.date < asOf).map((g) => (g.season === s ? g : { ...g, season: s }));
     const tgs = teamGames(rows);
     addUsage(rows, tgs);
     bySeason[s] = { rows, teamGames: tgs, summary: teamSummaries(tgs), posDef: positionDefense(rows, groupOf) };

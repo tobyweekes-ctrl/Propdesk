@@ -68,6 +68,12 @@ export async function renderLanding(view) {
       }).join('')}</div>
       <p class="hint">One leg per player, DraftKings prices. Lines where the model disagrees with the market by more than 8%, and prices that haven't moved for hours, are left out. "Most likely" only takes prices the model rates fair or better. Replaces what's in your slip; the slip page analyses it.</p>
     </section>` : ''}`;
+  // web version: download the season data in the background while this page is read, so opening a
+  // player doesn't wait on it (only the download; the processing waits until a page needs it)
+  if (window.PROPDESK_STATIC) {
+    const go = () => import('./static.js').then((m) => m.prefetch()).catch(() => {});
+    if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 1500);
+  }
   const closeMenus = () => view.querySelectorAll('.gen-menu').forEach((m) => { m.hidden = true; m.previousElementSibling.setAttribute('aria-expanded', 'false'); });
   view.onclick = (e) => {
     const toggle = e.target.closest('.gen-btn');

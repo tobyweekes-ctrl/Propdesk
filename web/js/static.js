@@ -6,33 +6,36 @@ import { createRoutes, dispatch } from '../server/routes.mjs';
 import { indexLeague, linesFor, ladderFor } from '../server/data/league.mjs';
 import { teamAbbr } from '../server/teams.mjs';
 import { todayET } from '../server/util.mjs';
+import { expandSeason } from './expand.js';
 
 const ESPN = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 const KEY = 'propdesk.entries.v1';
 const getJson = async (url) => { const r = await fetch(url, { cache: 'no-cache' }); if (!r.ok) throw new Error(`${r.status} ${url}`); return r.json(); };
 
+// build info: embedded in index.html by the build (no round trip), else fetched once
+let metaP;
+const meta = () => (metaP ||= globalThis.PROPDESK_META ? Promise.resolve(globalThis.PROPDESK_META) : getJson('data/meta.json'));
+
+// the data files, downloaded once; prefetch() starts this early (on the landing page) without the
+// processing, which waits until a page needs the full data
+let filesP;
+const files = () => (filesP ||= meta().then((m) => {
+  const v = encodeURIComponent(m.generated);
+  return Promise.all([
+    getJson(`data/season-${m.previous}.json?v=${v}`), getJson(`data/season-${m.current}.json?v=${v}`),
+    getJson(`data/slate.json?v=${v}`), getJson(`data/injuries.json?v=${v}`), getJson(`data/odds.json?v=${v}`),
+  ]);
+}));
+export const prefetch = () => { files().catch(() => { filesP = null; }); };
+
 let ready;
 function load() {
   ready ||= (async () => {
-    const meta = await getJson('data/meta.json');
-    const v = encodeURIComponent(meta.generated);
-    const [s0, s1, slates, injuries, odds] = await Promise.all([
-      getJson(`data/season-${meta.previous}.json?v=${v}`), getJson(`data/season-${meta.current}.json?v=${v}`),
-      getJson(`data/slate.json?v=${v}`), getJson(`data/injuries.json?v=${v}`), getJson(`data/odds.json?v=${v}`),
-    ]);
-    const expand = (S) => ({
-      season: S.season, source: S.source,
-      players: S.players.map(([id, name, team, pos]) => ({ id, name, team, pos })),
-      games: S.rows.map((r) => {
-        const o = Object.fromEntries(S.cols.map((c, i) => [c, r[i]]));
-        o.home = o.home === 1; o.starter = o.starter === 1;
-        return o;
-      }),
-    });
+    const [m, [s0, s1, slates, injuries, odds]] = await Promise.all([meta(), files()]);
     const today = todayET();
-    const L = indexLeague({ current: meta.current, previous: meta.previous, seasons: { [meta.current]: expand(s1), [meta.previous]: expand(s0) }, today, source: s1.source });
-    return { meta, L, today, slates, injuries, odds, live: { slate: null } };
-  })();
+    const L = indexLeague({ current: m.current, previous: m.previous, seasons: { [m.current]: expandSeason(s1), [m.previous]: expandSeason(s0) }, today, source: s1.source });
+    return { meta: m, L, today, slates, injuries, odds, live: { slate: null } };
+  })().catch((e) => { ready = null; filesP = null; throw e; });
   return ready;
 }
 
@@ -116,8 +119,6 @@ async function backend() {
 }
 
 // ---------- light routes: answered from small files, without downloading the season data ----------
-let metaP;
-const meta = () => (metaP ||= getJson('data/meta.json'));
 const light = {
   '/api/stats': async () => (await meta()).stats,
   '/api/health': async () => {
