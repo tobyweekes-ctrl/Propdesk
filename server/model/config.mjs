@@ -15,6 +15,16 @@ export const DEFAULTS = {
   blend: {
     rateK: 12,               // per-minute production (pts, reb, ast)
     fg3mRateK: 20,           // 3PM is noisier, so it needs more games
+    // Changed team: multiplies rateK / fg3mRateK, so the new team's per-minute numbers count sooner (a new
+    // team often means a new role). Backtest 2025-26, first 10 games with a new team: P+R error 6.037 ->
+    // 6.002; players whose new-team rate ran 20%+ above last season went over an estimated line 58-63% of
+    // the time while the model said 51% (now 54-55%); everyone else unchanged.
+    tradedRateScale: 0.2,
+    // Changed team: last-5 / last-10 form from new-team games only (old-team games mixed into the windows
+    // dragged a new role back toward the old one). Backtest 2025-26, first 10 games with a new team, on top
+    // of tradedRateScale: P+R error 6.002 -> 5.979, PRA 6.641 -> 6.598, points 5.110 -> 5.084, rebounds
+    // 1.931 -> 1.915; overall a hair better on every stat.
+    tradedFormNewTeamOnly: true,
     minutesK: 5,             // role shows up quickly
     minutesKTraded: 2,       // changed team: last season's minutes barely count
     teamK: 15,               // team pace / defence, in team games

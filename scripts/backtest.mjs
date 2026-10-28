@@ -101,6 +101,13 @@ for (const date of testDates) {
           baseSeason: ctx.curRows.length ? v(ctx.curRows) : v(ctx.prevRows), baseL10: v(ctx.logs.slice(-10)),
           line, pOver: e.model.over, side: e.side, confidence: e.confidence, outcome: actual > line ? 'over' : 'under',
           mateOut: ctx.teammatesOut.length > 0, oppOut: ctx.oppOut.length > 0, group: ctx.group,
+          traded: ctx.traded, teamN: ctx.teamRows.length, curN: ctx.curRows.length,
+          // per-minute rate for this stat with the current team this season vs last season (role change)
+          rateRatio: (() => {
+            const r = (rows) => { const m = rows.reduce((a, x) => a + x.min, 0); return m >= 30 ? rows.reduce((a, x) => a + statValue(x, stat), 0) / m : null; };
+            const a = r(ctx.teamRows), b = r(ctx.prevRows);
+            return a != null && b ? a / b : null;
+          })(),
           vac: Object.fromEntries(['pts', 'reb', 'ast'].map((k) => [k, ctx.teammatesOut.reduce((a, m) => a + (m.avg?.[k] || 0), 0)])),
           vacSame: ctx.teammatesOut.filter((m) => m.group === ctx.group).reduce((a, m) => a + (m.avg?.reb || 0), 0),
           oppVacReb: ctx.oppOut.reduce((a, m) => a + (m.avg?.reb || 0), 0),

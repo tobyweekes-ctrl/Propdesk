@@ -22,7 +22,7 @@ function rate(rows, s) {
 function componentRate(ctx, s, cfg, minutes) {
   const A = cfg.adjust;
   const factors = [];
-  const k = s === 'fg3m' ? cfg.blend.fg3mRateK : cfg.blend.rateK;
+  const k = (s === 'fg3m' ? cfg.blend.fg3mRateK : cfg.blend.rateK) * (ctx.traded ? cfg.blend.tradedRateScale ?? 1 : 1);
   const rc = rate(ctx.curRows, s), rp = rate(ctx.prevRows, s);
   const w = rp == null ? 1 : rc == null ? 0 : seasonWeight(ctx.curRows.length, k);
   let seasonRate = rc == null && rp == null ? rate(ctx.logs, s) : w * (rc ?? 0) + (1 - w) * (rp ?? 0);
@@ -33,7 +33,10 @@ function componentRate(ctx, s, cfg, minutes) {
   if (prior != null && cfg.blend.priorGames > 0) seasonRate = (n * seasonRate + cfg.blend.priorGames * prior) / (n + cfg.blend.priorGames);
 
   // recent-form windows only count once there are more games than the window itself
-  const parts = [[cfg.recency.season, seasonRate], [n > 10 ? cfg.recency.last10 : 0, rate(ctx.logs.slice(-10), s)], [n > 5 ? cfg.recency.last5 : 0, rate(ctx.logs.slice(-5), s)]]
+  // changed team: form windows can use only games for the new team (cfg.blend.tradedFormNewTeamOnly)
+  const form = ctx.traded && cfg.blend.tradedFormNewTeamOnly ? ctx.teamRows : ctx.logs;
+  const fn = form.length;
+  const parts = [[cfg.recency.season, seasonRate], [fn > 10 ? cfg.recency.last10 : 0, rate(form.slice(-10), s)], [fn > 5 ? cfg.recency.last5 : 0, rate(form.slice(-5), s)]]
     .filter(([, v]) => v != null);
   const wsum = parts.reduce((a, [wt]) => a + wt, 0);
   const base = parts.reduce((a, [wt, v]) => a + wt * v, 0) / wsum;
