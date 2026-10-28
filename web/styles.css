@@ -165,7 +165,7 @@ table.best tr:hover td { background: var(--panel-2); }
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
 .verdict.bet { background: var(--pos); border-color: var(--pos); color: var(--pos-ink); }
 .verdict.bet .v-notes, .verdict.bet dt { color: rgba(18, 22, 10, .7); }
-.v-main { display: flex; flex-direction: column; gap: 2px; }
+.v-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 460px; }
 .v-word { font: 800 52px/0.9 var(--cond); letter-spacing: .01em; }
 .v-sub { font: 700 13px var(--sans); letter-spacing: .04em; text-transform: uppercase; }
 .verdict dl { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 0; }
@@ -175,6 +175,8 @@ table.best tr:hover td { background: var(--panel-2); }
 .v-actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
 .verdict.bet .btn { background: var(--pos-ink); color: var(--pos); border-color: var(--pos-ink); }
 .verdict.bet .pos, .verdict.bet .neg, .verdict.bet .dim { color: var(--pos-ink); }
+/* no bet: the model's lean and the price that would make it one */
+.verdict.soft .v-word { color: var(--text); }
 /* low-confidence pick: outlined, not filled */
 .verdict.lean { border-color: var(--pos); }
 .verdict.lean .v-word { color: var(--pos); }

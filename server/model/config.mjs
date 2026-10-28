@@ -52,10 +52,19 @@ export const DEFAULTS = {
     h2hK: 15,                // head-to-head shrinkage in games (3 games -> 17% weight)
     h2hCap: 0.1,             // max ±10% from head-to-head
     h2hMinGames: 3,          // fewer games than this vs the opponent: no head-to-head adjustment
-    // per-minute usage bump when teammates are out: hurt real-data accuracy, so off by default
-    // (shrinkage so strong it never moves). Lower it to experiment, e.g. --set adjust.teammateRateK=60
-    teammateRateK: 1e6,
-    teammateRateCap: [0.95, 1.08],
+    // Teammates out: share of the production they leave (per game, last 10) that the remaining
+    // rotation picks up per minute, split by each player's own production, same position weighted up.
+    // Backtest 2025-26: with 40+ pts of teammates out, points bias -1.23 -> -0.67; centres with another
+    // centre out, rebounds -0.56 -> -0.23; overall accuracy unchanged or slightly better.
+    absorb: { pts: 0.2, reb: 0.25, ast: 0.2, fg3m: 0 },
+    absorbSameGroup: 4,
+    replacementLevel: 0.85,  // a replacement produces this share of a typical player at the position
+    absorbFrom: { reb: ['C'] }, // rebounds only shift when a centre is missing (forwards: no effect in the backtest)
+    absorbCap: 0.25,         // max +25% per-minute from absences
+    // Opponent players out: share of what they produced (above a replacement) that goes to this team.
+    // Off: for rebounds it moved centres' bias the right way (-0.19 -> -0.11) but made accuracy
+    // slightly worse in the 2025-26 backtest. The Context panel still reports opponent absences.
+    oppMissing: { pts: 0, reb: 0, ast: 0, fg3m: 0 },
   },
 
   dispersion: {

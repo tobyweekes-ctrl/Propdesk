@@ -20,6 +20,7 @@ function seasonStartOf(games, season) {
  * @param opts.T  league snapshot to read team-level stats from (backtest: a weekly snapshot). Defaults to L.
  * @param opts.injuries  injury report rows (live)
  * @param opts.teammatesOut  explicit list of teammate ids out (backtest); overrides injuries
+ * @param opts.oppOut  explicit list of opponent ids out (backtest); overrides injuries
  * @param opts.spread  game spread from this team's perspective (negative = favourite), optional
  * @param opts.minutesOverride  user-entered minutes projection
  */
@@ -38,37 +39,50 @@ export function buildContext(L, playerId, game, opts = {}) {
   const teamGamesBefore = (team) => (L.teamGameList.get(team) || []).filter((g) => g.date < game.date);
   const myTeamGames = teamGamesBefore(game.team);
 
-  // teammates who were in the rotation lately (so their absence tonight is new information)
-  // Look only at this season once it has games: someone injured since the opener is already
-  // reflected in this season's minutes, so his absence is not new information.
-  const seasonStart = seasonStartOf(myTeamGames, cur);
-  const thisSeason = myTeamGames.filter((g) => g.date >= seasonStart);
-  const recentTeamGames = (thisSeason.length >= 2 ? thisSeason : myTeamGames).slice(-4);
-  const needApps = Math.min(2, recentTeamGames.length);
-  const rotation = new Map(); // id -> {apps, min}
-  for (const g of recentTeamGames) {
-    for (const id of g.players) {
-      if (id === playerId) continue;
-      const r = L.playerLogs(id).find((x) => x.gameId === g.gameId);
-      const e = rotation.get(id) || { apps: 0, min: 0 };
-      e.apps++; e.min += r?.min || 0;
-      rotation.set(id, e);
+  // A team's rotation lately (so an absence tonight is new information), with each player's recent
+  // per-game numbers. Look only at this season once it has games: someone injured since the opener
+  // is already reflected in this season's numbers, so his absence is not new information.
+  const rotationOf = (team, skipId) => {
+    const tg = teamGamesBefore(team);
+    const seasonStart = seasonStartOf(tg, cur);
+    const thisSeason = tg.filter((g) => g.date >= seasonStart);
+    const recent = (thisSeason.length >= 2 ? thisSeason : tg).slice(-4);
+    const needApps = Math.min(2, recent.length);
+    const seen = new Map(); // id -> {apps, min}
+    for (const g of recent) {
+      for (const id of g.players) {
+        if (id === skipId) continue;
+        const r = L.playerLogs(id).find((x) => x.gameId === g.gameId);
+        const e = seen.get(id) || { apps: 0, min: 0 };
+        e.apps++; e.min += r?.min || 0;
+        seen.set(id, e);
+      }
     }
-  }
-  const activeMates = [...rotation.entries()]
-    .filter(([, e]) => e.apps >= needApps && e.min / e.apps >= 15)
-    .map(([id, e]) => ({ id, name: L.players.get(id)?.name, group: L.groupOf(id), min: e.min / e.apps }));
+    return [...seen.entries()]
+      .filter(([, e]) => e.apps >= needApps && e.min / e.apps >= 15)
+      .map(([id, e]) => ({ id, name: L.players.get(id)?.name, group: L.groupOf(id), min: e.min / e.apps, avg: recentAvg(id, team) }));
+  };
+  // per-game averages over the last 10 games for this team (stat production a teammate leaves behind)
+  const recentAvg = (id, team) => {
+    const rows = L.playerLogs(id).filter((r) => r.date < game.date && r.team === team && r.min > 0).slice(-10);
+    const out = { games: rows.length };
+    for (const k of ['min', 'pts', 'reb', 'ast', 'fg3m']) out[k] = rows.length ? mean(rows.map((r) => r[k])) : 0;
+    return out;
+  };
+  const outFrom = (rotation, team, ids) => {
+    if (ids) { const set = new Set(ids); return rotation.filter((m) => set.has(m.id)); }
+    const outNames = new Set((opts.injuries || []).filter((i) => i.team === team && OUT_STATUSES.test(i.status)).map((i) => normName(i.name)));
+    return rotation.filter((m) => outNames.has(normName(m.name)));
+  };
 
-  let teammatesOut;
-  if (opts.teammatesOut) {
-    const out = new Set(opts.teammatesOut);
-    teammatesOut = activeMates.filter((m) => out.has(m.id));
-  } else {
-    const outNames = new Set((opts.injuries || []).filter((i) => i.team === game.team && OUT_STATUSES.test(i.status)).map((i) => normName(i.name)));
-    teammatesOut = activeMates.filter((m) => outNames.has(normName(m.name)));
-  }
+  const activeMates = rotationOf(game.team, playerId);
+  const teammatesOut = outFrom(activeMates, game.team, opts.teammatesOut);
   const outIds = new Set(teammatesOut.map((m) => m.id));
   const availableMates = activeMates.filter((m) => !outIds.has(m.id));
+  const oppRotation = rotationOf(game.opp, null);
+  const oppOut = outFrom(oppRotation, game.opp, opts.oppOut);
+  const oppOutIds = new Set(oppOut.map((m) => m.id));
+  const oppAvailable = oppRotation.filter((m) => !oppOutIds.has(m.id));
 
   // team-level numbers, last season blended into this season by games played
   const teamStat = (team) => {
@@ -95,7 +109,8 @@ export function buildContext(L, playerId, game, opts = {}) {
     restDays: restDays(myTeamGames.map((g) => g.date), game.date),
     oppRestDays: restDays(teamGamesBefore(game.opp).map((g) => g.date), game.date),
     absence: absenceInfo(logs, myTeamGames, game.date),
-    teammatesOut, availableMates,
+    teammatesOut, availableMates, oppOut, oppAvailable,
+    selfAvg: recentAvg(playerId, game.team),
     h2hRows: logs.filter((r) => r.opp === game.opp),
     team: teamStat(game.team), opp: teamStat(game.opp), league: leagueStat,
     posDef, marginOf,
@@ -103,6 +118,7 @@ export function buildContext(L, playerId, game, opts = {}) {
     teams: { cur: T.bySeason[cur]?.summary.teams || {}, prev: T.bySeason[prev]?.summary.teams || {} },
     ownInjury: (opts.injuries || []).find((i) => i.team === game.team && normName(i.name) === normName(player?.name || '')) || null,
     priorRate: (s) => T.priorRate?.(L.groupOf(playerId), s) ?? null,
+    groupRate: (g, s) => T.priorRate?.(g, s) ?? null,
     lineup: (r) => L.lineup(r.gameId, r.team),
     mateSeasons: (id) => new Set(L.playerLogs(id).filter((r) => r.date < game.date).map((r) => `${r.season}|${r.team}`)),
     spread: opts.spread ?? null,

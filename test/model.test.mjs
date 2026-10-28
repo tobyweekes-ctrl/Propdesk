@@ -153,9 +153,10 @@ test('a teammate out since opening night is not treated as new information', asy
 });
 
 test('config override can set one element of an array', () => {
-  const c = mergeConfig(DEFAULTS, parseOverride('adjust.teammateRateCap.1=1.08'));
-  assert.ok(Array.isArray(c.adjust.teammateRateCap));
-  assert.deepEqual(c.adjust.teammateRateCap, [DEFAULTS.adjust.teammateRateCap[0], 1.08]);
+  const base = { cap: [0.95, 1.05] };
+  const c = mergeConfig(base, parseOverride('cap.1=1.08'));
+  assert.ok(Array.isArray(c.cap));
+  assert.deepEqual(c.cap, [0.95, 1.08]);
 });
 
 test('context notes: every section present, tones valid, matchup facts match the context', () => {
@@ -173,7 +174,7 @@ test('context notes: every section present, tones valid, matchup facts match the
   assert.ok(n.sections[0].notes.some((x) => x.key === `mate:${mate.id}` && x.title.includes(mate.name)));
   const h2h = n.sections[1].notes[0];
   assert.ok(ctx0.h2hRows.length ? h2h.text.startsWith(`${ctx0.h2hRows.length} game`) : h2h.key === 'h2h-none');
-  assert.ok(/^Context moves the projection/.test(n.summary.text));
+  assert.ok(/^Tonight.s context/.test(n.summary.text));
   // an absent player gets a first-game-back note
   const ret = demoInternals.storyPlayer(demoInternals.STORY.find((s) => s[2] === 'returning'));
   const r = analyse({ L, playerId: ret.id, game: { date: L.today, team: ret.team, opp: 'BOS', home: true }, stat: 'pts' });

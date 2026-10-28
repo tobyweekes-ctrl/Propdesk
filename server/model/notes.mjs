@@ -73,16 +73,31 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
     avail.push({ key: 'returned', tone: ramping && ramp.value < -0.5 ? 'down' : 'flat', title: `Back ${a.gamesSinceReturn} game${a.gamesSinceReturn === 1 ? '' : 's'} from ${an(a.gamesMissed)} ${a.gamesMissed}-game absence`,
       text: `Minutes since returning: ${a.minutesSinceReturn.map((x) => Math.round(x)).join(', ')}${pre != null ? `, against ${f1(pre)} before` : ''}. ${ramping ? `The model expects ${f1(m.proj)} tonight as the ramp continues; a jump to full minutes is possible but not assumed.` : 'Minutes look back to normal.'}` });
   }
-  for (const mate of ctx.teammatesOut) {
+  // what a missing player usually puts up, for the parts of this stat
+  const line3 = (x) => ['pts', 'reb', 'ast'].map((k) => `${f1(x.avg?.[k] || 0)} ${k}`).join(', ');
+  const share = sp.factors.find((f) => f.key === 'mates');
+  const shareGame = share ? (share.value - 1) / share.value * sp.mean : 0; // per game, from the per-minute factor
+  ctx.teammatesOut.forEach((mate, i) => {
     const step = m.steps.find((s) => s.key === `mate:${mate.id}`);
     const delta = step?.value ?? 0;
     const hist = step?.note?.match(/^(\d+)g without him: ([+-]?[\d.]+) \(weight (\d+)%/);
-    avail.push({ key: `mate:${mate.id}`, tone: toneOf(delta / Math.max(1, m.base), 0.015), title: `${mate.name} out`,
-      text: `${mate.name} plays ${Math.round(mate.min)} minutes a night. ${hist ? `In ${hist[1]} games without them, ${name}'s minutes moved ${Number(hist[2]) >= 0 ? '+' : ''}${hist[2]}; the model gives that ${hist[3]}% weight and the rest to a positional share of the freed minutes.` : 'There are few games without them to learn from, so the model hands over a modest share of their minutes by position.'} Net: ${delta >= 0 ? '+' : '−'}${f1(Math.abs(delta))} minutes.` });
-  }
-  const mates = sp.factors.find((f) => f.key === 'mates');
-  if (mates && Math.abs(mates.value - 1) > 0.01) {
-    avail.push({ key: 'mates-rate', tone: toneOf(mates.value - 1, 0.01), title: 'Usage without them', text: `Per-minute ${short} shift ${signedPct(mates.value - 1)} when those teammates sit (${mates.note.replace(/^per-min without: /, '')}).` });
+    const minText = Math.abs(delta) < 0.25
+      ? `${name}'s minutes barely change${hist ? ` (in ${hist[1]} games without them they moved ${Number(hist[2]) >= 0 ? '+' : ''}${hist[2]})` : ''}.`
+      : `${name} gets ${delta > 0 ? '+' : '−'}${f1(Math.abs(delta))} minutes${hist ? `, based partly on ${hist[1]} games without them` : ', a share of theirs by position'}.`;
+    // the production share is reported once, on the first absence, for all of them together
+    const shareText = i === 0 && shareGame >= 0.1
+      ? ` With ${ctx.teammatesOut.length > 1 ? 'those players' : 'them'} out, ${name} also picks up about +${f1(shareGame)} ${short} a game of the production they leave (what they put up above a typical replacement, more of it to the same position).`
+      : '';
+    const tone = toneOf((delta / Math.max(1, m.base)) + (i === 0 ? shareGame / Math.max(1, sp.mean) : 0), 0.015);
+    avail.push({ key: `mate:${mate.id}`, tone, title: `${mate.name} out (${g.team})`,
+      text: `Last 10 games: ${Math.round(mate.avg?.min || mate.min)} minutes, ${line3(mate)}. ${minText}${shareText}` });
+  });
+  for (const o of ctx.oppOut) {
+    const bigBoards = has('reb') && o.group === 'C' && ctx.group !== 'G' && (o.avg?.reb || 0) >= 6;
+    avail.push({ key: `opp:${o.id}`, tone: bigBoards && ctx.group === 'C' ? 'up' : 'flat', title: `${o.name} out (${g.opp})`,
+      text: `Last 10 games: ${Math.round(o.avg?.min || o.min)} minutes, ${line3(o)}. ${bigBoards
+        ? `Without their centre, ${g.opp} lose some size on the glass. Last season, centres facing a team missing its starting centre beat their projection by about 0.3 rebounds: real but small and noisy, so the model doesn't add it. Lean slightly over on ${name}'s rebounds if anything.`
+        : 'Their replacement absorbs most of the role; no adjustment for this player.'}` });
   }
   if (ctx.traded) {
     avail.push({ key: 'traded', tone: 'flat', title: `New team: ${ctx.teamRows.length} game${ctx.teamRows.length === 1 ? '' : 's'} with ${g.team}`,
@@ -91,7 +106,7 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
   if (ctx.logs.length < 10) {
     avail.push({ key: 'thin', tone: 'flat', title: `Only ${ctx.logs.length} games of history`, text: 'Thin sample: the projection leans on a typical player at this position, and the confidence is capped.' });
   }
-  if (!avail.length) avail.push({ key: 'clear', tone: 'flat', title: 'No availability flags', text: `${name} has played every recent game and no regular teammates are listed out.` });
+  if (!avail.length) avail.push({ key: 'clear', tone: 'flat', title: 'No availability flags', text: `${name} has played every recent game and no regular rotation players on either team are listed out.` });
 
   // ---------- opponent history ----------
   const hist = [];
@@ -109,7 +124,7 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
     const hf = sp.factors.find((f) => f.key === 'h2h');
     const weight = enough ? Math.round(seasonWeight(h.length, cfg.adjust.h2hK) * 100) : 0;
     hist.push({ key: 'h2h', tone: enough ? toneOf(rateRatio - 1, 0.08) : 'flat', title: `${word} against ${g.opp}`,
-      text: `${h.length} game${h.length === 1 ? '' : 's'}: ${f1(avgH)} ${short} in ${f1(minH)} minutes, against ${f1(avgAll)} in ${f1(minAll)} overall (per minute ${signedPct(rateRatio - 1)}).${over != null ? ` Over ${line} in ${over} of ${h.length}.` : ''} ${enough ? `The model gives this ${weight}% weight${hf ? ` (${signedPct(hf.value - 1)})` : ''}: a handful of games is mostly noise.` : `Under ${cfg.adjust.h2hMinGames} games, so the model ignores it.`}` });
+      text: `${h.length} game${h.length === 1 ? '' : 's'}: ${f1(avgH)} ${short} in ${f1(minH)} minutes, against ${f1(avgAll)} in ${f1(minAll)} overall (per minute ${signedPct(rateRatio - 1)}).${over != null ? ` Over ${line} in ${over} of ${h.length}.` : ''} ${!enough ? `Under ${cfg.adjust.h2hMinGames} games, so the model ignores it.` : hf && Math.round(Math.abs(hf.value - 1) * 100) >= 1 ? `The model gives it ${weight}% weight (${signedPct(hf.value - 1)} on the projection): a handful of games is mostly noise.` : 'Too close to normal, and too few games, to move the projection.'}` });
     const last = h.at(-1);
     hist.push({ key: 'h2h-last', tone: 'flat', title: 'Last meeting', text: `${last.date}: ${count(statValue(last, stat), short)} in ${Math.round(last.min)} minutes${last.team !== g.team ? ` (for ${last.team})` : ''}.` });
   }
@@ -136,16 +151,17 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
     const all = Object.keys({ ...ctx.teams.cur, ...ctx.teams.prev }).map((t) => [t, posFactor(t)]).filter(([, v]) => v != null).sort((x, y) => y[1] - x[1]);
     const rank = all.findIndex(([t]) => t === g.opp) + 1;
     const dv = sp.factors.find((f) => f.key === 'defence');
-    const word = oppPos >= 1.04 ? 'generous' : oppPos <= 0.96 ? 'stingy' : 'about average';
+    const word = oppPos >= 1.04 ? 'generous' : oppPos <= 0.96 ? 'stingy' : 'average';
     def.push({ key: 'pos', tone: toneOf(oppPos - 1, 0.04), title: `${g.opp} vs ${GROUP[ctx.group]}: ${word}`,
-      text: `They allow ${signedPct(oppPos - 1)} ${short} per minute to ${GROUP[ctx.group]} compared with the league${rank ? ` (${rankWord({ rank, of: all.length })} of ${all.length})` : ''}. The model applies ${Math.round(cfg.adjust.defWeight * 100)}% of that${dv ? `: ${signedPct(dv.value - 1)}` : ''}, because these numbers are noisy.` });
+      text: Math.abs(oppPos - 1) < 0.03
+        ? `${short[0].toUpperCase() + short.slice(1)} allowed to ${GROUP[ctx.group]} are within 3% of the league average, so no real matchup effect.`
+        : `They allow ${signedPct(oppPos - 1)} ${short} per minute to ${GROUP[ctx.group]} compared with the league${rank ? ` (${rankWord({ rank, of: all.length })} of ${all.length})` : ''}. The model applies half of that${dv ? ` (${signedPct(dv.value - 1)})` : ''}, because these numbers are noisy.` });
   }
   if (opp) {
     const d = rankOf(ps.teams, g.opp, 'drtg');
-    if (d) {
+    if (d && has('pts')) {
       const best = d.of + 1 - d.rank; // lowest drtg = best
-      const scoring = has('pts');
-      def.push({ key: 'drtg', tone: scoring ? (best <= EXTREME ? 'down' : best > d.of - EXTREME ? 'up' : 'flat') : 'flat',
+      def.push({ key: 'drtg', tone: best <= EXTREME ? 'down' : best > d.of - EXTREME ? 'up' : 'flat',
         title: `Defensive rating ${f1(d.value)} (${rankWord({ rank: best, of: d.of }, 'best', 'worst')})`, text: `Points allowed per 100 possessions ${ps.label}, league average ${f1(d.league)}.${ps.label === 'last season' ? ` ${g.opp} have only ${ps.games} games this season, so last season's numbers are shown.` : ''}` });
     }
     // style traits, kept to the ones that matter for this stat and position
@@ -194,11 +210,12 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
   const k = cfg.blend.teamK;
   const tPace = blendTeam(ctx.team, 'pace', k), oPace = blendTeam(ctx.opp, 'pace', k);
   const lgPace = blendTeam({ cur: ctx.league.cur && { ...ctx.league.cur, games: ctx.team.cur?.games || 0 }, prev: ctx.league.prev }, 'pace', k);
+  const paceSide = (t, v, lg) => `${t} ${Math.abs(v - lg) < 0.75 ? 'about average' : v > lg ? 'faster' : 'slower'} (${f1(v)})`;
   if (tPace && oPace && lgPace) {
     const gp = tPace + oPace - lgPace;
     const diff = gp - lgPace;
     script.push({ key: 'pace', tone: diff > 1.5 ? 'up' : diff < -1.5 ? 'down' : 'flat', title: `${diff > 1.5 ? 'Fast' : diff < -1.5 ? 'Slow' : 'Average'} pace`,
-      text: `Expected ${f1(gp)} possessions each (${g.team} ${f1(tPace)}, ${g.opp} ${f1(oPace)}, league ${f1(lgPace)}). ${Math.abs(diff) > 1.5 ? `${diff > 0 ? 'More' : 'Fewer'} possessions mean ${diff > 0 ? 'more' : 'fewer'} chances for every counting stat.` : 'No real pace effect.'}` });
+      text: `Possessions per game: ${paceSide(g.team, tPace, lgPace)}, ${paceSide(g.opp, oPace, lgPace)}, league ${f1(lgPace)}. Each team's gap from average adds up, so expect about ${Math.round(gp)} tonight. ${Math.abs(diff) > 1.5 ? `${diff > 0 ? 'More' : 'Fewer'} possessions mean ${diff > 0 ? 'more' : 'fewer'} chances for every counting stat.` : 'No real pace effect.'}` });
   }
   const em = m.expectedMargin;
   const bstep = m.steps.find((s) => s.key === 'blowout');
@@ -229,7 +246,9 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
   const totalMove = projBase > 0 ? sp.mean / projBase - 1 : 0;
   const summary = {
     tone: toneOf(totalMove, 0.03),
-    text: `Context moves the projection ${signedPct(totalMove)} from ${f1(projBase)} to ${f1(sp.mean)} ${short}: minutes ${minMove >= 0 ? '+' : '−'}${f1(Math.abs(minMove))} (${f1(m.base)} → ${f1(m.proj)}), per-minute rate ${signedPct(rateMove)}.`,
+    text: Math.abs(totalMove) < 0.015
+      ? `Tonight's context roughly cancels out: projection ${f1(sp.mean)} ${short}, the same as ${name}'s normal rate over ${f1(m.proj)} minutes.`
+      : `Tonight's context moves ${name}'s projection ${totalMove > 0 ? 'up' : 'down'} ${signedPct(totalMove).replace(/^[+−]/, '')}, from ${f1(projBase)} to ${f1(sp.mean)} ${short}. Minutes ${f1(m.base)} → ${f1(m.proj)}; per-minute output ${Math.abs(rateMove) < 0.005 ? 'unchanged' : signedPct(rateMove)}.`,
   };
 
   return {

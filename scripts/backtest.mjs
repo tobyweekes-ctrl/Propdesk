@@ -75,16 +75,18 @@ for (const date of testDates) {
   for (const r of S1.games) if (r.date === date) (games.get(`${r.gameId}|${r.team}`) || games.set(`${r.gameId}|${r.team}`, []).get(`${r.gameId}|${r.team}`)).push(r);
   for (const rows of games.values()) {
     const { team, opp, home } = rows[0];
-    const lineup = new Set(rows.map((r) => r.playerId));
-    // out = on this team's roster (his latest game before tonight was for this team) but not in
-    // tonight's box score: a proxy for the injury report. Players traded away are not "out".
-    const out = [...new Set(full.bySeason[season].rows.filter((r) => r.team === team && r.date < date).map((r) => r.playerId))]
-      .filter((id) => !lineup.has(id) && full.playerLogs(id).filter((r) => r.date < date).at(-1)?.team === team);
+    // out = on the team's roster (latest game before tonight was for this team) but not in tonight's
+    // box score: a proxy for the injury report. Players traded away are not "out".
+    const outOf = (t, played) => [...new Set(full.bySeason[season].rows.filter((r) => r.team === t && r.date < date).map((r) => r.playerId))]
+      .filter((id) => !played.has(id) && full.playerLogs(id).filter((r) => r.date < date).at(-1)?.team === t);
+    const out = outOf(team, new Set(rows.map((r) => r.playerId)));
+    const oppRows = games.get(`${rows[0].gameId}|${opp}`) || [];
+    const oppOut = outOf(opp, new Set(oppRows.map((r) => r.playerId)));
     for (const row of rows) {
       const prior = full.playerLogs(row.playerId).filter((r) => r.date < date);
       if (prior.length < MIN_PRIOR_GAMES || mean(prior.slice(-5).map((r) => r.min)) < MIN_RECENT_MIN) continue;
       const game = { date, team, opp, home };
-      const ctx = buildContext(full, row.playerId, game, { T, teammatesOut: out });
+      const ctx = buildContext(full, row.playerId, game, { T, teammatesOut: out, oppOut });
       const pp = projectPlayer(ctx, cfg);
       const q = quality(ctx, pp.minutes);
       for (const stat of stats) {
@@ -98,6 +100,10 @@ for (const date of testDates) {
           date, stat, player: row.playerId, actual, mean: sp.mean, sd: sp.sd, minProj: pp.minutes.proj, minActual: row.min,
           baseSeason: ctx.curRows.length ? v(ctx.curRows) : v(ctx.prevRows), baseL10: v(ctx.logs.slice(-10)),
           line, pOver: e.model.over, side: e.side, confidence: e.confidence, outcome: actual > line ? 'over' : 'under',
+          mateOut: ctx.teammatesOut.length > 0, oppOut: ctx.oppOut.length > 0, group: ctx.group,
+          vac: Object.fromEntries(['pts', 'reb', 'ast'].map((k) => [k, ctx.teammatesOut.reduce((a, m) => a + (m.avg?.[k] || 0), 0)])),
+          vacSame: ctx.teammatesOut.filter((m) => m.group === ctx.group).reduce((a, m) => a + (m.avg?.reb || 0), 0),
+          oppVacReb: ctx.oppOut.reduce((a, m) => a + (m.avg?.reb || 0), 0),
         });
       }
     }
@@ -152,6 +158,11 @@ const report = {
     byStat: Object.fromEntries(Object.entries(byStat).map(([s, rs]) => [s, roi(rs)])),
     byConfidence: Object.fromEntries(['HIGH', 'MEDIUM', 'LOW'].map((c) => [c, roi(rec.filter((x) => x.confidence === c))])),
   },
+  // the games where a rotation player was missing: where the absence adjustments act
+  absences: Object.fromEntries(['mateOut', 'oppOut'].map((k) => [k, Object.fromEntries(Object.entries(byStat).map(([s, rs]) => {
+    const xs = rs.filter((x) => x[k]);
+    return [s, { n: xs.length, maeModel: r3(mae(xs, (x) => x.mean)), bias: r3(mean(xs.map((x) => x.mean - x.actual))) }];
+  }))])),
   realLines: await realLineBacktest(),
   seconds: Math.round((Date.now() - t0) / 100) / 10,
 };
@@ -199,8 +210,9 @@ const file = opt('report', join(ROOT, 'reports', `backtest-${season}-${S1.source
 writeFileSync(file, JSON.stringify(report, null, 1));
 if (args.includes('--dump')) {
   // every prediction as CSV, for your own analysis
-  const cols = Object.keys(rec[0] || {});
+  const cols = Object.keys(rec[0] || {}).filter((c) => typeof rec[0][c] !== 'object');
   writeFileSync(file.replace(/\.json$/, '.csv'), [cols.join(','), ...rec.map((x) => cols.map((c) => x[c] ?? '').join(','))].join('\n'));
+  writeFileSync(file.replace(/\.json$/, '.jsonl'), rec.map((x) => JSON.stringify(x)).join('\n'));
 }
 
 if (!quiet) {
@@ -210,6 +222,9 @@ if (!quiet) {
   console.log('\nPROJECTION ACCURACY (mean absolute error; lower is better)');
   console.log('stat    n      model  season  last10  est.line   bias  spread');
   for (const [s, a] of Object.entries(report.accuracy)) console.log(`${s.padEnd(6)}${String(a.n).padStart(6)}  ${String(a.maeModel).padStart(6)}  ${String(a.maeSeasonAvg).padStart(6)}  ${String(a.maeLast10).padStart(6)}  ${String(a.maeEstLine).padStart(8)}  ${String(a.bias).padStart(6)}  ${a.spreadRatio}`);
+  for (const [k, label] of [['mateOut', 'teammate out'], ['oppOut', 'opponent player out']]) {
+    console.log(`\nGAMES WITH A ${label.toUpperCase()}   ${Object.entries(report.absences[k]).map(([st, x]) => `${st} n${x.n} mae ${x.maeModel} bias ${x.bias}`).join(' | ')}`);
+  }
   const c = report.calibration.all;
   console.log(`\nCALIBRATION  P(over estimated line)  Brier ${c.brier} (coin flip 0.25)  log loss ${c.logLoss}`);
   for (const b of c.buckets) console.log(`  predicted ${b.range.padEnd(8)} n=${String(b.n).padStart(6)}  avg ${pct(b.predicted)}  actual ${pct(b.actual)}`);

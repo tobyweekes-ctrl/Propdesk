@@ -103,7 +103,7 @@ function renderModel() {
     return;
   }
   if (!res.game || res.analysis?.error) {
-    $('#verdict').innerHTML = `<div class="verdict"><div class="v-main"><span class="v-word dim">${!res.game ? 'NO GAME' : 'NO DATA'}</span></div><p class="v-notes">${!res.game ? 'No game today, so there is nothing to price. History below.' : esc(res.analysis.error)}</p></div>`;
+    $('#verdict').innerHTML = `<div class="verdict"><div class="v-main"><span class="v-word dim">${!res.game ? 'NO GAME TODAY' : 'NOT ENOUGH DATA'}</span></div><p class="v-notes">${!res.game ? 'No game today, so there is nothing to price. History below.' : esc(res.analysis.error)}</p></div>`;
     $('#lines').innerHTML = ''; $('#check').innerHTML = ''; $('#details-inner').innerHTML = detailsHtml(null);
     renderLineParts();
     return;
@@ -130,29 +130,61 @@ const legFrom = (e, side) => ({
 const dur = (min) => (min == null ? 'an unknown time' : min < 60 ? `${min}m` : min < 48 * 60 ? `${Math.round(min / 60)}h` : `${Math.round(min / 1440)}d`);
 const ago = (min) => (min == null ? 'time unknown' : `${dur(min)} ago`);
 
+// P(stat > line) from the projection
+const pOverLine = (pmf, line) => pAtLeast(pmf, Math.floor(line) + 1);
+// the price at which a side becomes a bet: model chance at least the edge bar above the price's chance
+const poss = (n) => `${esc(n)}${/s$/i.test(n) ? "'" : "'s"}`;
+const valueAt = (p, a) => (p - a.config.threshold > 0.02 ? 1 / (p - a.config.threshold) : null);
+
 function verdictCard(a) {
   const h = a.headline;
   const p = a.projection;
   const side = h?.side;
-  const price = side ? (side === 'over' ? h.over : h.under) : null;
   const check = !side && h?.disagree;
-  const word = side ? `${side.toUpperCase()} ${fmt(h.line)}` : check ? 'NO PICK' : h ? 'PASS' : 'NO LINE';
-  const sub = side ? `${esc(h.bookTitle)} · ${odds(price)} · ${h.confidence.toLowerCase()} confidence`
-    : check ? `The model is ${pct(h.leanEdge, 0)} away from ${esc(h.bookTitle)}'s fair price, so something is probably missing`
-      : h?.stale ? `${esc(h.bookTitle)}'s price hasn't changed for ${dur(h.ageMin)}, too old to trust`
-        : h ? `No side clears the ${pct(a.config.threshold, 0)} edge bar` : 'Use the price checker below with your bookie\'s price';
-  const style = side ? (h.confidence === 'LOW' ? 'lean' : 'bet') : check ? 'warnv' : '';
+  const bar = pct(a.config.threshold, 0);
+  let word, sub, style = '', stats = '', note = '';
+  if (side) {
+    const price = side === 'over' ? h.over : h.under;
+    word = `${side.toUpperCase()} ${fmt(h.line)}`;
+    sub = `${esc(h.bookTitle)} · ${odds(price)} · ${h.confidence.toLowerCase()} confidence`;
+    style = h.confidence === 'LOW' ? 'lean' : 'bet';
+    stats = `<div><dt>Model ${side}</dt><dd>${pct(h.model[side])}</dd></div><div><dt>Edge</dt><dd>${edge(h.leanEdge)}</dd></div><div><dt>Value (EV)</dt><dd>${edge(h.ev[side])}</dd></div>`;
+  } else if (h) {
+    // a priced line without a bet: say which way the model leans and what price would make it one
+    const ls = h.leanSide || (h.model.over >= h.model.under ? 'over' : 'under');
+    const pm = h.model[ls];
+    const price = ls === 'over' ? h.over : h.under;
+    const need = valueAt(pm, a);
+    const fairish = (h.leanEdge ?? 0) < 0.01;
+    word = check ? 'CHECK NEWS' : h.stale ? `STALE · ${ls.toUpperCase()} ${fmt(h.line)}` : fairish ? `FAIR AT ${fmt(h.line)}` : `LEAN ${ls.toUpperCase()} ${fmt(h.line)}`;
+    sub = check ? `Model ${ls} ${pct(pm, 0)} vs ${esc(h.bookTitle)} ${pct(pm - h.leanEdge, 0)}: likely news the model can't see`
+      : h.stale ? `${poss(h.bookTitle)} price hasn't moved for ${dur(h.ageMin)}: check your bookie's current price`
+        : fairish ? `${esc(h.bookTitle)} have priced it right: no side clears the ${bar} edge bar`
+          : `${esc(h.bookTitle)} ${odds(price)} is too short to bet${need ? `. Value from ${odds(need)}` : ''}`;
+    style = check ? 'warnv' : 'soft';
+    stats = `<div><dt>Model ${ls}</dt><dd>${pct(pm)}</dd></div><div><dt>Fair price</dt><dd>${odds(1 / pm)}</dd></div>${check ? '' : `<div><dt>Bet ${ls} at</dt><dd class="pos">${need ? `${odds(need)}+` : '–'}</dd></div>`}`;
+    if (check) note = `When the model disagrees with a two-sided bookmaker price by more than ${pct(a.config.marketDisagreement ?? 0.08, 0)}, the bookmaker is usually reacting to something the model can't see: a role change, an injury, a minutes limit. Check the news before treating it as value.`;
+  } else {
+    // no bookmaker line: the model's own line and the prices that would be value either side
+    const L = p.modelLine;
+    const po = pOverLine(p.pmf, L), pu = 1 - po;
+    const ls = po >= pu ? 'over' : 'under';
+    const pm = Math.max(po, pu);
+    word = `MODEL LINE ${fmt(L)}`;
+    sub = `No bookmaker line yet · model ${ls} ${fmt(L)} at ${pct(pm, 0)}`;
+    style = 'soft';
+    stats = `<div><dt>Fair over ${fmt(L)}</dt><dd>${odds(1 / po)}</dd></div><div><dt>Fair under</dt><dd>${odds(1 / pu)}</dd></div><div><dt>Bet over at</dt><dd class="pos">${valueAt(po, a) ? `${odds(valueAt(po, a))}+` : '–'}</dd></div><div><dt>Bet under at</dt><dd class="pos">${valueAt(pu, a) ? `${odds(valueAt(pu, a))}+` : '–'}</dd></div>`;
+    note = 'Got a price from your bookie? Put it in the price checker below, or add the line under Model details.';
+  }
   return `<div class="verdict ${style}">
     <div class="v-main"><span class="v-word">${word}</span><span class="v-sub">${sub}</span></div>
     <dl>
-      ${h && !check ? `<div><dt>Model ${side || h.leanSide || 'over'}</dt><dd>${pct(side ? h.model[side] : h.model[h.leanSide || 'over'])}</dd></div>
-      <div><dt>Edge</dt><dd>${edge(h.leanEdge)}</dd></div>
-      <div><dt>Value (EV)</dt><dd>${edge(side ? h.ev[side] : h.leanSide ? h.ev[h.leanSide] : null)}</dd></div>` : ''}
+      ${stats}
       <div><dt>Projection</dt><dd>${fmt(p.mean)}</dd></div>
       <div><dt>Minutes</dt><dd>${fmt(p.minutes.proj)}</dd></div>
     </dl>
     ${side ? `<div class="v-actions"><button class="btn" data-addh="1">+ Add ${side} ${fmt(h.line)} to slip</button></div>` : ''}
-    ${check ? `<p class="v-notes">When the model disagrees with a two-sided bookmaker price by more than ${pct(a.config.marketDisagreement ?? 0.08, 0)}, the bookmaker is usually reacting to something the model can't see: a role change, an injury, a minutes limit. Check the news before treating it as value.</p>` : ''}
+    ${note ? `<p class="v-notes">${note}</p>` : ''}
     <p class="v-notes">Data quality ${Math.round(a.quality.score * 100)}%${a.quality.notes.length ? ` · ${a.quality.notes.map(esc).join(' · ')}` : ''}</p>
   </div>`;
 }
@@ -176,7 +208,7 @@ function lineRow(e) {
     <div class="who">${esc(e.bookTitle)}${tag}${e.stale ? '<span class="tag">stale</span>' : ''}<small>${[mv, age].filter(Boolean).join(' · ') || '&nbsp;'}</small></div>
     <div class="ln">${fmt(e.line)}</div>
     <div class="side-btns">${btn('over')}${btn('under')}</div>
-    <div class="lmeta"><span>Pick <b class="${e.side ? 'pos' : e.verdict === 'CHECK' ? 'warn' : 'dim'}">${e.verdict === 'CHECK' ? 'CHECK NEWS' : e.verdict}</b></span><span>Edge ${s ? `${s} ${edge(e.edge[s])}` : '–'}</span><span>EV ${edge(s ? e.ev[s] : null)}</span>${e.source === 'manual' ? `<button class="mini ghost" data-del="${esc(e.id)}">remove</button>` : ''}</div>
+    <div class="lmeta"><span>Pick <b class="${e.side ? 'pos' : e.verdict === 'CHECK' ? 'warn' : 'dim'}">${e.side ? e.verdict : e.verdict === 'CHECK' ? 'CHECK NEWS' : s && (e.edge[s] ?? 0) >= 0.01 ? `lean ${s}` : 'fair'}</b></span><span>Edge ${s ? `${s} ${edge(e.edge[s])}` : '–'}</span><span>EV ${edge(s ? e.ev[s] : null)}</span>${e.source === 'manual' ? `<button class="mini ghost" data-del="${esc(e.id)}">remove</button>` : ''}</div>
   </div>`;
 }
 

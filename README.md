@@ -137,7 +137,9 @@ For each player, stat and line:
 2. **Per-minute rate** (`projection.mjs`) for pts, reb, ast and 3PM: this season vs last season `n/(n+12)`
    (3PM `n/(n+20)`), then 70% season, 20% last 10, 10% last 5. Multiplied by home/away, back-to-back, matchup
    pace, opponent defence vs his position (guards / forwards / centres), head-to-head (`n/(n+15)`, capped ±10%),
-   and the usage bump from teammates out. Combos sum their parts.
+   and teammates out: 20% of the points and assists a missing teammate produced above a typical replacement
+   shifts to the players left (25% of rebounds when the missing player is a centre), more to the same
+   position. Combos sum their parts.
 3. **Distribution** (`distributions.mjs`): negative binomial with dispersion fitted to his game-to-game spread
    (it falls back to Poisson when the data show no extra spread, as with most 3PM), mixed over the minutes
    uncertainty, plus the uncertainty of the estimate itself (sampling error + `modelCv`).
@@ -185,8 +187,12 @@ Calibration is close between 30% and 80%. Below 30% the model is still too confi
 16–26%, overs actually landed 31–33% of the time, and this is worst late in the season (load management,
 tanking). Treat strong UNDER calls with care. What tuning on real data changed, settings chosen on
 Dec–Jan and checked on Oct–Nov and Feb–Apr:
-- the teammates-out adjustment at full strength made projections worse, so it now applies gently
-  (25% minutes redistribution, heavy shrinkage) and the per-minute usage bump is off;
+- the teammates-out adjustment at full strength made projections worse, so minutes redistribution is
+  gentle (25%, heavy shrinkage). A flat per-minute usage bump also hurt; counting only what the missing
+  player produced above a replacement works: with 40+ points of teammates out, points bias went from
+  −1.23 to −0.67, and centres with another centre out from −0.56 to −0.23 rebounds, with overall
+  accuracy unchanged or slightly better. Opponent absences moved centres' rebounds the right way
+  (−0.19 → −0.11) but hurt accuracy, so they are reported in the Context panel and not modelled;
 - recent form gets more weight (55% season, 30% last 10, 15% last 5).
 
 Beating these baselines is necessary, not sufficient: bookmaker lines are sharper than any of them. The

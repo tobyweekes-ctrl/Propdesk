@@ -4,7 +4,7 @@
 //   season rate  = w * this season + (1 - w) * last season,  w = n / (n + k)
 //   base rate    = recency.season * season rate + recency.last10 * L10 rate + recency.last5 * L5 rate
 //   x home/away x back-to-back x matchup pace x opponent defence vs position x head-to-head
-//   x teammates out (usage bump)
+//   x teammates out (share of the production they leave) x opponent players out (rebounds)
 // Combos (PRA, P+R, ...) sum their components' means; their spread is fitted on the combo itself.
 import { STATS, statValue } from '../stats.mjs';
 import { mixturePmf } from './distributions.mjs';
@@ -19,7 +19,7 @@ function rate(rows, s) {
   return m >= 30 ? x / m : null;
 }
 
-function componentRate(ctx, s, cfg) {
+function componentRate(ctx, s, cfg, minutes) {
   const A = cfg.adjust;
   const factors = [];
   const k = s === 'fg3m' ? cfg.blend.fg3mRateK : cfg.blend.rateK;
@@ -70,21 +70,51 @@ function componentRate(ctx, s, cfg) {
     factors.push({ key: 'h2h', label: `vs ${ctx.game.opp} history`, value: v, note: `${h.length}g, weight ${Math.round(seasonWeight(h.length, A.h2hK) * 100)}%` });
   }
 
-  if (ctx.teammatesOut.length) {
-    let f = 1;
-    const notes = [];
-    for (const m of ctx.teammatesOut) {
-      const seasons = ctx.mateSeasons(m.id);
-      const shared = ctx.logs.filter((r) => r.team === ctx.game.team && seasons.has(`${r.season}|${r.team}`));
-      const w = shared.filter((r) => ctx.lineup(r).has(m.id)).slice(-40);
-      const wo = shared.filter((r) => !ctx.lineup(r).has(m.id)).slice(-40);
-      const a = rate(wo, s), b = rate(w, s);
-      if (a != null && b && w.length >= 3) {
-        f *= shrinkRatio(a / b, wo.length, A.teammateRateK);
-        notes.push(`${m.name.split(' ').at(-1)} ${wo.length}g`);
+  // Teammates out: part of what they produced (rebounds, assists, shots) goes to the players left,
+  // more to the same position. Minutes already moved in the minutes step; this is the per-minute share.
+  const myGame = base * Math.max(1, minutes.proj); // tonight's production before this step
+  // what a missing player produced above a typical replacement at his position in the same minutes
+  // (losing a 10-rebound centre frees boards; losing a 3-rebound guard frees almost nothing)
+  const excess = (m) => {
+    if (A.absorbFrom[s] && !A.absorbFrom[s].includes(m.group)) return 0;
+    const typical = ctx.groupRate(m.group, s);
+    const repl = typical != null ? A.replacementLevel * typical * (m.avg?.min || m.min) : 0;
+    return Math.max(0, (m.avg?.[s] || 0) - repl);
+  };
+  const absorb = A.absorb[s] || 0;
+  if (ctx.teammatesOut.length && absorb > 0 && myGame > 0) {
+    const vacated = ctx.teammatesOut.reduce((a, m) => a + excess(m), 0);
+    if (vacated > 0) {
+      let mine = 0;
+      for (const m of ctx.teammatesOut) {
+        const v = excess(m);
+        if (!v) continue;
+        const w = (x, g) => x * (g === m.group ? A.absorbSameGroup : 1);
+        const pool = ctx.availableMates.reduce((a, x) => a + w(x.avg?.[s] || 0, x.group), 0) + w(myGame, ctx.group);
+        if (pool > 0) mine += absorb * v * (w(myGame, ctx.group) / pool);
       }
+      const f = clamp(1 + mine / myGame, 1, 1 + A.absorbCap);
+      if (f > 1.001) factors.push({ key: 'mates', label: 'Teammates out', value: f, note: `+${mine.toFixed(1)} of the ${vacated.toFixed(1)} ${s} a game they produce above a replacement` });
     }
-    if (notes.length) factors.push({ key: 'mates', label: 'Teammates out', value: clamp(f, ...A.teammateRateCap), note: `per-min without: ${notes.join(', ')}` });
+  }
+
+  // Opponent missing rebounders: their replacements recover most boards, the rest go to this team.
+  const oppShare = A.oppMissing[s] || 0;
+  if (ctx.oppOut.length && oppShare > 0 && myGame > 0) {
+    let mine = 0, lost = 0;
+    for (const m of ctx.oppOut) {
+      const v = excess(m);
+      if (!v) continue;
+      lost += v;
+      // the boards go mostly to the players matched up with him: same position weighted up
+      const w = (x, g) => x * (g === m.group ? A.absorbSameGroup : 1);
+      const pool = ctx.availableMates.reduce((a, x) => a + w(x.avg?.[s] || 0, x.group), 0) + w(myGame, ctx.group);
+      if (pool > 0) mine += oppShare * v * (w(myGame, ctx.group) / pool);
+    }
+    if (mine > 0) {
+      const f = clamp(1 + mine / myGame, 1, 1 + A.absorbCap);
+      if (f > 1.001) factors.push({ key: 'oppout', label: `${ctx.game.opp} missing players`, value: f, note: `+${mine.toFixed(1)}: ${ctx.oppOut.map((m) => m.name.split(' ').at(-1)).join(', ')} out (${lost.toFixed(1)} ${s} a game above a replacement)` });
+    }
   }
 
   const rateAdj = factors.reduce((a, f) => a * f.value, base);
@@ -95,7 +125,7 @@ function componentRate(ctx, s, cfg) {
 export function projectPlayer(ctx, cfg) {
   const minutes = projectMinutes(ctx, cfg);
   const comps = {};
-  for (const s of BASE_STATS) comps[s] = componentRate(ctx, s, cfg);
+  for (const s of BASE_STATS) comps[s] = componentRate(ctx, s, cfg, minutes);
   return { minutes, comps };
 }
 
