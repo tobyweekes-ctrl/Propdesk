@@ -30,6 +30,12 @@ export const DEFAULTS = {
     // 5.687, PRA 6.251 -> 6.235, points level, rebounds 1.941 -> 1.951; overall unchanged or better.
     roleChangeRateScale: 0.5,
     roleChangeMin: 0.2,
+    // Share of the player's actual last-20 results mixed into the model's distribution. Backtest 2025-26 (98k
+    // player-stat-games): when the last-20 hit rate ran 20+ points above the model, overs landed 42% (model
+    // 33%, hit rate 60%); 20+ below, 58% (model 60%, hit rate 33%). Chosen on Oct-Jan, confirmed on Jan-Apr.
+    // Full backtest at 0.15: error lower on every stat (pts 5.175 -> 5.162, PRA 6.560 -> 6.540), bias smaller,
+    // Brier 0.242 -> 0.241, log loss 0.676 -> 0.674.
+    recentMix: 0.15,
     minutesK: 5,             // role shows up quickly
     minutesKTraded: 2,       // changed team: last season's minutes barely count
     teamK: 15,               // team pace / defence, in team games

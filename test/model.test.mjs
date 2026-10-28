@@ -193,3 +193,13 @@ test('absence impact: a teammate out raises minutes and output against the no-ab
   assert.ok(i.pts.with > i.pts.without);
   assert.equal(absenceImpact(L, p.id, game, [], DEFAULTS), null); // nobody out: nothing to report
 });
+
+test('recent results mix into the distribution: a share of the last 20, total probability kept', async () => {
+  const { mixRecent } = await import('../server/model/projection.mjs');
+  const dist = { pmf: [0.5, 0.5], mean: 0.5, sd: 0.5 };
+  const m = mixRecent(dist, Array(10).fill(2), 0.2);
+  assert.ok(Math.abs(m.pmf.reduce((a, b) => a + b, 0) - 1) < 1e-12);
+  assert.deepEqual(m.pmf.map((x) => Math.round(x * 100) / 100), [0.4, 0.4, 0.2]);
+  assert.ok(Math.abs(m.mean - 0.8) < 1e-12);
+  assert.equal(mixRecent(dist, [1, 2, 3], 0.2), dist); // fewer than 10 games: unchanged
+});

@@ -152,6 +152,17 @@ export function fitDispersion(logs, stat, cfg) {
   return (rows.length * hat + K * prior) / (rows.length + K);
 }
 
+/** (1 - share) x model distribution + share x the empirical distribution of recent values (10+ games). */
+export function mixRecent(dist, values, share) {
+  if (!share || values.length < 10) return dist;
+  const len = Math.max(dist.pmf.length, Math.max(...values) + 1);
+  const pmf = Array.from({ length: len }, (_, x) => (1 - share) * (dist.pmf[x] || 0));
+  for (const v of values) pmf[Math.max(0, Math.round(v))] += share / values.length;
+  let mean = 0, m2 = 0;
+  pmf.forEach((p, x) => { mean += p * x; m2 += p * x * x; });
+  return { pmf, mean, sd: Math.sqrt(Math.max(0, m2 - mean * mean)) };
+}
+
 /** Full distribution for one stat. */
 export function projectStat(pp, ctx, stat, cfg) {
   const parts = STATS[stat].parts;
@@ -166,7 +177,11 @@ export function projectStat(pp, ctx, stat, cfg) {
   const perGame = ratePerMin * Math.max(1, pp.minutes.proj);
   const cv = typeof D.modelCv === 'number' ? D.modelCv : D.modelCv[stat] ?? 0.16;
   const meanCv2 = (1 / Math.max(0.5, perGame) + invK) / nEff + cv ** 2;
-  const { pmf, mean, sd } = mixturePmf({ ratePerMin, minMean: pp.minutes.proj, minSd: pp.minutes.sd, invK: invK + meanCv2 });
+  const mixed = mixturePmf({ ratePerMin, minMean: pp.minutes.proj, minSd: pp.minutes.sd, invK: invK + meanCv2 });
+  // A share of the player's actual last 20 results is mixed in: when recent hit rates and the model disagree,
+  // reality landed about a third of the way toward the hit rates in the backtest (see cfg.blend.recentMix)
+  // (all recent games, old team included: new-team-only made no difference in the backtest)
+  const { pmf, mean, sd } = mixRecent(mixed, ctx.logs.slice(-20).map((r) => statValue(r, stat)), cfg.blend.recentMix || 0);
 
   // combined factors, weighted by each component's share of the stat
   const byKey = new Map();
