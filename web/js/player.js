@@ -136,6 +136,16 @@ const pOverLine = (pmf, line) => pAtLeast(pmf, Math.floor(line) + 1);
 const poss = (n) => `${esc(n)}${/s$/i.test(n) ? "'" : "'s"}`;
 const valueAt = (p, a) => (p - a.config.threshold > 0.02 ? 1 / (p - a.config.threshold) : null);
 
+// a pick on the less likely side is a price call, not a forecast: say so in words
+function underdogNote(side, h, price, need) {
+  const other = side === 'over' ? 'under' : 'over';
+  const otherPrice = side === 'over' ? h.under : h.over;
+  const head = `The model thinks the ${other} is more likely (${pct(h.model[other], 0)}), but at ${odds(otherPrice)} the ${other} is priced as if it were ${pct(1 / otherPrice, 0)} likely, so it's poor value. `;
+  return need
+    ? `${head}The ${side} at ${odds(price)} needs to land ${pct(1 / price, 0)} of the time to break even and the model gives it ${pct(h.model[side], 0)}: close to break-even, so no bet. It would be value from ${odds(need, 'up')}.`
+    : `${head}The ${side} at ${odds(price)} needs to land only ${pct(1 / price, 0)} of the time to break even and the model gives it ${pct(h.model[side], 0)}. A value bet that still loses more often than it wins.`;
+}
+
 function verdictCard(a) {
   const h = a.headline;
   const p = a.projection;
@@ -149,6 +159,7 @@ function verdictCard(a) {
     sub = `${esc(h.bookTitle)} · ${odds(price)} · ${h.confidence.toLowerCase()} confidence`;
     style = h.confidence === 'LOW' ? 'lean' : 'bet';
     stats = `<div><dt>Model ${side}</dt><dd>${pct(h.model[side])}</dd></div><div><dt>Edge</dt><dd>${edge(h.leanEdge)}</dd></div><div><dt>Value (EV)</dt><dd>${edge(h.ev[side])}</dd></div>`;
+    if (h.model[side] < 0.5) note = underdogNote(side, h, price);
   } else if (h) {
     // a priced line without a bet: say which way the model leans and what price would make it one
     const ls = h.leanSide || (h.model.over >= h.model.under ? 'over' : 'under');
@@ -162,6 +173,7 @@ function verdictCard(a) {
         : fairish ? `${esc(h.bookTitle)} have priced it right: no side clears the ${bar} edge bar`
           : `${esc(h.bookTitle)} ${odds(price)} is too short to bet${need ? `. Value from ${odds(need, 'up')}` : ''}`;
     style = check ? 'warnv' : 'soft';
+    if (!check && !h.stale && !fairish && pm < 0.5) note = underdogNote(ls, h, price, need);
     stats = `<div><dt>Model ${ls}</dt><dd>${pct(pm)}</dd></div><div><dt>Fair price</dt><dd>${odds(1 / pm, 'up')}</dd></div>${check ? '' : `<div><dt>Bet ${ls} at</dt><dd class="pos">${need ? `${odds(need, 'up')}+` : '–'}</dd></div>`}`;
     if (check) note = `When the model disagrees with a two-sided bookmaker price by more than ${pct(a.config.marketDisagreement ?? 0.08, 0)}, the bookmaker is usually reacting to something the model can't see: a role change, an injury, a minutes limit. Check the news before treating it as value.`;
   } else {
