@@ -371,7 +371,7 @@ svg .season-label.strong { fill: var(--dim); font-weight: 600; }
   table.best .c-add { grid-area: add; align-self: center; }
   table.best .c-price { grid-area: price; } table.best .c-model { grid-area: model; } table.best .c-ev { grid-area: ev; }
   table.best .c-model::after { content: ' model'; color: var(--faint); } table.best .c-ev::after { content: ' EV'; color: var(--faint); }
-  table.best .c-min { display: none; }
+  table.best .c-min, table.best .c-conf { display: none; }
   /* game cards: teams stacked so names fit */
   .sides { grid-template-columns: 1fr; }
   .side + .side { border-left: 0; border-top: 1px solid var(--line); }

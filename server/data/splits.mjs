@@ -32,14 +32,20 @@ export function computeSplits(L, playerId, stat, { opp = null, injuries = [], ma
 
   out.push(row('Season', 'cur', `This season`, cur, stat));
   out.push(row('Season', 'prev', `Last season`, prev, stat));
-  out.push(row('Venue', 'home', 'Home', logs.filter((r) => r.home), stat));
-  out.push(row('Venue', 'away', 'Away', logs.filter((r) => !r.home), stat));
+  // a player who changed team: home/away and rest from games with his current team only (a home game for
+  // the old team says little about this one)
+  const mineAll = logs.filter((r) => r.team === p.team);
+  const moved = mineAll.length < logs.length;
+  const scope = moved ? mineAll : logs;
+  const tag = moved ? ` (${p.team})` : '';
+  out.push(row('Venue', 'home', `Home${tag}`, scope.filter((r) => r.home), stat));
+  out.push(row('Venue', 'away', `Away${tag}`, scope.filter((r) => !r.home), stat));
   if (opp) out.push(row('Opponent', 'opp', `vs ${opp}`, logs.filter((r) => r.opp === opp), stat, { dates: logs.filter((r) => r.opp === opp).map((r) => r.date) }));
 
   const rest = (r) => L.restDays(r.team, r.date);
-  out.push(row('Rest', 'b2b', 'Back-to-back', logs.filter((r) => rest(r) === 0), stat));
-  out.push(row('Rest', 'rest1', '1 day rest', logs.filter((r) => rest(r) === 1), stat));
-  out.push(row('Rest', 'rest2', '2+ days rest', logs.filter((r) => rest(r) >= 2), stat));
+  out.push(row('Rest', 'b2b', `Back-to-back${tag}`, scope.filter((r) => rest(r) === 0), stat));
+  out.push(row('Rest', 'rest1', `1 day rest${tag}`, scope.filter((r) => rest(r) === 1), stat));
+  out.push(row('Rest', 'rest2', `2+ days rest${tag}`, scope.filter((r) => rest(r) >= 2), stat));
 
   // key teammates: most minutes alongside him on his current team lately, plus anyone out tonight
   const teamGames = (L.teamGameList.get(p.team) || []).slice(-15);
@@ -58,7 +64,7 @@ export function computeSplits(L, playerId, stat, { opp = null, injuries = [], ma
     .map(([id]) => L.players.get(id));
   const chosen = [...mates.slice(0, maxMates), ...mates.slice(maxMates).filter((m) => outTonight.has(normName(m.name)))];
 
-  const mine = logs.filter((r) => r.team === p.team);
+  const mine = mineAll;
   for (const m of chosen) {
     // seasons they shared a team; this season counts if he's on the roster now, even if injured all year
     const seasons = new Set(L.playerLogs(m.id).filter((r) => r.team === p.team).map((r) => r.season));

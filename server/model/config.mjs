@@ -25,6 +25,11 @@ export const DEFAULTS = {
     // of tradedRateScale: P+R error 6.002 -> 5.979, PRA 6.641 -> 6.598, points 5.110 -> 5.084, rebounds
     // 1.931 -> 1.915; overall a hair better on every stat.
     tradedFormNewTeamOnly: true,
+    // Same team but a new role (minutes 20%+ different from last season): multiplies rateK. Backtest 2025-26,
+    // those players in their first 20 games (n 796) were projected low (P+R bias -0.50): P+R error 5.691 ->
+    // 5.687, PRA 6.251 -> 6.235, points level, rebounds 1.941 -> 1.951; overall unchanged or better.
+    roleChangeRateScale: 0.5,
+    roleChangeMin: 0.2,
     minutesK: 5,             // role shows up quickly
     minutesKTraded: 2,       // changed team: last season's minutes barely count
     teamK: 15,               // team pace / defence, in team games

@@ -14,14 +14,14 @@ export async function renderSlip(view) {
       <section class="card">
         <div class="card-head"><h3>Selections</h3>
           <div class="seg" role="group" aria-label="Bet type"><button data-mode="singles" aria-pressed="${S.mode === 'singles'}">Singles</button><button data-mode="acca" aria-pressed="${S.mode === 'acca'}" ${legs.length < 2 ? 'disabled' : ''}>Acca</button></div></div>
-        <div class="leg" style="padding-top:0;border:0"><span class="hint" style="margin:0">Selection</span><span class="hint" style="margin:0">Price</span><span class="hint" style="margin:0">${S.mode === 'singles' ? 'Stake' : ''}</span><span></span></div>
+        <div class="leg" style="padding-top:0;border:0"><span class="hint" style="margin:0">Selection</span><span class="hint" style="margin:0">Price</span><span class="hint" style="margin:0">${S.mode === 'singles' ? 'Stake (£)' : ''}</span><span></span></div>
         ${legs.map((l) => `<div class="leg" data-id="${esc(l.id)}">
           <div class="what"><b><i class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:${teamColour(l.team)}"></i>${esc(l.playerName)}</b><small>${esc(legLabel(l))} · ${esc(l.book || '')}</small></div>
           <input name="price" value="${esc(typeof l.price === 'number' ? odds(l.price) : l.price)}" aria-label="Price">
-          ${S.mode === 'singles' ? `<input name="stake" inputmode="decimal" value="${esc(l.stake ?? 1)}" aria-label="Stake">` : '<span></span>'}
+          ${S.mode === 'singles' ? `<input name="stake" inputmode="decimal" value="${esc(l.stake ?? 1)}" aria-label="Stake in pounds">` : '<span></span>'}
           <button class="x" data-x="${esc(l.id)}" aria-label="Remove">×</button>
         </div>`).join('')}
-        ${S.mode === 'acca' ? `<div class="inline"><label class="f">Acca stake<input id="acca-stake" inputmode="decimal" value="${esc(S.accaStake)}"></label></div>` : ''}
+        ${S.mode === 'acca' ? `<div class="inline"><label class="f">Acca stake (£)<input id="acca-stake" inputmode="decimal" value="${esc(S.accaStake)}"></label></div>` : ''}
         <div class="slip-actions">
           <button class="btn primary" id="place">Log as placed</button>
           <button class="btn ghost" id="clear">Clear slip</button>
@@ -56,7 +56,7 @@ function analysisHtml() {
   const blurb = { POSITIVE: 'The model rates this slip as positive expected value.', MARGINAL: 'Close to fair: small edge either way.', NEGATIVE: 'Expected to lose money over time at these prices.' }[a.verdict] || '';
   const legRows = a.legs.map((l) => l.error
     ? `<tr><td class="l">${esc(l.playerName || l.player || '')}</td><td colspan="5" class="l neg">${esc(l.error)}</td></tr>`
-    : `<tr><td class="l">${esc(l.player.split(' ').at(-1))} <span class="dim">${esc(legLabel(l))}</span></td><td>${pct(l.pWin)}</td><td>${pct(l.fairP ?? l.implied)}</td><td>${odds(l.fairPrice)}</td><td class="${l.ev >= 0 ? 'pos' : 'neg'}">${signed(l.ev * 100, 0)}%</td><td><span class="chip ${l.verdict.toLowerCase()}">${l.verdict}</span></td></tr>`).join('');
+    : `<tr><td class="l">${esc(l.player.split(' ').at(-1))} <span class="dim">${esc(legLabel(l))}</span></td><td>${pct(l.pWin)}</td><td>${pct(l.fairP ?? l.implied)}</td><td>${odds(l.fairPrice, 'up')}</td><td class="${l.ev >= 0 ? 'pos' : 'neg'}">${signed(l.ev * 100, 0)}%</td><td><span class="chip ${l.verdict.toLowerCase()}">${l.verdict}</span></td></tr>`).join('');
   const s = a.singles, c = a.acca;
   const dist = s.winsDistribution.map((p, i) => `<div class="${i > 0 ? 'won' : ''}" style="height:${Math.max(2, p * 100)}%" title="${i} winner${i === 1 ? '' : 's'}: ${pct(p)}"><span>${pct(p, 0)}</span><label>${i}</label></div>`).join('');
   return `
@@ -65,11 +65,11 @@ function analysisHtml() {
     <div class="scroll" style="margin-top:12px"><table class="legs"><tr><th class="l">Leg</th><th>Model</th><th>Bookie</th><th>Fair</th><th>EV</th><th></th></tr>${legRows}</table></div>
     ${S.mode === 'singles' || !c ? `
       <div class="stats">
-        <div><dt>Total stake</dt><dd>${fmt(s.stake, 2)}</dd></div>
-        <div><dt>Expected profit</dt><dd class="${s.expectedProfit >= 0 ? 'pos' : 'neg'}">${signed(s.expectedProfit, 2)}</dd></div>
+        <div><dt>Total stake</dt><dd>£${fmt(s.stake, 2)}</dd></div>
+        <div><dt>Expected profit</dt><dd class="${s.expectedProfit >= 0 ? 'pos' : 'neg'}">${s.expectedProfit >= 0 ? '+' : '−'}£${fmt(Math.abs(s.expectedProfit), 2)}</dd></div>
         <div><dt>Expected return</dt><dd class="${s.roi >= 0 ? 'pos' : 'neg'}">${signed((s.roi || 0) * 100, 1)}%</dd></div>
         <div><dt>Expected winners</dt><dd>${fmt(s.expectedWinners, 1)} of ${a.legs.filter((l) => !l.error).length}</dd></div>
-        <div><dt>All lose</dt><dd>${pct(s.pAllLose)}</dd></div>
+        <div><dt>${a.legs.filter((l) => !l.error).length === 1 ? 'Loses' : 'All lose'}</dt><dd>${pct(s.pAllLose)}</dd></div>
       </div>
       <div class="sub-h hint" style="margin-top:14px">How many win (chance of each)</div>
       <div class="dist">${dist}</div><div style="height:20px"></div>`
@@ -79,7 +79,7 @@ function analysisHtml() {
         <div><dt>Model chance</dt><dd>${pct(c.pWin, c.pWin < 0.01 ? 2 : 1)}</dd></div>
         <div><dt>Bookie chance</dt><dd>${pct(c.impliedP, c.impliedP < 0.01 ? 2 : 1)}</dd></div>
         <div><dt>Expected return</dt><dd class="${c.ev >= 0 ? 'pos' : 'neg'}">${signed(c.ev * 100, 0)}%</dd></div>
-        <div><dt>Returns if it lands</dt><dd>${fmt(c.price * S.accaStake, 2)}</dd></div>
+        <div><dt>Returns if it lands</dt><dd>£${fmt(c.price * S.accaStake, 2)}</dd></div>
       </div>
       <p class="hint">${c.correlation > 1.05 ? `Legs tend to land together (${fmt(c.correlation, 2)}× more often than if independent), which helps an acca.` : c.correlation < 0.95 ? `Legs work against each other (${fmt(c.correlation, 2)}×), which hurts an acca.` : 'Legs are close to independent.'} Independent-legs chance would be ${pct(c.pIndependent, 2)}.</p>
       ${c.dropBest ? `<p class="hint pos">Tip: dropping ${esc(c.dropBest.player)} ${esc(c.dropBest.label)} raises expected return to ${signed(c.dropBest.ev * 100, 0)}%.</p>` : ''}`}

@@ -102,6 +102,7 @@ for (const date of testDates) {
           line, pOver: e.model.over, side: e.side, confidence: e.confidence, outcome: actual > line ? 'over' : 'under',
           mateOut: ctx.teammatesOut.length > 0, oppOut: ctx.oppOut.length > 0, group: ctx.group,
           traded: ctx.traded, teamN: ctx.teamRows.length, curN: ctx.curRows.length,
+          minNow: ctx.curRows.length ? ctx.curRows.reduce((a, r) => a + r.min, 0) / ctx.curRows.length : null, minThen: ctx.prevRows.length >= 10 ? ctx.prevRows.reduce((a, r) => a + r.min, 0) / ctx.prevRows.length : null,
           // per-minute rate for this stat with the current team this season vs last season (role change)
           rateRatio: (() => {
             const r = (rows) => { const m = rows.reduce((a, x) => a + x.min, 0); return m >= 30 ? rows.reduce((a, x) => a + statValue(x, stat), 0) / m : null; };

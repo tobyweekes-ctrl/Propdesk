@@ -42,11 +42,11 @@ export async function renderRecord(view) {
   try { r = await api('/api/record'); } catch (e) { view.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
   const o = r.overall || {};
   const head = `<section class="hero"><h1>Track <em>record</em></h1>
-    <p>Every pick the model publishes is saved with the price at the time and the closing price, then graded from box scores. Prices are DraftKings'. Flat 1-unit stakes.</p></section>`;
+    <p>Every pick the model publishes is saved with the price at the time and the closing price, then graded from box scores. One pick per player per game counts (the best-value one): picks on the same player win or lose together. Prices are DraftKings'. Flat 1-unit stakes.</p></section>`;
   if (r.unavailable) { view.innerHTML = `${head}<p class="empty">The record is built by the scheduled job on the web version.</p>`; return; }
   const up = r.upcoming || [];
   const tracking = up.length ? `<section class="card"><div class="card-head"><h3>Tracked tonight</h3><span class="hint" style="margin:0">${r.pending} pick${r.pending === 1 ? '' : 's'}${up.length < r.pending ? `, best ${up.length} shown` : ''}</span></div>
-      <div class="scroll"><table class="tracked"><tr><th class="l">Pick</th><th>Price</th><th>Model</th><th>EV</th><th>Confidence</th></tr>
+      <div class="scroll"><table class="tracked"><tr><th class="l">Pick</th><th>Price when tracked</th><th>Model</th><th>EV</th><th>Confidence</th></tr>
       ${up.map((g) => `<tr><td class="l"><a href="#/p/${esc(g.playerId)}/${esc(g.stat)}"><b>${esc(g.name)}</b></a> <span class="dim">${g.side} ${fmt(g.line)} ${state.stats[g.stat]?.short || g.stat}</span></td><td>${odds(g.side === 'over' ? g.over : g.under)}</td><td>${pct(g.pWin, 0)}</td><td>${g.ev == null ? '–' : signedPct(g.ev, 0)}</td><td>${esc((g.confidence || '').toLowerCase())}</td></tr>`).join('')}
       </table></div><p class="hint">Saved at the first price seen; the closing price is recorded at tip-off.</p></section>` : '';
   if (!o.settled) {
@@ -59,14 +59,16 @@ export async function renderRecord(view) {
   const sideRows = ['over', 'under'].filter((k) => r.bySide?.[k]).map((k) => [k === 'over' ? 'Overs' : 'Unders', r.bySide[k]]);
   const confRows = Object.entries(r.byConfidence).map(([c, x]) => [c[0] + c.slice(1).toLowerCase(), x]);
   const games = (r.byGame || []).filter((g) => g.settled);
+  // ROI from a handful of nights is mostly luck: lead with the sample and the closing line until there's more
+  const early = (r.nights ?? days.length) < 14;
   const cal = r.calibration.map((b) => `<tr><td class="l">${b.range}</td><td>${b.n}</td><td>${pct(b.predicted)}</td><td>${pct(b.actual)}</td></tr>`).join('');
   const res = (g) => `<span class="chip ${g.result === 'win' ? 'value' : g.result === 'loss' ? 'avoid' : 'fair'}">${g.result}</span>`;
   view.innerHTML = `${head}
     <div class="summary">
-      ${box('Settled picks', `${o.settled} <span class="dim">(${o.won} won)</span>`)}
+      ${box('Sample so far', `${o.settled} picks <span class="dim">· ${r.nights ?? days.length} night${(r.nights ?? days.length) === 1 ? '' : 's'} · ${games.length} game${games.length === 1 ? '' : 's'}</span>`)}
+      ${box('Against the closing line', r.clv.n ? `<span class="pos">${r.clv.beat} beat</span> · ${r.clv.same} same · <span class="neg">${r.clv.worse} worse</span>` : '<span class="dim">not enough yet</span>')}
       ${box('Hit rate', `${pct(o.hitRate)} <span class="dim">model said ${pct(o.expectedHitRate)}</span>`)}
-      ${box('ROI (flat stakes)', signedPct(o.roi))}
-      ${box('Beat the closing line', r.clv.n ? `${pct(r.clv.positive, 0)} <span class="dim">avg ${signedPct(r.clv.avg)}</span>` : '<span class="dim">not enough yet</span>')}
+      ${box('ROI (flat stakes)', early ? `<span class="dim">too early to judge</span> <span class="dim small">(${signedPct(o.roi)})</span>` : signedPct(o.roi))}
     </div>
     ${days.length ? `<section class="card"><div class="chart-head"><h3>Profit by day</h3>
         <div class="legend"><span><i class="sw b-over"></i>Day up</span><span><i class="sw b-under"></i>Day down</span><span><i class="ln"></i>Running total</span></div></div>
@@ -84,10 +86,10 @@ export async function renderRecord(view) {
         <p class="hint">Well calibrated means the 60% picks win about 60% of the time. Small samples swing a lot.</p></section>
     ${tracking}
     <section class="card"><h3>Recent picks</h3>
-      <div class="scroll"><table class="recent"><tr><th>Date</th><th class="l">Pick</th><th>Price</th><th>Model</th><th>Result</th><th>CLV</th></tr>
+      <div class="scroll"><table class="recent"><tr><th>Date</th><th class="l">Pick</th><th>Price when tracked</th><th>Model</th><th>Result</th><th>CLV</th></tr>
       ${r.recent.map((g, i) => (i === 25 ? '</table><details class="more-rows"><summary>Show all ' + r.recent.length + ' picks</summary><table class="recent">' : '') + `<tr><td>${g.date.slice(5)}</td><td class="l"><b>${esc(g.name)}</b> <span class="dim">${g.side} ${fmt(g.line)} ${state.stats[g.stat]?.short || g.stat}</span></td><td>${odds(g.price ?? (g.side === 'over' ? g.over : g.under))}</td><td>${pct(g.pWin, 0)}</td><td>${res(g)}${g.actual != null ? ` <span class="dim">${fmt(g.actual, 0)}</span>` : ''}</td><td>${g.clv == null ? '–' : signedPct(g.clv)}</td></tr>`).join('')}
       </table>${r.recent.length > 25 ? '</details>' : ''}</div>
-      <p class="hint">CLV (closing-line value) = how far the market's fair price moved toward the pick by tip-off. Consistently beating the close is the best sign of a real edge.</p></section>`;
+      <p class="hint">CLV (closing-line value) = how far the market's fair price moved toward the pick by tip-off. Consistently beating the close is the best early sign of a real edge; more "worse" than "beat" is a warning. "Same" means the line didn't move.</p></section>`;
   const wrap = view.querySelector('#profit');
   if (wrap) {
     // redraw at the real width so text stays its own size

@@ -137,7 +137,11 @@ for (const g of slates[day]) {
     }
   }
 }
-const best = picks.filter((x) => x.side).sort((a, b) => b.ev - a.ev).slice(0, 12);
+// best value: medium confidence or better (near coin-flip picks at evens turn a small model error into a loss),
+// one per player (picks on one player win or lose together)
+const seenBest = new Set();
+const best = picks.filter((x) => x.side && (x.confidence === 'MEDIUM' || x.confidence === 'HIGH')).sort((a, b) => b.ev - a.ev)
+  .filter((x) => !seenBest.has(x.playerId) && seenBest.add(x.playerId)).slice(0, 12);
 console.log(`picks: ${picks.filter((x) => x.side).length} published (${picks.length} lines priced), ${picks.filter((x) => x.verdict === 'CHECK').length} flagged CHECK`);
 
 // ---------- archive + public record ----------

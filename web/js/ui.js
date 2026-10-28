@@ -46,20 +46,39 @@ const PREF = 'propdesk.odds';
 export const oddsFormat = () => { try { return localStorage.getItem(PREF) || 'frac'; } catch { return 'frac'; } };
 export const setOddsFormat = (f) => { try { localStorage.setItem(PREF, f); } catch { /* private mode */ } };
 
-const LADDER = [[1, 50], [1, 33], [1, 25], [1, 20], [1, 16], [1, 14], [1, 12], [1, 11], [1, 10], [1, 9], [1, 8], [1, 7], [1, 6], [1, 5], [2, 9], [1, 4], [2, 7], [3, 10], [1, 3], [4, 11], [2, 5], [4, 9], [1, 2], [8, 15], [4, 7], [8, 13], [4, 6], [8, 11], [4, 5], [5, 6], [10, 11],
-  [1, 1], [11, 10], [6, 5], [5, 4], [11, 8], [6, 4], [13, 8], [7, 4], [15, 8], [2, 1], [9, 4], [5, 2], [11, 4], [3, 1], [10, 3], [7, 2], [4, 1], [9, 2], [5, 1], [11, 2], [6, 1], [13, 2], [7, 1], [15, 2],
-  [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [14, 1], [16, 1], [18, 1], [20, 1], [25, 1], [33, 1], [40, 1], [50, 1], [66, 1], [80, 1], [100, 1]];
-/** decimal -> nearest bookmaker-style fraction ("5/1", "10/11", "EVS") */
-export function toFrac(dec) {
+// the standard UK fractional ladder
+const LADDER = [[1, 250], [1, 200], [1, 100], [1, 66], [1, 50], [1, 40], [1, 33], [1, 25], [1, 20], [1, 16], [1, 14], [1, 12], [1, 11], [1, 10], [1, 9], [1, 8],
+  [2, 15], [1, 7], [1, 6], [2, 11], [1, 5], [2, 9], [1, 4], [2, 7], [3, 10], [1, 3], [4, 11], [2, 5], [4, 9], [1, 2], [8, 15], [4, 7], [8, 13], [4, 6],
+  [8, 11], [4, 5], [5, 6], [10, 11], [20, 21], [1, 1], [21, 20], [11, 10], [6, 5], [5, 4], [11, 8], [6, 4], [13, 8], [7, 4], [15, 8], [2, 1], [85, 40],
+  [9, 4], [5, 2], [11, 4], [3, 1], [10, 3], [7, 2], [4, 1], [9, 2], [5, 1], [11, 2], [6, 1], [13, 2], [7, 1], [15, 2], [8, 1], [17, 2], [9, 1], [10, 1],
+  [11, 1], [12, 1], [14, 1], [16, 1], [18, 1], [20, 1], [22, 1], [25, 1], [28, 1], [33, 1], [40, 1], [50, 1], [66, 1], [80, 1], [100, 1], [150, 1], [200, 1]];
+// feeds give decimals to 2 places (10/11 arrives as 1.91): a price within that rounding counts as on the
+// fraction (smaller at very short prices, where 0.005 would span several fractions)
+const eps = (v) => Math.min(0.005, v * 0.02);
+const fracText = ([a, b]) => (a === b ? 'EVS' : `${a}/${b}`);
+/**
+ * Decimal odds -> a standard fraction. `down` (the default, for prices on offer) never shows more than
+ * the price really pays; `up` (for thresholds such as "bet at 6/5 or bigger" and fair prices) never
+ * shows less than is needed.
+ */
+export function toFrac(dec, dir = 'down') {
   if (!dec || dec <= 1) return '–';
   const v = dec - 1;
-  let best = LADDER[0];
-  for (const f of LADDER) if (Math.abs(f[0] / f[1] - v) < Math.abs(best[0] / best[1] - v)) best = f;
-  if (Math.abs(best[0] / best[1] - v) / v > 0.06) return v >= 1 ? `${v >= 20 ? Math.round(v) : Math.round(v * 2) / 2}/1` : `1/${Math.round(1 / v)}`;
-  return best[0] === best[1] ? 'EVS' : `${best[0]}/${best[1]}`;
+  if (dir === 'up') {
+    const f = LADDER.find(([a, b]) => a / b >= v - eps(v));
+    return f ? fracText(f) : `${Math.ceil(v)}/1`;
+  }
+  let f = null;
+  for (const x of LADDER) if (x[0] / x[1] <= v + eps(v)) f = x;
+  return f ? fracText(f) : `1/${Math.ceil(1 / v - 1e-9)}`;
 }
-/** price in the user's chosen format */
-export const odds = (dec) => (dec == null ? '–' : oddsFormat() === 'dec' ? Number(dec).toFixed(2) : toFrac(dec));
+/** A price for display: `down` for prices on offer, `up` for thresholds (fair prices, "bet at X+"). */
+export const odds = (dec, dir = 'down') => {
+  if (dec == null) return '–';
+  if (oddsFormat() !== 'dec') return toFrac(dec, dir);
+  const x = (dir === 'up' ? Math.ceil(dec * 100 - 1e-6) : Math.floor(dec * 100 + 1e-6)) / 100;
+  return x.toFixed(2);
+};
 
 // ---------- team colours (for accents) ----------
 export const TEAM_COLOURS = {

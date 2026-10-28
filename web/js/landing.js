@@ -44,11 +44,11 @@ export async function renderLanding(view) {
     </section>
     ${best.length ? `<section class="card">
       <div class="card-head"><h3>Best value tonight</h3><a class="hint" style="margin:0" href="#/record">How has the model done? →</a></div>
-      <div class="scroll"><table class="best"><tr><th class="l">Player</th><th class="l">Pick</th><th>Price</th><th>Model</th><th>EV</th><th>Min</th><th></th></tr>
+      <div class="scroll"><table class="best"><tr><th class="l">Player</th><th class="l">Pick</th><th>Price</th><th>Model</th><th>EV</th><th>Confidence</th><th>Min</th><th></th></tr>
       ${best.map((b, i) => `<tr><td class="l c-who"><a href="#/p/${esc(b.playerId)}/${esc(b.stat)}"><b>${esc(b.name)}</b></a> <span class="dim">${b.team} ${b.home ? 'v' : '@'} ${b.opp}</span></td>
-        <td class="l c-pick">${label(b)}</td><td class="c-price">${odds(b.side === 'over' ? b.over : b.under)}</td><td class="c-model">${pct(b.pWin, 0)}</td><td class="pos c-ev">+${Math.round(b.ev * 100)}%</td><td class="c-min">${fmt(b.minutes, 0)}</td>
+        <td class="l c-pick">${label(b)}</td><td class="c-price">${odds(b.side === 'over' ? b.over : b.under)}</td><td class="c-model">${pct(b.pWin, 0)}</td><td class="pos c-ev">+${Math.round(b.ev * 100)}%</td><td class="c-conf">${esc((b.confidence || '').toLowerCase())}</td><td class="c-min">${fmt(b.minutes, 0)}</td>
         <td class="c-add">${slipBtn(i, slip.has(legOf(b)))}</td></tr>`).join('')}</table></div>
-      <p class="hint">DraftKings prices (US). Edges over 8% against the market are left out: they usually mean news the model can't see. Confidence and reasons are on each player's page.</p>
+      <p class="hint">DraftKings prices (US). Medium confidence or better, one pick per player. EV is the expected profit per £1 staked. The edge (model chance minus the bookie's fair chance) is a different number: picks where it tops 8% are left out, because a gap that big usually means news the model can't see. Reasons are on each player's page.</p>
     </section>` : ''}
     ${benefits.length ? `<section class="card">
       <div class="card-head"><h3>Who benefits tonight</h3><span class="hint" style="margin:0">${benefits.length} team${benefits.length === 1 ? '' : 's'} missing rotation players</span></div>

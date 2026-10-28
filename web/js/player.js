@@ -160,9 +160,9 @@ function verdictCard(a) {
     sub = check ? `Model ${ls} ${pct(pm, 0)} vs ${esc(h.bookTitle)} ${pct(pm - h.leanEdge, 0)}: likely news the model can't see`
       : h.stale ? `${poss(h.bookTitle)} price hasn't moved for ${dur(h.ageMin)}: check your bookie's current price`
         : fairish ? `${esc(h.bookTitle)} have priced it right: no side clears the ${bar} edge bar`
-          : `${esc(h.bookTitle)} ${odds(price)} is too short to bet${need ? `. Value from ${odds(need)}` : ''}`;
+          : `${esc(h.bookTitle)} ${odds(price)} is too short to bet${need ? `. Value from ${odds(need, 'up')}` : ''}`;
     style = check ? 'warnv' : 'soft';
-    stats = `<div><dt>Model ${ls}</dt><dd>${pct(pm)}</dd></div><div><dt>Fair price</dt><dd>${odds(1 / pm)}</dd></div>${check ? '' : `<div><dt>Bet ${ls} at</dt><dd class="pos">${need ? `${odds(need)}+` : '–'}</dd></div>`}`;
+    stats = `<div><dt>Model ${ls}</dt><dd>${pct(pm)}</dd></div><div><dt>Fair price</dt><dd>${odds(1 / pm, 'up')}</dd></div>${check ? '' : `<div><dt>Bet ${ls} at</dt><dd class="pos">${need ? `${odds(need, 'up')}+` : '–'}</dd></div>`}`;
     if (check) note = `When the model disagrees with a two-sided bookmaker price by more than ${pct(a.config.marketDisagreement ?? 0.08, 0)}, the bookmaker is usually reacting to something the model can't see: a role change, an injury, a minutes limit. Check the news before treating it as value.`;
   } else {
     // no bookmaker line: the model's own line and the prices that would be value either side
@@ -173,7 +173,7 @@ function verdictCard(a) {
     word = `MODEL LINE ${fmt(L)}`;
     sub = `No bookmaker line yet · model ${ls} ${fmt(L)} at ${pct(pm, 0)}`;
     style = 'soft';
-    stats = `<div><dt>Fair over ${fmt(L)}</dt><dd>${odds(1 / po)}</dd></div><div><dt>Fair under</dt><dd>${odds(1 / pu)}</dd></div><div><dt>Bet over at</dt><dd class="pos">${valueAt(po, a) ? `${odds(valueAt(po, a))}+` : '–'}</dd></div><div><dt>Bet under at</dt><dd class="pos">${valueAt(pu, a) ? `${odds(valueAt(pu, a))}+` : '–'}</dd></div>`;
+    stats = `<div><dt>Fair over ${fmt(L)}</dt><dd>${odds(1 / po, 'up')}</dd></div><div><dt>Fair under</dt><dd>${odds(1 / pu, 'up')}</dd></div><div><dt>Bet over at</dt><dd class="pos">${valueAt(po, a) ? `${odds(valueAt(po, a), 'up')}+` : '–'}</dd></div><div><dt>Bet under at</dt><dd class="pos">${valueAt(pu, a) ? `${odds(valueAt(pu, a), 'up')}+` : '–'}</dd></div>`;
     note = 'Got a price from your bookie? Put it in the price checker below, or add the line under Model details.';
   }
   return `<div class="verdict ${style}">
@@ -234,7 +234,7 @@ function checkRow(c, i, a) {
   let out = '<span class="dim">Enter a threshold and a price, e.g. 20+ at 5/1</span>';
   if (p != null) {
     const fair = p > 0 ? 1 / p : null;
-    out = `Model <b>${p < 0.001 ? '<0.1%' : pct(p)}</b> · fair <b>${fair && fair < 1000 ? odds(fair) : '1000/1+'}</b>`;
+    out = `Model <b>${p < 0.001 ? '<0.1%' : pct(p)}</b> · fair <b>${fair && fair < 1000 ? odds(fair, 'up') : '1000/1+'}</b>`;
     if (dec) {
       const j = judge(p, dec);
       const low = j.verdict === 'VALUE' && a.quality.score < 0.5 ? ' <span class="dim">(low confidence)</span>' : '';
@@ -270,7 +270,7 @@ function checkCard(a) {
     // one-sided prices carry a margin, so a gap beyond the bar after that is a warning, not value
     if (j && p - 1 / price > gapBar) j = { ...j, verdict: 'CHECK' };
     const tag = !price ? '' : l.stale ? `<span class="dim" title="price unchanged for ${dur(l.ageMin)}">stale</span>` : j ? `<span class="chip ${j.verdict === 'CHECK' ? 'fair' : j.verdict.toLowerCase()}">${j.verdict}</span>` : '';
-    return `<tr class="${j?.verdict === 'VALUE' ? 'val' : ''} ${l?.stale ? 'stale' : ''}"><td class="k">${k}+</td><td>${pct(p, 0)}</td><td>${p > 0.001 ? odds(1 / p) : '–'}</td><td>${price ? odds(price) : '<span class="dim">–</span>'}</td>
+    return `<tr class="${j?.verdict === 'VALUE' ? 'val' : ''} ${l?.stale ? 'stale' : ''}"><td class="k">${k}+</td><td>${pct(p, 0)}</td><td>${p > 0.001 ? odds(1 / p, 'up') : '–'}</td><td>${price ? odds(price) : '<span class="dim">–</span>'}</td>
       <td>${tag}</td><td>${price && !l.stale ? `<button class="mini" data-ladd="${k}" data-price="${price}">+ Slip</button>` : ''}</td></tr>`;
   }).join('');
   const thin = a.quality.score < 0.5 ? `<p class="hint neg">Thin data for this player (${a.quality.notes.map(esc).join('; ')}). Value calls here are low confidence.</p>` : '';
@@ -363,6 +363,8 @@ function detailsHtml(a) {
 
 // ---------- chart, hit rates, splits (client-side, follow the selected line) ----------
 function hitOf(values, line) {
+  // with no line there is nothing to hit: counting "v > null" made every game an over (100%)
+  if (line == null) return { n: values.length, over: null, rate: null, avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null };
   const over = values.filter((v) => v > line).length;
   return { n: values.length, over, rate: values.length ? over / values.length : null };
 }
@@ -381,12 +383,14 @@ function renderLineParts() {
   $('#chart-block').innerHTML = `
     <div class="chart-head"><h3>Last ${games.length} · ${short()}${line != null ? ` vs ${fmt(line)}` : ''}</h3>
       <div class="legend"><span><i class="sw b-over"></i>Over</span><span><i class="sw b-under"></i>Under</span><span><i class="ln"></i>Line</span>${proj != null ? '<span><i class="ln proj"></i>Projection</span>' : ''}</div>
-      <div class="seg" role="group" aria-label="Games shown">${[10, 20].map((w) => `<button aria-pressed="${S.window === w}" data-w="${w}">L${w}</button>`).join('')}</div></div>
+      ${logs.length > 10 ? `<div class="seg" role="group" aria-label="Games shown">${[10, 20].map((w) => `<button aria-pressed="${S.window === w}" data-w="${w}">L${w}</button>`).join('')}</div>` : ''}</div>
     <div id="chart"></div>
     ${changed ? `<p class="hint">Faded bars are games for his previous team; "With ${team}" counts only games since he joined.</p>` : ''}
-    <div class="hits">${hits.map((h) => `<div><dt>${h.k}</dt><dd>${h.n ? `${h.over}/${h.n} <span class="${h.rate >= 0.5 ? 'pos' : 'neg'}">${pct(h.rate, 0)}</span>` : '–'}</dd></div>`).join('')}</div>`;
+    <div class="hits">${hits.map((h) => `<div><dt>${h.k}${line == null ? ' avg' : ''}</dt><dd>${!h.n ? '–' : line == null ? `${fmt(h.avg)} <span class="dim">${h.n}g</span>` : `${h.over}/${h.n} <span class="${h.rate >= 0.5 ? 'pos' : 'neg'}">${pct(h.rate, 0)}</span>`}</dd></div>`).join('')}</div>
+    ${line == null ? '<p class="hint">No line to measure against, so these are averages. Hit rates appear when there is a line (a game today, or one you enter).</p>' : ''}`;
   barChart($('#chart'), games, { line, projection: proj, label: `${S.profile.player.name} ${short()}` });
-  $('#chart-block .seg').onclick = (e) => { const b = e.target.closest('button'); if (b) { S.window = Number(b.dataset.w); renderLineParts(); } };
+  const seg = $('#chart-block .seg');
+  if (seg) seg.onclick = (e) => { const b = e.target.closest('button'); if (b) { S.window = Number(b.dataset.w); renderLineParts(); } };
   renderSplits(line);
   $$('.lrow[data-line]').forEach((r) => r.classList.toggle('sel', Number(r.dataset.line) === line));
 }
@@ -403,7 +407,7 @@ function renderSplits(line) {
     // under 5 games a split is mostly noise: show it greyed, without a verdict-like hit rate
     const small = s.n < SMALL_N && s.group !== 'Season';
     return `${head}<tr class="${small ? 'small' : ''}"><td class="l">${esc(s.label)}${s.outTonight ? '<span class="tag neg-tag">out tonight</span>' : ''}${small ? '<span class="small-n">small sample</span>' : ''}</td><td>${s.n}</td>
-      <td>${small ? fmt(s.avg) : `${fmt(s.avg)} ${delta == null ? '' : `<span class="${delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'dim'}">${signed(delta)}</span>`}`}</td><td>${fmt(s.min, 0)}</td><td>${small || !s.n ? '–' : `${h.over}/${h.n} <span class="dim">${pct(h.rate, 0)}</span>`}</td></tr>`;
+      <td>${small ? fmt(s.avg) : `${fmt(s.avg)} ${delta == null ? '' : `<span class="${delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'dim'}">${signed(delta)}</span>`}`}</td><td>${fmt(s.min, 0)}</td><td>${small || !s.n || line == null ? '–' : `${h.over}/${h.n} <span class="dim">${pct(h.rate, 0)}</span>`}</td></tr>`;
   }).join('');
   $('#splits').innerHTML = `<div class="card-head"><h3>Splits · ${short()}${line != null ? ` · over ${fmt(line)}` : ''}</h3></div>
     <div class="scroll"><table class="splits"><tr><th class="l">Split</th><th>GP</th><th>Avg</th><th>Min</th><th>Over</th></tr>${rows}</table></div>`;

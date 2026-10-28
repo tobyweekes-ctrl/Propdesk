@@ -45,13 +45,13 @@ test('gradeRecord settles picks, computes hit rate, ROI, calibration and CLV', (
 test('gradeRecord breaks results down by stat, side, game and day, with running profit', () => {
   const L = {
     today: '2026-11-03',
-    playerLogs: (id) => ({ p1: [{ date: '2026-11-01', pts: 25, reb: 3 }, { date: '2026-11-02', pts: 10, reb: 9 }] }[id] || []),
+    playerLogs: (id) => [{ date: '2026-11-01', pts: 25, reb: 3 }, { date: '2026-11-02', pts: 10, reb: 9 }],
     teamDates: new Map([['AAA', ['2026-11-01', '2026-11-02']]]),
   };
   const g = { opp: 'BBB', home: true };
   const r = gradeRecord(L, {
-    '2026-11-01': { a: pick({ ...g, line: 20.5 }), b: pick({ ...g, stat: 'reb', line: 5.5, side: 'under' }) }, // win, win
-    '2026-11-02': { c: pick({ ...g, line: 15.5 }), d: pick({ ...g, stat: 'reb', line: 5.5, side: 'under' }) }, // loss, loss
+    '2026-11-01': { a: pick({ ...g, line: 20.5 }), b: pick({ ...g, playerId: 'p2', stat: 'reb', line: 5.5, side: 'under' }) }, // win, win
+    '2026-11-02': { c: pick({ ...g, line: 15.5 }), d: pick({ ...g, playerId: 'p2', stat: 'reb', line: 5.5, side: 'under' }) }, // loss, loss
   });
   assert.deepEqual(r.byStat.pts && [r.byStat.pts.settled, r.byStat.pts.won], [2, 1]);
   assert.deepEqual([r.bySide.over.won, r.bySide.under.won], [1, 1]);
@@ -62,4 +62,33 @@ test('gradeRecord breaks results down by stat, side, game and day, with running 
   const up = 2 * 0.91;
   assert.ok(Math.abs(r.byDay[0].cumProfit - up) < 1e-9);
   assert.ok(Math.abs(r.byDay[1].cumProfit - (up - 2)) < 1e-9);
+});
+
+test('one pick per player per game: the best-value one counts, the rest are not double-counted', () => {
+  const L = {
+    today: '2026-11-03',
+    playerLogs: (id) => ({ p1: [{ date: '2026-11-01', pts: 25, reb: 9 }], p2: [{ date: '2026-11-01', pts: 5 }] }[id] || []),
+    teamDates: new Map([['AAA', ['2026-11-01']]]),
+  };
+  const r = gradeRecord(L, {
+    '2026-11-01': {
+      a: pick({ line: 20.5, ev: 0.05 }),                            // p1 pts over: win, lower EV
+      b: pick({ stat: 'pra', line: 30.5, ev: 0.09, side: 'under' }), // p1 PRA under: loss, best EV -> counts
+      c: pick({ playerId: 'p2', line: 9.5, ev: 0.04, side: 'under' }),
+    },
+    '2026-11-03': { d: pick({ ev: 0.02 }), e: pick({ stat: 'reb', line: 5.5, ev: 0.03 }) },
+  });
+  assert.equal(r.overall.settled, 2);
+  assert.equal(r.overall.won, 1);
+  assert.ok(r.recent.find((g) => g.playerId === 'p1').stat === 'pra');
+  assert.equal(r.pending, 1);
+  assert.equal(r.upcoming.length, 1);
+  assert.equal(r.upcoming[0].stat, 'reb');
+});
+
+test('closing-line value split into beat, same and worse', () => {
+  const L = { today: '2026-11-03', playerLogs: () => [{ date: '2026-11-01', pts: 25 }], teamDates: new Map([['AAA', ['2026-11-01']]]) };
+  const mk = (id, closeOver, closeUnder) => ({ ...pick({ playerId: id }), firstSeen: 'a', close: { over: closeOver, under: closeUnder, at: 'b' } });
+  const r = gradeRecord(L, { '2026-11-01': { a: mk('p1', 1.8, 2.02), b: mk('p2', 1.91, 1.91), c: mk('p3', 2.02, 1.8) } });
+  assert.deepEqual([r.clv.beat, r.clv.same, r.clv.worse], [1, 1, 1]);
 });

@@ -33,12 +33,25 @@ const fairSide = (side, over, under) => {
  * @param days { 'YYYY-MM-DD': { key: pick } }
  * @returns summary, by-confidence, calibration buckets, CLV and the graded list
  */
+/**
+ * One pick per player per game: the best-value one. Picks on the same player (points, P+R, PRA...) rise and
+ * fall together, so counting each would make the record look bigger and steadier than it is.
+ */
+export function bestPerPlayer(picks) {
+  const best = new Map();
+  for (const p of Object.values(picks)) {
+    if (!p.side) continue; // only published picks count, not passes
+    const cur = best.get(p.playerId);
+    if (!cur || (p.ev ?? 0) > (cur.ev ?? 0)) best.set(p.playerId, p);
+  }
+  return [...best.values()];
+}
+
 export function gradeRecord(L, days) {
   const graded = [];
   for (const [date, picks] of Object.entries(days)) {
     if (date >= L.today) continue;
-    for (const p of Object.values(picks)) {
-      if (!p.side) continue; // only published picks count, not passes
+    for (const p of bestPerPlayer(picks)) {
       const row = L.playerLogs(p.playerId).find((r) => r.date === date);
       const teamPlayed = (L.teamDates.get(p.team) || []).includes(date);
       if (!row) { if (teamPlayed) graded.push({ ...p, date, result: 'void' }); continue; }
@@ -74,6 +87,7 @@ export function gradeRecord(L, days) {
     if (xs.length) buckets.push({ range: `${Math.round(lo * 100)}–${Math.min(100, Math.round(hi * 100))}%`, n: xs.length, predicted: sum(xs, (g) => g.pWin) / xs.length, actual: xs.filter((g) => g.result === 'win').length / xs.length });
   }
   const withClv = graded.filter((g) => g.clv != null && g.close && g.close.at !== g.firstSeen);
+  const SAME = 0.005; // under half a point of fair probability: the line didn't really move
   const groupBy = (key) => {
     const m = new Map();
     for (const g of graded) { const k = key(g); if (k != null) (m.get(k) || m.set(k, []).get(k)).push(g); }
@@ -97,12 +111,17 @@ export function gradeRecord(L, days) {
     byConfidence: Object.fromEntries(['HIGH', 'MEDIUM', 'LOW'].map((c) => [c, summarise(graded.filter((g) => g.confidence === c))])),
     calibration: buckets,
     byStat, bySide, byGame, byDay,
-    clv: { n: withClv.length, avg: withClv.length ? sum(withClv, (g) => g.clv) / withClv.length : null, positive: withClv.length ? withClv.filter((g) => g.clv > 0).length / withClv.length : null },
-    pending: Object.entries(days).filter(([d]) => d >= L.today).reduce((a, [, ps]) => a + Object.values(ps).filter((p) => p.side).length, 0),
+    clv: {
+      n: withClv.length, avg: withClv.length ? sum(withClv, (g) => g.clv) / withClv.length : null,
+      positive: withClv.length ? withClv.filter((g) => g.clv > 0).length / withClv.length : null,
+      beat: withClv.filter((g) => g.clv >= SAME).length, same: withClv.filter((g) => Math.abs(g.clv) < SAME).length, worse: withClv.filter((g) => g.clv <= -SAME).length,
+    },
+    pending: Object.entries(days).filter(([d]) => d >= L.today).reduce((a, [, ps]) => a + bestPerPlayer(ps).length, 0),
+    nights: new Set(graded.filter((g) => g.result === 'win' || g.result === 'loss').map((g) => g.date)).size,
     recent: graded.slice(0, 150),
     // picks waiting on tonight's games, best value first
     upcoming: Object.entries(days).filter(([d]) => d >= L.today)
-      .flatMap(([date, ps]) => Object.values(ps).filter((p) => p.side).map((p) => ({ ...p, date })))
+      .flatMap(([date, ps]) => bestPerPlayer(ps).map((p) => ({ ...p, date })))
       .sort((a, b) => (b.ev ?? 0) - (a.ev ?? 0)).slice(0, 60),
   };
 }

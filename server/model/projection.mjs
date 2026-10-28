@@ -22,7 +22,12 @@ function rate(rows, s) {
 function componentRate(ctx, s, cfg, minutes) {
   const A = cfg.adjust;
   const factors = [];
-  const k = (s === 'fg3m' ? cfg.blend.fg3mRateK : cfg.blend.rateK) * (ctx.traded ? cfg.blend.tradedRateScale ?? 1 : 1);
+  // a new role makes last season's rate less relevant: a new team, or (same team) minutes 20%+ different
+  const minNow = ctx.curRows.length >= 3 ? ctx.curRows.reduce((a, r) => a + r.min, 0) / ctx.curRows.length : null;
+  const minThen = ctx.prevRows.length >= 10 ? ctx.prevRows.reduce((a, r) => a + r.min, 0) / ctx.prevRows.length : null;
+  const roleChanged = !ctx.traded && minNow != null && minThen && Math.abs(minNow / minThen - 1) >= (cfg.blend.roleChangeMin ?? 0.2);
+  const k = (s === 'fg3m' ? cfg.blend.fg3mRateK : cfg.blend.rateK)
+    * (ctx.traded ? cfg.blend.tradedRateScale ?? 1 : roleChanged ? cfg.blend.roleChangeRateScale ?? 1 : 1);
   const rc = rate(ctx.curRows, s), rp = rate(ctx.prevRows, s);
   const w = rp == null ? 1 : rc == null ? 0 : seasonWeight(ctx.curRows.length, k);
   let seasonRate = rc == null && rp == null ? rate(ctx.logs, s) : w * (rc ?? 0) + (1 - w) * (rp ?? 0);
