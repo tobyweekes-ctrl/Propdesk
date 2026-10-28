@@ -64,6 +64,16 @@ main { flex: 1; width: 100%; max-width: 1360px; margin: 0 auto; padding: 0 22px 
 .foot { display: flex; flex-wrap: wrap; gap: 6px 22px; justify-content: space-between; padding: 14px 22px; border-top: 1px solid var(--line); font: 11.5px var(--mono); color: var(--faint); }
 
 /* ---------- shared bits ---------- */
+:focus-visible { outline: 2px solid var(--pos); outline-offset: 2px; }
+input:focus-visible, select:focus-visible { outline: none; }
+/* request in flight: thin bar under the header */
+body::before { content: ''; position: fixed; top: 0; left: 0; height: 2px; width: 0; z-index: 60; background: var(--pos); opacity: 0; transition: opacity .3s; }
+body.loading::before { opacity: 1; animation: load 1.4s ease-in-out infinite; }
+@keyframes load { 0% { left: 0; width: 0; } 50% { left: 15%; width: 55%; } 100% { left: 100%; width: 0; } }
+.search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; cursor: pointer; background: var(--dim);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M2 2l10 10M12 2 2 12' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M2 2l10 10M12 2 2 12' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; margin-top: 16px; }
 .card > h3, .card-head h3 { font-size: 15px; letter-spacing: .1em; color: var(--dim); margin-bottom: 10px; }
 .card-head { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -91,6 +101,7 @@ main { flex: 1; width: 100%; max-width: 1360px; margin: 0 auto; padding: 0 22px 
 .mini { background: var(--raise); color: var(--text); border: 1px solid var(--line-strong); font: 600 12px var(--sans); padding: 3px 10px; border-radius: 999px; cursor: pointer; }
 .mini:hover { border-color: var(--text); }
 .mini.ghost { background: none; color: var(--dim); }
+.mini.added { background: none; border-color: var(--pos); color: var(--pos); }
 input, select { background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); font: 14px var(--mono); padding: 8px 10px; border-radius: 6px; min-width: 0; }
 input:focus, select:focus { outline: none; border-color: var(--pos); }
 label.f { display: flex; flex-direction: column; gap: 4px; font: 600 10.5px var(--sans); color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
@@ -127,6 +138,10 @@ td.why { text-align: left; white-space: normal; color: var(--dim); font: 12px va
 .side + .side { border-left: 1px solid var(--line); }
 .prow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 8px; padding: 8px 14px; text-decoration: none; color: var(--text); }
 .prow:hover, .prow:focus { background: var(--panel-2); outline: none; }
+table.best a, table.tracked a { text-decoration: none; }
+table.best a:hover b, table.tracked a:hover b { text-decoration: underline; text-underline-offset: 3px; }
+table.best tr:hover td { background: var(--panel-2); }
+.side-h { display: none; }
 .pn { font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pm { font: 11px var(--mono); color: var(--faint); text-align: right; }
 .ps { grid-column: 1 / -1; font: 12px var(--mono); color: var(--dim); }
@@ -259,13 +274,14 @@ details.more .sub-h { font: 700 13px var(--cond); letter-spacing: .1em; text-tra
 .big-verdict.negative { background: rgba(224, 103, 92, .14); color: var(--neg); }
 .big-verdict b { font: 800 30px/1 var(--cond); letter-spacing: .02em; }
 .big-verdict span { font: 500 13px var(--sans); }
-.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 12px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 8px; margin-top: 12px; }
 .stats div { background: var(--panel-2); border-radius: 6px; padding: 9px 11px; }
 .stats dt { font: 600 10px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
 .stats dd { margin: 3px 0 0; font: 600 16px var(--mono); }
-.dist { display: flex; align-items: flex-end; gap: 4px; height: 70px; margin-top: 10px; }
+.dist { display: flex; align-items: flex-end; gap: 4px; height: 70px; margin-top: 26px; }
 .dist div { flex: 1; background: var(--raise); border-radius: 4px 4px 0 0; position: relative; min-height: 2px; }
 .dist div.won { background: var(--bar-over); }
+.dist span { position: absolute; top: -17px; left: 0; right: 0; text-align: center; font: 600 11px var(--mono); color: var(--text); }
 .dist label { position: absolute; bottom: -18px; left: 0; right: 0; text-align: center; font: 10px var(--mono); color: var(--faint); }
 .flags { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .flags li { font: 13px var(--sans); padding: 8px 12px; border-radius: 6px; background: var(--panel-2); border-left: 3px solid var(--line-strong); }
@@ -289,7 +305,8 @@ details.more .sub-h { font: 700 13px var(--cond); letter-spacing: .1em; text-tra
   .top .search { grid-column: 1 / -1; grid-row: 2; max-width: none; }
   .search kbd, .kbd-hint { display: none; }
   .nav { justify-self: end; }
-  .nav a { padding: 6px 9px; font-size: 14px; }
+  .nav a { padding: 6px 7px; font-size: 13px; }
+  .odds-toggle { font-size: 11px; padding: 4px 7px; }
   main { padding: 0 14px 32px; }
   .verdict { grid-template-columns: 1fr; padding: 16px; }
   .v-word { font-size: 44px; }
@@ -305,7 +322,7 @@ details.more .sub-h { font: 700 13px var(--cond); letter-spacing: .1em; text-tra
   .card { padding: 14px; }
 }
 
-/* review fixes */
+/* states: stale prices, small samples, previous team */
 .verdict.warnv { border-color: var(--warn); }
 .verdict.warnv .v-word { color: var(--warn); }
 .lrow.stale { opacity: .55; }
@@ -325,8 +342,30 @@ svg .season-label.strong { fill: var(--dim); font-weight: 600; }
   .ladder .mini { padding: 2px 8px; font-size: 0; }
   .ladder .mini::before { content: '+'; font-size: 14px; }
   .small-n { display: block; margin: 2px 0 0; }
+  /* best value: one card per pick */
+  table.best tr:first-child { display: none; }
+  table.best tr { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: 'who who who add' 'pick pick pick add' 'price model ev add'; column-gap: 14px; row-gap: 2px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  table.best tr:last-child { border-bottom: 0; }
+  table.best td { border: 0; padding: 0; text-align: left; white-space: normal; }
+  table.best tr:hover td { background: none; }
+  table.best .c-who { grid-area: who; } table.best .c-pick { grid-area: pick; font-weight: 600; }
+  table.best .c-add { grid-area: add; align-self: center; }
+  table.best .c-price { grid-area: price; } table.best .c-model { grid-area: model; } table.best .c-ev { grid-area: ev; }
+  table.best .c-model::after { content: ' model'; color: var(--faint); } table.best .c-ev::after { content: ' EV'; color: var(--faint); }
+  table.best .c-min { display: none; }
+  /* game cards: teams stacked so names fit */
+  .sides { grid-template-columns: 1fr; }
+  .side + .side { border-left: 0; border-top: 1px solid var(--line); }
+  .side-h { display: block; padding: 8px 14px 0; font: 700 14px var(--cond); letter-spacing: .06em; color: var(--dim); }
+  /* slip analysis */
+  table.legs th:nth-child(3), table.legs td:nth-child(3), table.legs th:nth-child(4), table.legs td:nth-child(4) { display: none; }
+  table.legs td:first-child { white-space: normal; }
+  .big-verdict { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .big-verdict b { font-size: 26px; white-space: nowrap; }
+  .stats div:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  table.tracked th:nth-child(5), table.tracked td:nth-child(5) { display: none; }
+  table.tracked td:first-child { white-space: normal; }
 }
-@media (max-width: 720px) { .nav a { padding: 6px 7px; font-size: 13px; } .odds-toggle { font-size: 11px; padding: 4px 7px; } }
 
 /* context panel */
 .ctx-btn { margin-left: auto; gap: 8px; }

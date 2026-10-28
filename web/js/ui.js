@@ -11,7 +11,16 @@ export const pct = (x, d = 1) => (x == null ? '–' : `${(x * 100).toFixed(d)}%`
 export const edge = (x, d = 1) => (x == null ? '<span class="dim">–</span>' : `<span class="${x > 0 ? 'pos' : x < 0 ? 'neg' : ''}">${x > 0 ? '+' : ''}${(x * 100).toFixed(d)}%</span>`);
 export const signed = (x, d = 1) => (x == null ? '–' : `${x > 0 ? '+' : ''}${Number(x).toFixed(d)}`);
 
-export async function api(path, { method = 'GET', body } = {}) {
+// thin progress bar under the header while any request is in flight
+let inFlight = 0;
+const busy = (d) => { inFlight = Math.max(0, inFlight + d); document.body.classList.toggle('loading', inFlight > 0); };
+
+export async function api(path, opts = {}) {
+  busy(1);
+  try { return await request(path, opts); } finally { busy(-1); }
+}
+
+async function request(path, { method = 'GET', body } = {}) {
   if (window.PROPDESK_STATIC) {
     // GitHub Pages build: same routes, run in the browser over prebuilt data
     const { staticApi } = await import('./static.js');
@@ -66,10 +75,11 @@ const SLIP = 'propdesk.slip.v1';
 export const slip = {
   get() { try { return JSON.parse(localStorage.getItem(SLIP) || '[]'); } catch { return []; } },
   set(legs) { try { localStorage.setItem(SLIP, JSON.stringify(legs)); } catch { /* ignore */ } window.dispatchEvent(new Event('slip:change')); },
+  key: (l) => `${l.playerId}|${l.stat}|${l.side}|${l.line}`,
+  has(leg) { return slip.get().some((l) => slip.key(l) === slip.key(leg)); },
   add(leg) {
     const legs = slip.get();
-    const key = (l) => `${l.playerId}|${l.stat}|${l.side}|${l.line}`;
-    const i = legs.findIndex((l) => key(l) === key(leg));
+    const i = legs.findIndex((l) => slip.key(l) === slip.key(leg));
     if (i >= 0) legs[i] = { ...legs[i], ...leg }; else legs.push({ id: crypto.randomUUID?.() || String(Date.now() + Math.random()), stake: 1, ...leg });
     slip.set(legs);
     return i < 0;

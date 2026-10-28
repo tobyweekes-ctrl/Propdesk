@@ -169,7 +169,7 @@ function lineRow(e) {
   let mv = '';
   if (e.open?.line != null && e.open.line !== e.line) mv = `${e.line > e.open.line ? '▲' : '▼'} from ${fmt(e.open.line)}`;
   else if (e.open?.over && e.open.over !== e.over) mv = `${e.over < e.open.over ? '▲ over shortened' : '▼ over drifted'} from ${odds(e.open.over)}`;
-  const age = e.source === 'manual' || e.source === 'preview' ? '' : `changed ${ago(e.ageMin)}`;
+  const age = e.source === 'manual' || e.source === 'preview' || e.ageMin == null ? '' : `changed ${ago(e.ageMin)}`;
   const btn = (side) => `<button class="sbtn ${e.side === side ? 'pick' : ''} ${(side === 'over' ? e.bestOver : e.bestUnder) ? 'best' : ''}" data-add="${esc(e.id)}" data-side="${side}" aria-label="Add ${side} ${e.line} to slip">
       <span>${side}</span><b>${odds(side === 'over' ? e.over : e.under)}</b><small>${pct(e.model[side], 0)}</small></button>`;
   return `<div class="lrow ${e.side ? 'rec' : ''} ${e.stale ? 'stale' : ''} ${e.line === S.selLine ? 'sel' : ''}" data-line="${e.line}" data-row="${esc(e.id)}" tabindex="0" title="Tap to chart this line">

@@ -82,5 +82,9 @@ export function gradeRecord(L, days) {
     clv: { n: withClv.length, avg: withClv.length ? sum(withClv, (g) => g.clv) / withClv.length : null, positive: withClv.length ? withClv.filter((g) => g.clv > 0).length / withClv.length : null },
     pending: Object.entries(days).filter(([d]) => d >= L.today).reduce((a, [, ps]) => a + Object.values(ps).filter((p) => p.side).length, 0),
     recent: graded.slice(0, 150),
+    // picks waiting on tonight's games, best value first
+    upcoming: Object.entries(days).filter(([d]) => d >= L.today)
+      .flatMap(([date, ps]) => Object.values(ps).filter((p) => p.side).map((p) => ({ ...p, date })))
+      .sort((a, b) => (b.ev ?? 0) - (a.ev ?? 0)).slice(0, 60),
   };
 }

@@ -58,11 +58,11 @@ function analysisHtml() {
     ? `<tr><td class="l">${esc(l.playerName || l.player || '')}</td><td colspan="5" class="l neg">${esc(l.error)}</td></tr>`
     : `<tr><td class="l">${esc(l.player.split(' ').at(-1))} <span class="dim">${esc(legLabel(l))}</span></td><td>${pct(l.pWin)}</td><td>${pct(l.fairP ?? l.implied)}</td><td>${odds(l.fairPrice)}</td><td class="${l.ev >= 0 ? 'pos' : 'neg'}">${signed(l.ev * 100, 0)}%</td><td><span class="chip ${l.verdict.toLowerCase()}">${l.verdict}</span></td></tr>`).join('');
   const s = a.singles, c = a.acca;
-  const dist = s.winsDistribution.map((p, i) => `<div class="${i > 0 ? 'won' : ''}" style="height:${Math.max(2, p * 100)}%" title="${i} winner${i === 1 ? '' : 's'}: ${pct(p)}"><label>${i}</label></div>`).join('');
+  const dist = s.winsDistribution.map((p, i) => `<div class="${i > 0 ? 'won' : ''}" style="height:${Math.max(2, p * 100)}%" title="${i} winner${i === 1 ? '' : 's'}: ${pct(p)}"><span>${pct(p, 0)}</span><label>${i}</label></div>`).join('');
   return `
     <div class="card-head"><h3>Analysis</h3><span class="hint" style="margin:0">${a.sims.toLocaleString()} simulated games</span></div>
     <div class="big-verdict ${a.verdict.toLowerCase()}"><b>${word}</b><span>${blurb}</span></div>
-    <div class="scroll" style="margin-top:12px"><table><tr><th class="l">Leg</th><th>Model</th><th>Bookie</th><th>Fair</th><th>EV</th><th></th></tr>${legRows}</table></div>
+    <div class="scroll" style="margin-top:12px"><table class="legs"><tr><th class="l">Leg</th><th>Model</th><th>Bookie</th><th>Fair</th><th>EV</th><th></th></tr>${legRows}</table></div>
     ${S.mode === 'singles' || !c ? `
       <div class="stats">
         <div><dt>Total stake</dt><dd>${fmt(s.stake, 2)}</dd></div>
@@ -71,7 +71,7 @@ function analysisHtml() {
         <div><dt>Expected winners</dt><dd>${fmt(s.expectedWinners, 1)} of ${a.legs.filter((l) => !l.error).length}</dd></div>
         <div><dt>All lose</dt><dd>${pct(s.pAllLose)}</dd></div>
       </div>
-      <div class="sub-h hint" style="margin-top:14px">How many win</div>
+      <div class="sub-h hint" style="margin-top:14px">How many win (chance of each)</div>
       <div class="dist">${dist}</div><div style="height:20px"></div>`
     : `
       <div class="stats">

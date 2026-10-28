@@ -11,8 +11,13 @@ export async function renderRecord(view) {
   const head = `<section class="hero"><h1>Track <em>record</em></h1>
     <p>Every pick the model publishes is saved with the price at the time and the closing price, then graded from box scores. Prices are DraftKings'. Flat 1-unit stakes.</p></section>`;
   if (r.unavailable) { view.innerHTML = `${head}<p class="empty">The record is built by the scheduled job on the web version.</p>`; return; }
+  const up = r.upcoming || [];
+  const tracking = up.length ? `<section class="card"><div class="card-head"><h3>Tracked tonight</h3><span class="hint" style="margin:0">${r.pending} pick${r.pending === 1 ? '' : 's'}${up.length < r.pending ? `, best ${up.length} shown` : ''}</span></div>
+      <div class="scroll"><table class="tracked"><tr><th class="l">Pick</th><th>Price</th><th>Model</th><th>EV</th><th>Confidence</th></tr>
+      ${up.map((g) => `<tr><td class="l"><a href="#/p/${esc(g.playerId)}/${esc(g.stat)}"><b>${esc(g.name)}</b></a> <span class="dim">${g.side} ${fmt(g.line)} ${state.stats[g.stat]?.short || g.stat}</span></td><td>${odds(g.side === 'over' ? g.over : g.under)}</td><td>${pct(g.pWin, 0)}</td><td>${g.ev == null ? '–' : signedPct(g.ev, 0)}</td><td>${esc((g.confidence || '').toLowerCase())}</td></tr>`).join('')}
+      </table></div><p class="hint">Saved at the first price seen; the closing price is recorded at tip-off.</p></section>` : '';
   if (!o.settled) {
-    view.innerHTML = `${head}<section class="card"><p class="empty" style="padding:8px 0">${r.since ? `Tracking since ${esc(r.since)}.` : 'Tracking starts with tonight\'s picks.'} ${r.pending ? `${r.pending} pick${r.pending === 1 ? '' : 's'} waiting on tonight's games.` : ''} Results appear the morning after.</p></section>`;
+    view.innerHTML = `${head}<section class="card"><p class="empty" style="padding:8px 0">${r.since ? `Tracking since ${esc(r.since)}.` : 'Tracking starts with tonight\'s picks.'} Results appear the morning after the games.</p></section>${tracking}`;
     return;
   }
   const box = (label, x) => `<div><dt>${label}</dt><dd>${x}</dd></div>`;
@@ -37,5 +42,6 @@ export async function renderRecord(view) {
       <div class="scroll"><table><tr><th>Date</th><th class="l">Pick</th><th>Price</th><th>Model</th><th>Result</th><th>CLV</th></tr>
       ${r.recent.map((g) => `<tr><td>${g.date.slice(5)}</td><td class="l"><b>${esc(g.name)}</b> <span class="dim">${g.side} ${fmt(g.line)} ${state.stats[g.stat]?.short || g.stat}</span></td><td>${odds(g.price ?? (g.side === 'over' ? g.over : g.under))}</td><td>${pct(g.pWin, 0)}</td><td>${res(g)}${g.actual != null ? ` <span class="dim">${fmt(g.actual, 0)}</span>` : ''}</td><td>${g.clv == null ? '–' : signedPct(g.clv)}</td></tr>`).join('')}
       </table></div>
-      <p class="hint">CLV (closing-line value) = how far the market's fair price moved toward the pick by tip-off. Consistently beating the close is the best sign of a real edge.</p></section>`;
+      <p class="hint">CLV (closing-line value) = how far the market's fair price moved toward the pick by tip-off. Consistently beating the close is the best sign of a real edge.</p></section>
+    ${tracking}`;
 }
