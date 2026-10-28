@@ -420,3 +420,21 @@ svg .run-dot { fill: var(--text); stroke: var(--panel); stroke-width: 2; }
 table.split td:first-child { white-space: normal; }
 .more-rows > summary { cursor: pointer; padding: 10px 8px; font: 600 12px var(--sans); color: var(--dim); }
 .more-rows > summary:hover { color: var(--text); }
+
+/* landing: who benefits tonight */
+.bf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 10px; }
+.bf { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; min-width: 0; }
+.bf header { display: flex; align-items: center; gap: 8px; font: 700 17px var(--cond); letter-spacing: .03em; }
+.bf header .dim { font-size: 14px; }
+.bf-out { margin: 4px 0 6px; font: 12.5px/1.45 var(--sans); }
+.bf-row { display: flex; flex-direction: column; gap: 1px; padding: 7px 0; border-top: 1px solid var(--line); text-decoration: none; color: var(--text); }
+.bf-row .pn { white-space: normal; }
+.bf-row:hover .pn { text-decoration: underline; text-underline-offset: 3px; }
+.bf-d { font: 12px var(--mono); color: var(--dim); }
+.bf-p { font: 11.5px var(--mono); color: var(--faint); }
+.bf-more { display: none; margin-top: 10px; }
+@media (max-width: 720px) {
+  .bf.extra { display: none; }
+  .bf-open .bf.extra { display: block; }
+  .bf-more { display: inline-block; }
+}

@@ -10,7 +10,8 @@ import { mkdirSync, rmSync, readFileSync, writeFileSync, cpSync, existsSync, rea
 import { join, dirname, relative, resolve } from 'node:path';
 import { ROOT, config } from '../server/env.mjs';
 import { loadSeason, getSlate, getInjuries, eventProps, today, getLeague, linesFor, injuryFor, averages } from '../server/data/store.mjs';
-import { analyse } from '../server/model/index.mjs';
+import { analyse, DEFAULTS } from '../server/model/index.mjs';
+import { absenceImpact } from '../server/model/impact.mjs';
 import { mergePicks, gradeRecord } from '../server/model/record.mjs';
 import { quota } from '../server/providers/oddsApi.mjs';
 import { STATS } from '../server/stats.mjs';
@@ -155,6 +156,41 @@ const record = gradeRecord(L, days);
 writeFileSync(join(DIST, 'data', 'record.json'), JSON.stringify({ ...record, archived: Boolean(ARCHIVE), generated: new Date().toISOString() }));
 console.log(`record: ${record.overall.settled} settled picks since ${record.since || 'n/a'}, hit ${record.overall.hitRate == null ? '–' : (record.overall.hitRate * 100).toFixed(1) + '%'}`);
 
+// ---------- who benefits tonight: absences and the teammates the model projects to gain ----------
+const r1 = (x) => Math.round(x * 10) / 10;
+const benefits = [];
+for (const g of slates[day]) {
+  for (const team of [g.away, g.home]) {
+    const game = { date: day, gameId: g.gameId, team, opp: team === g.home ? g.away : g.home, home: team === g.home };
+    const roster = [...L.players.values()].filter((p) => p.team === team && L.playerLogs(p.id).filter((r) => r.team === team).length >= 3);
+    const gainers = [];
+    let outs = null;
+    for (const p of roster) {
+      if (OUT.test(injuryFor(injuries, p)?.status || '')) continue;
+      const i = absenceImpact(L, p.id, game, injuries, DEFAULTS);
+      if (!i) continue;
+      outs ||= i.outs;
+      const d = { min: i.minutes.with - i.minutes.without, pts: i.pts.with - i.pts.without, reb: i.reb.with - i.reb.without, ast: i.ast.with - i.ast.without };
+      if (d.min >= 1 || d.pts >= 1 || d.reb >= 0.5 || d.ast >= 0.5) {
+        gainers.push({ id: p.id, name: p.name, pos: p.pos, minutes: r1(i.minutes.with), d: { min: r1(d.min), pts: r1(d.pts), reb: r1(d.reb), ast: r1(d.ast) }, pts: r1(i.pts.with), reb: r1(i.reb.with), ast: r1(i.ast.with) });
+      }
+    }
+    if (!outs) continue;
+    const out = outs.map((o) => {
+      const recent = L.playerLogs(o.id).filter((r) => r.team === team).slice(-10);
+      const av = averages(recent);
+      const inj = injuryFor(injuries, L.players.get(o.id));
+      return { id: o.id, name: o.name, status: inj?.status || 'Out', injury: inj?.injury || '', min: r1(av.min), pts: r1(av.pts), reb: r1(av.reb), ast: r1(av.ast) };
+    });
+    gainers.sort((a, b) => (b.d.pts + b.d.reb + b.d.ast) - (a.d.pts + a.d.reb + a.d.ast));
+    benefits.push({ gameId: g.gameId, team, opp: game.opp, home: game.home, tipoff: g.tipoff, out, gainers: gainers.slice(0, 3) });
+  }
+}
+// teams where the absences move projections most come first
+const lift = (b) => b.gainers.reduce((a, x) => a + x.d.pts + x.d.reb + x.d.ast, 0);
+benefits.sort((a, b) => lift(b) - lift(a));
+console.log(`benefits: ${benefits.length} teams with rotation players out, ${benefits.reduce((a, b) => a + b.gainers.length, 0)} gainers`);
+
 // ---------- landing (served without loading the season files, so the first visit is quick) ----------
 const top = (team) => [...L.players.values()]
   .filter((p) => p.team === team && !OUT.test(injuryFor(injuries, p)?.status || ''))
@@ -167,7 +203,7 @@ const top = (team) => [...L.players.values()]
     return { id: p.id, name: p.name, pos: p.pos, min: av.min, minProj: minutesFor.get(p.id) ?? null, pts: av.pts, reb: av.reb, ast: av.ast, injury: injuryFor(injuries, p)?.status || null };
   });
 writeFileSync(join(DIST, 'data', 'landing.json'), JSON.stringify({
-  date: day, games: slates[day].map((g) => ({ ...g, awayPlayers: top(g.away), homePlayers: top(g.home) })), best,
+  date: day, games: slates[day].map((g) => ({ ...g, awayPlayers: top(g.away), homePlayers: top(g.home) })), best, benefits,
   // compact pool for generated slips, rounded to keep the file small
   // (only lines a generated slip could use: no CHECK, a published pick or a fair-ish price; see web/js/autoslip.js)
   pool: pool.filter((x) => x.verdict !== 'CHECK' && (x.side || x.evLean >= 0))

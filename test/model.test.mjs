@@ -180,3 +180,16 @@ test('context notes: every section present, tones valid, matchup facts match the
   const r = analyse({ L, playerId: ret.id, game: { date: L.today, team: ret.team, opp: 'BOS', home: true }, stat: 'pts' });
   assert.ok(r.notes.sections[0].notes.some((x) => x.key === 'returned' || x.key === 'absent'));
 });
+
+test('absence impact: a teammate out raises minutes and output against the no-absence projection', async () => {
+  const { absenceImpact } = await import('../server/model/impact.mjs');
+  const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'G');
+  const game = { date: L.today, team: p.team, opp: p.team === 'BOS' ? 'NYK' : 'BOS', home: true };
+  const mate = buildContext(L, p.id, game).availableMates.sort((a, b) => b.min - a.min)[0];
+  const injuries = [{ name: mate.name, team: p.team, status: 'Out', injury: 'Knee' }];
+  const i = absenceImpact(L, p.id, game, injuries, DEFAULTS);
+  assert.deepEqual(i.outs.map((o) => o.id), [mate.id]);
+  assert.ok(i.minutes.with > i.minutes.without, `${i.minutes.with} > ${i.minutes.without}`);
+  assert.ok(i.pts.with > i.pts.without);
+  assert.equal(absenceImpact(L, p.id, game, [], DEFAULTS), null); // nobody out: nothing to report
+});

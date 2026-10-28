@@ -8,6 +8,16 @@ export async function renderLanding(view) {
   let games;
   try { games = await api('/api/slate/players'); } catch (e) { view.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
   const best = games.best || [];
+  const benefits = games.benefits || [];
+  const gain = (v, label) => (v >= 0.5 ? `<span class="pos">+${fmt(v)}</span> ${label}` : '');
+  const benefitCard = (b, i) => `<section class="bf ${i >= 4 ? 'extra' : ''}">
+    <header>${team(b.team)} <span class="dim">${b.home ? 'v' : '@'} ${b.opp}</span></header>
+    <p class="bf-out">Without ${b.out.map((o) => `<b>${esc(o.name)}</b> <span class="dim">(${esc(o.status.toLowerCase())}${o.injury ? `, ${esc(o.injury.toLowerCase())}` : ''} · ${fmt(o.pts)} pts, ${fmt(o.reb)} reb, ${fmt(o.ast)} ast)</span>`).join(', ')}</p>
+    ${b.gainers.length ? b.gainers.map((x) => `<a class="bf-row" href="#/p/${esc(x.id)}/pts"><span class="pn">${esc(x.name)}</span>
+      <span class="bf-d">${[gain(x.d.min, 'min'), gain(x.d.pts, 'pts'), gain(x.d.reb, 'reb'), gain(x.d.ast, 'ast')].filter(Boolean).join(' · ')}</span>
+      <span class="bf-p">now ${fmt(x.pts)} pts · ${fmt(x.reb)} reb · ${fmt(x.ast)} ast</span></a>`).join('')
+    : '<p class="hint" style="margin:6px 0 0">No teammate gains enough to note: the minutes spread thinly.</p>'}
+  </section>`;
   const pool = games.pool || [];
   const poolFor = (gameId) => (gameId ? pool.filter((x) => x.gameId === gameId) : pool);
   const genMenu = (gameId, label) => {
@@ -39,6 +49,12 @@ export async function renderLanding(view) {
         <td class="l c-pick">${label(b)}</td><td class="c-price">${odds(b.side === 'over' ? b.over : b.under)}</td><td class="c-model">${pct(b.pWin, 0)}</td><td class="pos c-ev">+${Math.round(b.ev * 100)}%</td><td class="c-min">${fmt(b.minutes, 0)}</td>
         <td class="c-add">${slipBtn(i, slip.has(legOf(b)))}</td></tr>`).join('')}</table></div>
       <p class="hint">DraftKings prices (US). Edges over 8% against the market are left out: they usually mean news the model can't see. Confidence and reasons are on each player's page.</p>
+    </section>` : ''}
+    ${benefits.length ? `<section class="card">
+      <div class="card-head"><h3>Who benefits tonight</h3><span class="hint" style="margin:0">${benefits.length} team${benefits.length === 1 ? '' : 's'} missing rotation players</span></div>
+      <div class="bf-grid">${benefits.map(benefitCard).join('')}</div>
+      ${benefits.length > 4 ? `<button class="mini bf-more" data-bfmore>Show all ${benefits.length} teams</button>` : ''}
+      <p class="hint">Model projection with tonight's injury report against the same projection with everyone available: extra minutes, plus a share of the points, assists and (for a missing centre) rebounds the absent player leaves. Bookmakers adjust these lines too; tap a player to see if the price still has value.</p>
     </section>` : ''}
     ${games.length ? `<div class="games">${games.map((g) => `<section class="game">
       <header>${team(g.away)} <span class="at">@</span> ${team(g.home)}<span class="sp"></span>${pool.length ? genMenu(g.gameId, `${g.away} @ ${g.home}`) : ''}<span class="time">${time(g)}</span></header>
@@ -77,6 +93,8 @@ export async function renderLanding(view) {
       return;
     }
     if (!e.target.closest('.gen')) closeMenus();
+    const more = e.target.closest('[data-bfmore]');
+    if (more) { more.closest('.card').classList.add('bf-open'); more.remove(); return; }
     const b = e.target.closest('[data-best]');
     if (!b) return;
     const x = best[Number(b.dataset.best)];
