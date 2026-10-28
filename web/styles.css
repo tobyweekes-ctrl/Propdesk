@@ -131,7 +131,24 @@ td.why { text-align: left; white-space: normal; color: var(--dim); font: 12px va
 .game { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .game header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); font: 700 20px var(--cond); letter-spacing: .03em; }
 .game header .at { color: var(--faint); font-size: 15px; }
-.game header .time { margin-left: auto; font: 600 12px var(--mono); color: var(--pos); }
+.game header { flex-wrap: wrap; row-gap: 8px; }
+.game header .time { font: 600 12px var(--mono); color: var(--pos); }
+.game header .sp { flex: 1; }
+/* generate-slip menu */
+.gen { position: relative; font: 600 12px var(--sans); letter-spacing: 0; }
+.gen-btn { white-space: nowrap; }
+.gen-menu { position: absolute; z-index: 20; top: calc(100% + 6px); right: 0; min-width: 230px; padding: 4px; background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: var(--r); box-shadow: 0 12px 30px rgba(0, 0, 0, .45); display: flex; flex-direction: column; }
+.gen-menu button { display: flex; flex-direction: column; gap: 2px; text-align: left; background: none; border: 0; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: var(--text); }
+.gen-menu button:hover:not(:disabled), .gen-menu button:focus-visible { background: var(--raise); }
+.gen-menu button:disabled { opacity: .45; cursor: default; }
+.gen-menu b, .gen-big b { font: 700 15px var(--cond); letter-spacing: .05em; text-transform: uppercase; }
+.gen-menu small, .gen-big small { font: 11.5px var(--mono); color: var(--dim); }
+.gen-all { margin-top: 18px; }
+.gen-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.gen-big { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 14px 16px; background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: var(--r); cursor: pointer; color: var(--text); }
+.gen-big:hover:not(:disabled) { border-color: var(--pos); }
+.gen-big:first-child b { color: var(--pos); }
+.gen-big:disabled { opacity: .45; cursor: default; }
 .tm { display: inline-flex; align-items: center; gap: 7px; }
 .tm i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .sides { display: grid; grid-template-columns: 1fr 1fr; }

@@ -100,6 +100,7 @@ writeFileSync(join(DIST, 'data', 'odds.json'), JSON.stringify(odds));
 const L = await getLeague();
 const OUT = /^(out|suspended)/i;
 const picks = [];
+const pool = []; // every priced line with the model's lean (generated slips)
 const minutesFor = new Map(); // playerId -> projected minutes
 for (const g of slates[day]) {
   const o = odds.games[g.gameId];
@@ -119,6 +120,13 @@ for (const g of slates[day]) {
       const h = a.headline;
       if (!h || h.stale) continue;
       const side = h.side;
+      const ls = side || h.leanSide;
+      if (ls) {
+        pool.push({
+          gameId: g.gameId, playerId: id, name: p.name, team: p.team, stat, line: h.line, book: h.bookTitle, over: h.over, under: h.under,
+          side, leanSide: ls, pLean: h.model[ls], evLean: h.ev[ls], verdict: h.verdict, stale: false,
+        });
+      }
       picks.push({
         date: day, gameId: g.gameId, tipoff: g.tipoff, playerId: id, name: p.name, team: p.team, opp: game.opp, home: game.home,
         stat, line: h.line, book: h.bookTitle, over: h.over, under: h.under, side,
@@ -160,6 +168,10 @@ const top = (team) => [...L.players.values()]
   });
 writeFileSync(join(DIST, 'data', 'landing.json'), JSON.stringify({
   date: day, games: slates[day].map((g) => ({ ...g, awayPlayers: top(g.away), homePlayers: top(g.home) })), best,
+  // compact pool for generated slips, rounded to keep the file small
+  // (only lines a generated slip could use: no CHECK, a published pick or a fair-ish price; see web/js/autoslip.js)
+  pool: pool.filter((x) => x.verdict !== 'CHECK' && (x.side || x.evLean >= 0))
+    .map(({ stale, verdict, ...x }) => ({ ...x, verdict, pLean: Math.round(x.pLean * 1e3) / 1e3, evLean: Math.round(x.evLean * 1e3) / 1e3 })),
 }));
 
 const meta = {

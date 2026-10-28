@@ -103,6 +103,10 @@ for good) so the first search is instant.
 ## Using it
 
 - **Landing:** tonight's games with each team's main players; click one, or press `/` and search any player.
+- **Generate slip:** on each game, and for all games at the bottom of the landing page. *Value slip* takes the
+  best expected-value picks; *Top 10 most likely* takes the legs with the highest model chance at fair prices
+  or better. One leg per player, no CHECK or stale lines (`web/js/autoslip.js`). Web version only: the
+  candidate lines come from the scheduled build.
 - **Stat:** chips for PTS, REB, AST, 3PM, PRA, P+R, P+A, R+A, or keys `1`–`8`.
 - **Verdict strip:** the best bet across all lines (OVER / UNDER / PASS, confidence, edge, EV), projection,
   the model's own line and projected minutes.
