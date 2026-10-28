@@ -4,6 +4,7 @@
 import { teamGames, teamSummaries, addUsage, positionDefense, posGroup, absenceInfo, restDays } from './derive.mjs';
 import { normName, mean, round } from '../util.mjs';
 import { STATS, statValue } from '../stats.mjs';
+import { snapDown } from '../model/odds.mjs';
 
 /** Build indexes from raw season bundles. Exported so the backtest can index a truncated copy. */
 export function indexLeague({ current, previous, seasons, today: asOf, source }) {
@@ -114,7 +115,8 @@ const isPlayer = (r, player, n) => (r.playerId ? r.playerId === player.id : norm
 export function linesFor(rows, player, stat) {
   const n = normName(player.name);
   const lines = rows.filter((r) => r.stat === stat && r.kind !== 'ms' && isPlayer(r, player, n))
-    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, line: r.line, over: r.over, under: r.under, open: r.open || null, updated: r.updated, ageMin: r.ageMin ?? null, stale: Boolean(r.stale) }))
+    // prices snapped down to the standard fraction the page shows; the feed's own decimals kept as raw*
+    .map((r) => ({ book: r.book, bookTitle: r.bookTitle, line: r.line, over: snapDown(r.over), under: snapDown(r.under), rawOver: r.over, rawUnder: r.under, open: r.open || null, updated: r.updated, ageMin: r.ageMin ?? null, stale: Boolean(r.stale) }))
     .sort((a, b) => a.line - b.line || a.bookTitle.localeCompare(b.bookTitle));
   const pick = (cmp) => lines.filter((l) => l.over && l.under && !l.stale).reduce((best, l) => (!best || cmp(l, best) ? l : best), null);
   const bestOver = pick((l, b) => l.line < b.line || (l.line === b.line && l.over > b.over));
@@ -130,6 +132,7 @@ export function ladderFor(rows, player, stat) {
     .map((r) => ({ book: r.book, bookTitle: r.bookTitle, k: r.line, price: r.over, updated: r.updated, ageMin: r.ageMin ?? null, stale: Boolean(r.stale) }))
     .sort((a, b) => a.k - b.k);
   // safety net: a ladder whose prices don't rise with k (or with two prices for one k) is not trusted at all
+  // (checked on the feed's prices: two close ones can snap to the same fraction)
   const ok = out.every((x, i) => i === 0 || (x.k > out[i - 1].k && x.price > out[i - 1].price));
-  return ok ? out : [];
+  return ok ? out.map((x) => ({ ...x, rawPrice: x.price, price: snapDown(x.price) })) : [];
 }

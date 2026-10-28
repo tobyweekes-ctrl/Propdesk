@@ -39,10 +39,12 @@ export function barChart(el, games, { line, projection = null, label = '' } = {}
   // grid
   for (const t of ticks) svg += `<line class="grid" x1="${m.l}" x2="${m.l + iw}" y1="${y(t)}" y2="${y(t)}"/><text class="tick" x="${m.l - 6}" y="${y(t) + 3.5}" text-anchor="end">${fmt(t, 0)}</text>`;
   // season / team boundaries (games for a previous team are drawn faded)
+  const breaks = new Set();
   for (let i = 1; i < n; i++) {
     const newSeason = games[i].season !== games[i - 1].season;
     const newTeam = games[i].team && games[i].team !== games[i - 1].team;
     if (newSeason || newTeam) {
+      breaks.add(i);
       const x = m.l + i * band;
       const label = [newSeason ? games[i].season : null, newTeam ? `now ${games[i].team}` : null].filter(Boolean).join(' · ');
       svg += `<line class="season" x1="${x}" x2="${x}" y1="${m.t - 6}" y2="${m.t + ih}"/><text class="season-label strong" x="${x + 4}" y="${m.t - 6}">${esc(label)}</text>`;
@@ -59,10 +61,12 @@ export function barChart(el, games, { line, projection = null, label = '' } = {}
       : `M${x},${base}V${top + r}Q${x},${top} ${x + r},${top}H${x + bw - r}Q${x + bw},${top} ${x + bw},${top + r}V${base}Z`;
     svg += `<path class="bar ${cls(g.value)} ${g.old ? 'old' : ''}" data-i="${i}" d="${d}"/>`;
     if (showValues) svg += `<text class="val" x="${x + bw / 2}" y="${top - 4}" text-anchor="middle">${fmt(g.value, 0)}</text>`;
-    if (i % labelEvery === (n - 1) % labelEvery) {
-      svg += `<text class="xl" x="${m.l + i * band + band / 2}" y="${m.t + ih + 13}" text-anchor="middle">${g.home ? '' : '@'}${esc(g.opp)}</text>`;
-      // a game from an earlier season carries its year, so last October's 10/29 doesn't read as a future date
-      if (band >= 40) svg += `<text class="xd" x="${m.l + i * band + band / 2}" y="${m.t + ih + 25}" text-anchor="middle">${g.date.slice(5).replace('-', '/')}${g.season !== games[n - 1].season ? `/${g.date.slice(2, 4)}` : ''}</text>`;
+    const labelled = i % labelEvery === (n - 1) % labelEvery;
+    if (labelled) svg += `<text class="xl" x="${m.l + i * band + band / 2}" y="${m.t + ih + 13}" text-anchor="middle">${g.home ? '' : '@'}${esc(g.opp)}</text>`;
+    // dates: every labelled bar when there's room, else the first game, each season/team break and the last;
+    // a game from an earlier season carries its year, so last October's 10/29 doesn't read as a future date
+    if ((band >= 40 && labelled) || (band < 40 && (i === 0 || i === n - 1 || breaks.has(i)))) {
+      svg += `<text class="xd" x="${m.l + i * band + band / 2}" y="${m.t + ih + 25}" text-anchor="${band < 40 && i === 0 ? 'start' : band < 40 && i === n - 1 ? 'end' : 'middle'}">${g.date.slice(5).replace('-', '/')}${g.season !== games[n - 1].season ? `/${g.date.slice(2, 4)}` : ''}</text>`;
     }
   });
   // projection (dashed, quiet) and line (solid, labelled)

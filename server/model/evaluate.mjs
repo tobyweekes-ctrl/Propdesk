@@ -43,7 +43,7 @@ export function evaluateLine(sp, l, q, cfg) {
   const sides = ['over', 'under'].filter((s) => edge[s] != null);
   const best = sides.sort((a, b) => edge[b] - edge[a])[0] || null;
   // a price that hasn't changed for hours can't be trusted as tonight's price, so it can't be the pick
-  const passes = best && !l.stale && edge[best] >= cfg.threshold && (!cfg.requirePositiveEV || ev[best] > 0);
+  const passes = best && !l.stale && edge[best] >= cfg.threshold && ev[best] >= cfg.minEv;
   const disagree = Boolean(best && fair && !fair.estimated && edge[best] > cfg.marketDisagreement);
   const side = passes && !disagree ? best : null;
   let confidence = null;

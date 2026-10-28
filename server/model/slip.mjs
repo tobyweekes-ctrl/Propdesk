@@ -68,7 +68,7 @@ export function analyseSlip(players, legs, { sims = 20000, seed = 7, cfg, accaSt
     const ev = expectedValue(pWin, p.push, price);
     const q = dataQuality(pl.ctx, pl.pp.minutes);
     const disagree = fairP != null && pWin - fairP > cfg.marketDisagreement;
-    const verdict = disagree ? 'CHECK' : ev >= 0.05 ? 'VALUE' : ev >= 0 ? 'FAIR' : 'AVOID';
+    const verdict = disagree ? 'CHECK' : ev >= cfg.minEv ? 'VALUE' : ev >= 0 ? 'FAIR' : 'AVOID';
     return {
       ...leg, price, player: pl.name, team: pl.team, opp: pl.opp, gameId: pl.game?.gameId,
       pWin, pPush: p.push, implied, fairP, edge: pWin - (fairP ?? implied), ev, verdict,
@@ -173,7 +173,7 @@ export function analyseSlip(players, legs, { sims = 20000, seed = 7, cfg, accaSt
   } : null;
 
   const verdict = !ok.length ? null
-    : (acca && acca.ev > 0.05) || singles.roi > 0.05 ? 'POSITIVE'
+    : (acca && acca.ev >= cfg.minEv) || singles.roi >= cfg.minEv ? 'POSITIVE'
       : (acca && acca.ev > -0.03) || singles.roi > -0.03 ? 'MARGINAL' : 'NEGATIVE';
   return { legs: L, singles, acca, flags, verdict, sims };
 }

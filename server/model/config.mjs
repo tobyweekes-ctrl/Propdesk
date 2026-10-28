@@ -3,7 +3,9 @@
 export const DEFAULTS = {
   // Verdict
   threshold: 0.04,           // min edge (model prob − no-vig market prob) to recommend a side
-  requirePositiveEV: true,   // also require EV > 0 at the offered price
+  // One value bar for every verdict on the site (pick, ladder, price checker, slip): expected return of at least
+  // 3% at the price shown. Backtest 2025-26 on estimated lines: picks the model rated 3-5% returned 4.1%.
+  minEv: 0.03,
   devig: 'multiplicative',   // 'multiplicative' | 'power'
   assumedMargin: 0.05,       // bookmaker margin assumed when only one side's price is known
   // An edge this big against a two-sided no-vig price usually means the model is missing news (role,

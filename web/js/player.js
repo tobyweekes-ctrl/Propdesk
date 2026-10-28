@@ -111,8 +111,10 @@ function renderModel() {
   const a = res.analysis;
   if (S.selLine == null || S.preview?.line) S.selLine = S.preview?.line ? Number(S.preview.line) : a.headline?.line ?? a.consensus?.line ?? a.projection.modelLine;
   if (!S.checks) {
+    // first row: the line itself as "k or more"; second: at least 2 higher (low-count stats made these equal)
     const p = a.projection.mean;
-    S.checks = [{ k: Math.max(1, Math.round(p * 1.2)), price: '' }, { k: Math.max(2, Math.round(p * 1.5)), price: '' }];
+    const k1 = S.selLine != null ? Math.floor(S.selLine) + 1 : Math.max(1, Math.round(p));
+    S.checks = [{ k: k1, price: '' }, { k: k1 + Math.max(2, Math.round(p * 0.3)), price: '' }];
   }
   $('#verdict').innerHTML = verdictCard(a);
   $('#lines').innerHTML = linesCard(a);
@@ -134,7 +136,8 @@ const ago = (min) => (min == null ? 'time unknown' : `${dur(min)} ago`);
 const pOverLine = (pmf, line) => pAtLeast(pmf, Math.floor(line) + 1);
 // the price at which a side becomes a bet: model chance at least the edge bar above the price's chance
 const poss = (n) => `${esc(n)}${/s$/i.test(n) ? "'" : "'s"}`;
-const valueAt = (p, a) => (p - a.config.threshold > 0.02 ? 1 / (p - a.config.threshold) : null);
+// the price at which a side becomes a pick: it must clear both bars the verdict uses (edge and expected return)
+const valueAt = (p, a) => (p - a.config.threshold > 0.02 ? Math.max(1 / (p - a.config.threshold), (1 + (a.config.minEv ?? 0)) / p) : null);
 
 // a pick on the less likely side is a price call, not a forecast: say so in words
 function underdogNote(side, h, price, need) {
@@ -144,6 +147,18 @@ function underdogNote(side, h, price, need) {
   return need
     ? `${head}The ${side} at ${odds(price)} needs to land ${pct(1 / price, 0)} of the time to break even and the model gives it ${pct(h.model[side], 0)}: close to break-even, so no bet. It would be value from ${odds(need, 'up')}.`
     : `${head}The ${side} at ${odds(price)} needs to land only ${pct(1 / price, 0)} of the time to break even and the model gives it ${pct(h.model[side], 0)}. A value bet that still loses more often than it wins.`;
+}
+
+// why the pick got the confidence it did (same rule as server/model/evaluate.mjs)
+function confidenceWhy(h, a) {
+  const bar = a.config.threshold, q = a.quality.score;
+  const e = h.edge[h.side];
+  const parts = [];
+  if (h.confidence === 'HIGH') return `High confidence: edge ${pct(e, 1)} (high needs ${pct(bar * 2.5, 0)}+) and data quality ${Math.round(q * 100)}%.`;
+  const nextE = h.confidence === 'LOW' ? 1.5 : 2.5, nextQ = h.confidence === 'LOW' ? 0.5 : 0.7;
+  if (e < bar * nextE) parts.push(`the edge (${pct(e, 1)}) is ${h.confidence === 'LOW' ? 'only just over' : 'well over'} the ${pct(bar, 0)} bar; ${h.confidence === 'LOW' ? 'medium' : 'high'} needs ${pct(bar * nextE, 0)}+`);
+  if (q < nextQ) parts.push(`data quality is ${Math.round(q * 100)}%; ${h.confidence === 'LOW' ? 'medium' : 'high'} needs ${Math.round(nextQ * 100)}%+`);
+  return `${h.confidence === 'LOW' ? 'Low' : 'Medium'} confidence because ${parts.join(', and ') || 'of the rules above'}.`;
 }
 
 function verdictCard(a) {
@@ -208,6 +223,7 @@ function verdictCard(a) {
     </dl>
     ${side ? `<div class="v-actions"><button class="btn" data-addh="1">+ Add ${side} ${fmt(h.line)} to slip</button></div>` : ''}
     ${note ? `<p class="v-notes">${note}</p>` : ''}
+    ${side ? `<p class="v-notes">${confidenceWhy(h, a)}</p>` : ''}
     <p class="v-notes">Data quality ${Math.round(a.quality.score * 100)}%${a.quality.notes.length ? ` · ${a.quality.notes.map(esc).join(' · ')}` : ''}</p>
   </div>`;
 }
@@ -246,9 +262,9 @@ function linesCard(a) {
 
 // ---------- price checker ----------
 function pAtLeast(pmf, k) { let s = 0; for (let x = Math.max(0, Math.ceil(k)); x < pmf.length; x++) s += pmf[x]; return s; }
-function judge(p, dec) {
+function judge(p, dec, minEv) {
   const ev = p * dec - 1;
-  return { ev, verdict: ev >= 0.05 ? 'VALUE' : ev >= 0 ? 'FAIR' : 'AVOID' };
+  return { ev, verdict: ev >= minEv ? 'VALUE' : ev >= 0 ? 'FAIR' : 'AVOID' };
 }
 function checkRow(c, i, a) {
   const pmf = a.projection.pmf;
@@ -259,7 +275,7 @@ function checkRow(c, i, a) {
     const fair = p > 0 ? 1 / p : null;
     out = `Model <b>${p < 0.001 ? '<0.1%' : pct(p)}</b> · fair <b>${fair && fair < 1000 ? odds(fair, 'up') : '1000/1+'}</b>`;
     if (dec) {
-      const j = judge(p, dec);
+      const j = judge(p, dec, a.config.minEv);
       const low = j.verdict === 'VALUE' && a.quality.score < 0.5 ? ' <span class="dim">(low confidence)</span>' : '';
       out += ` · bookie ${pct(1 / dec)} · EV <b class="${j.ev >= 0 ? 'pos' : 'neg'}">${signed(j.ev * 100, 0)}%</b> <span class="chip ${j.verdict.toLowerCase()}">${j.verdict}</span>${low}`;
     }
@@ -289,7 +305,7 @@ function checkCard(a) {
     const p = pAtLeast(pmf, k);
     const l = dk.get(k);
     const price = l?.price;
-    let j = price && !l.stale ? judge(p, price) : null;
+    let j = price && !l.stale ? judge(p, price, a.config.minEv) : null;
     // one-sided prices carry a margin, so a gap beyond the bar after that is a warning, not value
     if (j && p - 1 / price > gapBar) j = { ...j, verdict: 'CHECK' };
     const tag = !price ? '' : l.stale ? `<span class="dim" title="price unchanged for ${dur(l.ageMin)}">stale</span>` : j ? `<span class="chip ${j.verdict === 'CHECK' ? 'fair' : j.verdict.toLowerCase()}">${j.verdict}</span>` : '';
@@ -303,11 +319,11 @@ function checkCard(a) {
     ${thin}
     <h3 style="margin:18px 0 6px;font-size:13px;letter-spacing:.1em;color:var(--faint)">Ladder: model vs DraftKings</h3>
     <div class="scroll"><table class="ladder"><tr><th class="l">${short()}</th><th>Model</th><th>Fair</th><th>DraftKings</th><th></th><th></th></tr>${rows}</table></div>
-    <p class="hint">"20+" means 20 or more. Fair = the price at which the model sees no edge. VALUE = at least 5% expected return.</p>`;
+    <p class="hint">"20+" means 20 or more. Fair = the price at which the model sees no edge. VALUE = at least ${pct(a.config.minEv, 0)} expected return, the same bar as the verdict.</p>`;
 }
 
 // ---------- context panel ----------
-const TONE = { up: ['▲', 'pos', 'helps the over'], down: ['▼', 'neg', 'helps the under'], flat: ['•', 'dim', 'neutral'] };
+const TONE = { up: ['▲', 'pos', 'moved the projection up'], down: ['▼', 'neg', 'moved the projection down'], info: ['◦', 'dim', 'context the model does not use'], flat: ['•', 'dim', 'neutral'] };
 
 function contextButton(n) {
   const b = $('#ctxbtn');
@@ -343,7 +359,7 @@ function openContext() {
       <button class="mini ghost" data-close aria-label="Close">Esc ×</button></header>
     <p class="ctx-sum ${TONE[n.summary.tone]?.[1] || ''}">${esc(n.summary.text)}</p>
     ${n.sections.map((sec) => `<section><h3>${esc(sec.title)}</h3><ul>${sec.notes.map(note).join('')}</ul></section>`).join('')}
-    <p class="hint">▲ helps the over · ▼ helps the under · • neutral. ${esc(n.basis)}</p>
+    <p class="hint">▲ ▼ moved the projection up or down · ◦ background the model doesn't use · • neutral. ${esc(n.basis)}</p>
   </div>`;
   d.showModal();
   d.querySelector('[data-close]').focus();

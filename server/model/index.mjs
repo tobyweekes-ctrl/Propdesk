@@ -29,7 +29,7 @@ export function analyse({ L, playerId, game, stat, lines = [], opts = {}, config
   const market = evaluateMarket(sp, lines, q, cfg);
   const mainLine = market.headline?.line ?? market.consensus?.line ?? sp.modelLine;
   return {
-    config: { threshold: cfg.threshold, devig: cfg.devig, marketDisagreement: cfg.marketDisagreement },
+    config: { threshold: cfg.threshold, minEv: cfg.minEv, devig: cfg.devig, marketDisagreement: cfg.marketDisagreement },
     context: {
       restDays: ctx.restDays, oppRestDays: ctx.oppRestDays, traded: ctx.traded, group: ctx.group,
       absence: ctx.absence,

@@ -169,7 +169,7 @@ test('context notes: every section present, tones valid, matchup facts match the
   assert.deepEqual(n.sections.map((s) => s.title), ['Availability', `History vs ${game.opp}`, `${game.opp} defence`, 'Game script']);
   for (const s of n.sections) {
     assert.ok(s.notes.length, `${s.title} has notes`);
-    for (const x of s.notes) { assert.ok(['up', 'down', 'flat'].includes(x.tone)); assert.ok(x.title && x.text && !/undefined|NaN/.test(x.title + x.text), x.text); }
+    for (const x of s.notes) { assert.ok(['up', 'down', 'flat', 'info'].includes(x.tone)); assert.ok(x.title && x.text && !/undefined|NaN/.test(x.title + x.text), x.text); }
   }
   assert.ok(n.sections[0].notes.some((x) => x.key === `mate:${mate.id}` && x.title.includes(mate.name)));
   const h2h = n.sections[1].notes[0];

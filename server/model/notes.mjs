@@ -1,6 +1,7 @@
 // Plain-English context for one player-game, built only from numbers the model already has:
 // availability, history against this opponent, the opponent's defence, and the game script.
-// Every note carries a tone relative to the stat going OVER: 'up', 'down' or 'flat'.
+// Every note carries a tone relative to the stat going OVER: 'up' or 'down' only when it moved the projection,
+// 'info' for background the model doesn't use, 'flat' for neutral.
 // Scheme words (drop, switch) are inferences from box-score numbers, and the text says so.
 import { STATS, statValue } from '../stats.mjs';
 import { blendTeam, seasonWeight } from './blend.mjs';
@@ -26,11 +27,24 @@ function rankOf(teams, team, key) {
   return i < 0 ? null : { rank: i + 1, of: vals.length, value: vals[i][key], league: mean(vals.map((t) => t[key])) };
 }
 
-/** Which season's team numbers to describe: this one once it has a few games, else last season. */
-function profileSeason(ctx) {
+const TEAM_KEYS = ['drtg', 'blkPer100', 'stlPer100', 'tovForcedPer100', 'opp3paRate', 'opp3pPct', 'oppOrebPct', 'oppAstRate', 'oppFtRate'];
+/** Team numbers this season blended with last season by games played (the model's own blend), every team. */
+function profileSeason(ctx, cfg) {
+  const k = cfg.blend.teamK;
+  const teams = {};
+  for (const t of new Set([...Object.keys(ctx.teams.cur), ...Object.keys(ctx.teams.prev)])) {
+    const c = ctx.teams.cur[t], p = ctx.teams.prev[t];
+    const w = c ? (p ? c.games / (c.games + k) : 1) : 0;
+    const row = { team: t };
+    for (const key of TEAM_KEYS) {
+      const a = c?.[key], b = p?.[key];
+      row[key] = a == null ? b ?? null : b == null ? a : w * a + (1 - w) * b;
+    }
+    teams[t] = row;
+  }
   const games = ctx.teams.cur[ctx.game.opp]?.games || 0;
-  if (games >= 8 || !Object.keys(ctx.teams.prev).length) return { teams: ctx.teams.cur, label: 'this season', games };
-  return { teams: ctx.teams.prev, label: 'last season', games };
+  const label = !Object.keys(ctx.teams.prev).length ? 'this season' : games ? `this season (${games} game${games === 1 ? '' : 's'}) blended with last season` : 'last season';
+  return { teams, label, games };
 }
 
 /**
@@ -54,7 +68,7 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
   const avail = [];
   const inj = ctx.ownInjury;
   if (inj && !/^out/i.test(inj.status)) {
-    avail.push({ key: 'injury', tone: 'down', title: `Listed ${inj.status.toLowerCase()}`,
+    avail.push({ key: 'injury', tone: 'info', title: `Listed ${inj.status.toLowerCase()}`,
       text: `${inj.injury ? `${inj.injury}. ` : ''}The model doesn't cut minutes for a questionable tag, so check the news before tip-off: if ${name} plays limited minutes, overs suffer most.` });
   }
   const a = ctx.absence;
@@ -94,7 +108,7 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
   });
   for (const o of ctx.oppOut) {
     const bigBoards = has('reb') && o.group === 'C' && ctx.group !== 'G' && (o.avg?.reb || 0) >= 6;
-    avail.push({ key: `opp:${o.id}`, tone: bigBoards && ctx.group === 'C' ? 'up' : 'flat', title: `${o.name} out (${g.opp})`,
+    avail.push({ key: `opp:${o.id}`, tone: bigBoards ? 'info' : 'flat', title: `${o.name} out (${g.opp})`,
       text: `Last 10 games: ${Math.round(o.avg?.min || o.min)} minutes, ${line3(o)}. ${bigBoards
         ? `Without their centre, ${g.opp} lose some size on the glass. Last season, centres facing a team missing its starting centre beat their projection by about 0.3 rebounds: real but small and noisy, so the model doesn't add it. Lean slightly over on ${name}'s rebounds if anything.`
         : 'Their replacement absorbs most of the role; no adjustment for this player.'}` });
@@ -131,7 +145,7 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
 
   // ---------- opponent defence ----------
   const def = [];
-  const ps = profileSeason(ctx);
+  const ps = profileSeason(ctx, cfg);
   const opp = ps.teams[g.opp];
   // defence vs this position for this stat, weighted by how much each component makes up the stat
   const posFactor = (team) => {
@@ -147,6 +161,10 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
     return den > 0 ? num / den : null;
   };
   const oppPos = posFactor(g.opp);
+  // a main defender at this position out: the number still holds about as well in the backtest (softening it made
+  // projections slightly worse), so it stays, and the note says so rather than looking like an oversight
+  const posOutPlayers = ctx.oppOut.filter((m) => m.group === ctx.group && (m.avg?.min || m.min) >= 20);
+  const posOutNote = posOutPlayers.length ? ` ${posOutPlayers.map((m) => m.name).join(' and ')} ${posOutPlayers.length > 1 ? 'are' : 'is'} out tonight; this number was built mostly with them playing, but last season it held about as well without them, so it stays.` : '';
   if (oppPos != null) {
     const all = Object.keys({ ...ctx.teams.cur, ...ctx.teams.prev }).map((t) => [t, posFactor(t)]).filter(([, v]) => v != null).sort((x, y) => y[1] - x[1]);
     const rank = all.findIndex(([t]) => t === g.opp) + 1;
@@ -155,14 +173,14 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
     def.push({ key: 'pos', tone: toneOf(oppPos - 1, 0.04), title: `${g.opp} vs ${GROUP[ctx.group]}: ${word}`,
       text: Math.abs(oppPos - 1) < 0.03
         ? `${short[0].toUpperCase() + short.slice(1)} allowed to ${GROUP[ctx.group]} are within 3% of the league average, so no real matchup effect.`
-        : `They allow ${signedPct(oppPos - 1)} ${short} per minute to ${GROUP[ctx.group]} compared with the league${rank ? ` (${rankWord({ rank, of: all.length })} of ${all.length})` : ''}. The model applies half of that${dv ? ` (${signedPct(dv.value - 1)})` : ''}, because these numbers are noisy.` });
+        : `They allow ${signedPct(oppPos - 1)} ${short} per minute to ${GROUP[ctx.group]} compared with the league${rank ? ` (${rankWord({ rank, of: all.length })} of ${all.length})` : ''}. The model applies half of that${dv ? ` (${signedPct(dv.value - 1)})` : ''}, because these numbers are noisy.${posOutNote}` });
   }
   if (opp) {
     const d = rankOf(ps.teams, g.opp, 'drtg');
     if (d && has('pts')) {
       const best = d.of + 1 - d.rank; // lowest drtg = best
-      def.push({ key: 'drtg', tone: best <= EXTREME ? 'down' : best > d.of - EXTREME ? 'up' : 'flat',
-        title: `Defensive rating ${f1(d.value)} (${rankWord({ rank: best, of: d.of }, 'best', 'worst')})`, text: `Points allowed per 100 possessions ${ps.label}, league average ${f1(d.league)}.${ps.label === 'last season' ? ` ${g.opp} have only ${ps.games} games this season, so last season's numbers are shown.` : ''}` });
+      def.push({ key: 'drtg', tone: 'info',
+        title: `Defensive rating ${f1(d.value)} (${rankWord({ rank: best, of: d.of }, 'best', 'worst')})`, text: `Points allowed per 100 possessions, ${ps.label}; league average ${f1(d.league)}. Background only: the model uses the defence against ${GROUP[ctx.group]} above.` });
     }
     // style traits, kept to the ones that matter for this stat and position
     const traits = [];
@@ -172,7 +190,7 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
       const high = r.rank <= EXTREME, low = r.rank > r.of - EXTREME;
       if (!high && !low) return;
       const t = test(r, high);
-      if (t) traits.push({ key, ...t });
+      if (t) traits.push({ key, ...t, tone: 'info' }); // style is background: the model doesn't use it
     };
     const big = ctx.group !== 'G';
     if (has('pts')) {
@@ -196,13 +214,13 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
         text: `Opponents grab ${P(r.value)} of their own misses (${rankWord(r)}). ${high ? `More loose balls: good for ${big ? 'bigs on the offensive glass' : 'crashing guards'}.` : 'Fewer second chances.'}` }));
     }
     if (has('ast')) {
-      trait('tovForcedPer100', (r, high) => ({ tone: ctx.group === 'G' ? (high ? 'down' : 'up') : 'flat', title: high ? 'High-pressure defence' : 'Low-pressure defence',
+      if (ctx.group === 'G') trait('tovForcedPer100', (r, high) => ({ tone: ctx.group === 'G' ? (high ? 'down' : 'up') : 'flat', title: high ? 'High-pressure defence' : 'Low-pressure defence',
         text: `Forces ${f1(r.value)} turnovers per 100 possessions (${rankWord(r)}). ${high ? 'Aggressive, trapping or switch-everything defences make life harder for ball-handlers.' : 'Ball-handlers can survey the floor.'}` }));
       trait('oppAstRate', (r, high) => ({ tone: high ? 'up' : 'down', title: high ? 'Ball moves against them' : 'Few assisted baskets allowed',
         text: `${P(r.value)} of opponent baskets are assisted (${rankWord(r)}). ${high ? 'Rotations get stretched: good for passers.' : 'Opponents are pushed into one-on-one play.'}` }));
     }
     def.push(...traits);
-    if (!traits.length) def.push({ key: 'style-none', tone: 'flat', title: 'No standout style', text: `Nothing in ${g.opp}'s numbers ${ps.label} is near the top or bottom of the league for this stat.` });
+    if (!traits.length) def.push({ key: 'style-none', tone: 'flat', title: 'No standout style', text: `Nothing in ${g.opp}'s numbers (${ps.label}) is near the top or bottom of the league for this stat.` });
   }
 
   // ---------- game script ----------
@@ -230,7 +248,7 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
   if (ctx.restDays === 0) {
     script.push({ key: 'b2b', tone: 'down', title: 'Second night of a back-to-back', text: `The model trims minutes ${P(1 - cfg.minutes.b2bFactor)} and per-minute output slightly. Watch for rest days on the injury report.` });
   } else if (ctx.restDays != null && ctx.oppRestDays === 0) {
-    script.push({ key: 'opp-b2b', tone: 'up', title: `${g.opp} on a back-to-back`, text: `${g.team} have ${ctx.restDays} day${ctx.restDays === 1 ? '' : 's'} of rest; tired legs on defence can help, though the model doesn't add anything for it.` });
+    script.push({ key: 'opp-b2b', tone: 'info', title: `${g.opp} on a back-to-back`, text: `${g.team} have ${ctx.restDays} day${ctx.restDays === 1 ? '' : 's'} of rest; tired legs on defence can help, though the model doesn't add anything for it.` });
   } else if (ctx.restDays != null && ctx.restDays >= 3) {
     script.push({ key: 'rest', tone: 'flat', title: `${ctx.restDays} days of rest`, text: 'Fully rested. No adjustment.' });
   }
@@ -240,15 +258,21 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
   }
 
   // ---------- summary: how far context moved the projection ----------
+  // every percentage from unrounded numbers, and only from the parts listed (minutes x per-minute rate), so
+  // the sentence adds up; the recent-results mix is reported as its own step
   const rateMove = sp.basePer36 > 0 ? sp.per36 / sp.basePer36 - 1 : 0;
-  const minMove = m.proj - m.base;
   const projBase = (sp.basePer36 / 36) * m.base;
-  const totalMove = projBase > 0 ? sp.mean / projBase - 1 : 0;
+  const projCtx = (sp.per36 / 36) * m.proj;
+  const totalMove = projBase > 0 ? projCtx / projBase - 1 : 0;
+  const mixMove = sp.mean - projCtx;
+  const mixText = Math.abs(mixMove) >= 0.05
+    ? ` Mixing in ${name}'s last 20 games ${mixMove > 0 ? 'lifts' : 'lowers'} the final projection to ${f1(sp.mean)}.`
+    : '';
   const summary = {
     tone: toneOf(totalMove, 0.03),
-    text: Math.abs(totalMove) < 0.015
-      ? `Tonight's context roughly cancels out: projection ${f1(sp.mean)} ${short}, the same as ${name}'s normal rate over ${f1(m.proj)} minutes.`
-      : `Tonight's context moves ${name}'s projection ${totalMove > 0 ? 'up' : 'down'} ${signedPct(totalMove).replace(/^[+−]/, '')}, from ${f1(projBase)} to ${f1(sp.mean)} ${short}. Minutes ${f1(m.base)} → ${f1(m.proj)}; per-minute output ${Math.abs(rateMove) < 0.005 ? 'unchanged' : signedPct(rateMove)}.`,
+    text: (Math.abs(totalMove) < 0.015
+      ? `Tonight's context roughly cancels out: ${f1(projCtx)} ${short} from ${name}'s normal rate over ${f1(m.proj)} minutes.`
+      : `Tonight's context moves ${name}'s projection ${totalMove > 0 ? 'up' : 'down'} ${signedPct(totalMove).replace(/^[+−]/, '')}, from ${f1(projBase)} to ${f1(projCtx)} ${short}: minutes ${f1(m.base)} → ${f1(m.proj)} (${signedPct(m.base > 0 ? m.proj / m.base - 1 : 0)}), per-minute output ${Math.abs(rateMove) < 0.005 ? 'unchanged' : signedPct(rateMove)}.`) + mixText,
   };
 
   return {
@@ -259,6 +283,6 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
       { title: `${g.opp} defence`, notes: def },
       { title: 'Game script', notes: script },
     ],
-    basis: `Team numbers from ${ps.label}. Built from box scores and the injury report only.`,
+    basis: `Team numbers: ${ps.label}. Built from box scores and the injury report only.`,
   };
 }

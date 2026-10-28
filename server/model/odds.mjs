@@ -51,3 +51,23 @@ export function expectedValue(pWin, pPush, decimal) {
   const pLose = 1 - pWin - (pPush || 0);
   return pWin * (decimal - 1) - pLose;
 }
+
+// The standard UK fractional ladder. Prices on offer are snapped DOWN to it before anything is worked out,
+// so the edge, EV and verdict are for the price the page shows (web/js/ui.js toFrac uses the same ladder and
+// tolerance; a test holds the two together).
+const LADDER = [[1, 250], [1, 200], [1, 100], [1, 66], [1, 50], [1, 40], [1, 33], [1, 25], [1, 20], [1, 16], [1, 14], [1, 12], [1, 11], [1, 10], [1, 9], [1, 8],
+  [2, 15], [1, 7], [1, 6], [2, 11], [1, 5], [2, 9], [1, 4], [2, 7], [3, 10], [1, 3], [4, 11], [2, 5], [4, 9], [1, 2], [8, 15], [4, 7], [8, 13], [4, 6],
+  [8, 11], [4, 5], [5, 6], [10, 11], [20, 21], [1, 1], [21, 20], [11, 10], [6, 5], [5, 4], [11, 8], [6, 4], [13, 8], [7, 4], [15, 8], [2, 1], [85, 40],
+  [9, 4], [5, 2], [11, 4], [3, 1], [10, 3], [7, 2], [4, 1], [9, 2], [5, 1], [11, 2], [6, 1], [13, 2], [7, 1], [15, 2], [8, 1], [17, 2], [9, 1], [10, 1],
+  [11, 1], [12, 1], [14, 1], [16, 1], [18, 1], [20, 1], [22, 1], [25, 1], [28, 1], [33, 1], [40, 1], [50, 1], [66, 1], [80, 1], [100, 1], [150, 1], [200, 1]];
+// feeds give decimals to 2 places (10/11 arrives as 1.91): within that rounding counts as on the fraction
+const eps = (v) => Math.min(0.005, v * 0.02);
+
+/** Decimal price -> the decimal of the largest standard fraction that doesn't pay more. */
+export function snapDown(dec) {
+  if (!dec || dec <= 1) return dec;
+  const v = dec - 1;
+  let f = null;
+  for (const x of LADDER) if (x[0] / x[1] <= v + eps(v)) f = x;
+  return f ? 1 + f[0] / f[1] : 1 + 1 / Math.ceil(1 / v - 1e-9);
+}

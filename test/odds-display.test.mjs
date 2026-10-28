@@ -25,3 +25,28 @@ test('beyond the ladder, long and short prices still follow the direction', () =
   assert.equal(toFrac(1.004, 'down'), '1/250');
   assert.equal(toFrac(1, 'down'), '–');
 });
+
+test('the model snaps feed prices to the same fraction the page shows (so EV is at the price on screen)', async () => {
+  const { snapDown } = await import('../server/model/odds.mjs');
+  const fracToDec = (f) => (f === 'EVS' ? 2 : 1 + Number(f.split('/')[0]) / Number(f.split('/')[1]));
+  for (let d = 1.01; d < 60; d = Math.round((d * 1.013 + 0.001) * 1000) / 1000) {
+    assert.ok(Math.abs(snapDown(d) - fracToDec(toFrac(d))) < 1e-9, `${d}: snap ${snapDown(d)} vs shown ${toFrac(d)}`);
+  }
+  assert.ok(Math.abs(snapDown(1.66) - (1 + 8 / 13)) < 1e-9); // the review's case: 8/13 shown, 8/13 used
+});
+
+test('league lines carry snapped prices; the ladder check runs on the raw ones', async () => {
+  const { linesFor, ladderFor } = await import('../server/data/league.mjs');
+  const p = { id: '1', name: 'A B' };
+  const rows = [
+    { stat: 'reb', kind: 'ou', playerId: '1', book: 'dk', bookTitle: 'DraftKings', line: 2.5, over: 2.3, under: 1.66 },
+    { stat: 'reb', kind: 'ms', playerId: '1', book: 'dk', bookTitle: 'DraftKings', line: 3, over: 2.06 },
+    { stat: 'reb', kind: 'ms', playerId: '1', book: 'dk', bookTitle: 'DraftKings', line: 4, over: 2.08 }, // same fraction once snapped
+  ];
+  const [l] = linesFor(rows, p, 'reb');
+  assert.ok(Math.abs(l.under - (1 + 8 / 13)) < 1e-9);
+  assert.equal(l.rawUnder, 1.66);
+  const lad = ladderFor(rows, p, 'reb');
+  assert.equal(lad.length, 2);
+  assert.ok(Math.abs(lad[0].price - 2.05) < 1e-9);
+});

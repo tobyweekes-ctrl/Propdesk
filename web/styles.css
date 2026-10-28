@@ -255,7 +255,7 @@ svg .pline { stroke: var(--text); stroke-width: 2; }
 svg .pline-label { font: 600 11px var(--mono); fill: var(--text); }
 svg .proj { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 3 3; }
 svg .proj-label { font: 10px var(--mono); fill: var(--dim); }
-svg .season { stroke: var(--line-strong); stroke-width: 1; }
+svg .season { stroke: var(--dim); stroke-width: 2; stroke-dasharray: 4 3; }
 svg .hit { fill: transparent; cursor: crosshair; }
 .tip { position: absolute; pointer-events: none; background: var(--raise); border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 9px; font: 11.5px/1.45 var(--mono); white-space: nowrap; z-index: 2; }
 .tip b { font-size: 14px; }
@@ -349,7 +349,7 @@ details.more .sub-h { font: 700 13px var(--cond); letter-spacing: .1em; text-tra
 .ladder tr.stale td { color: var(--faint); }
 tr.small td { color: var(--faint); }
 .small-n { font: 600 10px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .05em; margin-left: 6px; }
-svg .bar.old { opacity: .38; }
+svg .bar.old { opacity: .3; }
 svg .season-label.strong { fill: var(--dim); font-weight: 600; }
 @media (max-width: 720px) {
   /* make tables fit a phone instead of relying on sideways scrolling */
