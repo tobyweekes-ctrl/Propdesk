@@ -8,6 +8,7 @@ import { searchPlayers, averages, injuryFor } from './data/league.mjs';
 import { grade, summariseBets } from './data/entries.mjs';
 import { analyse, buildContext, projectPlayer, projectStat, DEFAULTS } from './model/index.mjs';
 import { analyseSlip, legLabel } from './model/slip.mjs';
+import { teamCards } from './model/impact.mjs';
 import { computeSplits } from './data/splits.mjs';
 import { parsePrice } from './model/odds.mjs';
 
@@ -45,20 +46,9 @@ export function createRoutes(B) {
   get('/api/slate/players', async () => {
     const L = await B.getLeague();
     const [games, injuries] = await Promise.all([B.getSlate(), B.getInjuries().catch(() => [])]);
-    const top = (team) => [...L.players.values()]
-      .filter((p) => p.team === team)
-      .map((p) => {
-        const recent = L.playerLogs(p.id).filter((r) => r.team === team).slice(-10);
-        return { p, recent, min: recent.reduce((a, r) => a + r.min, 0) / Math.max(1, recent.length) };
-      })
-      .filter((x) => x.recent.length >= 3 && !OUT_RE.test(injuryFor(injuries, x.p)?.status || ''))
-      .sort((a, b) => b.min - a.min)
-      .slice(0, 5)
-      .map(({ p, recent, min }) => {
-        const a = averages(recent);
-        return { id: p.id, name: p.name, pos: p.pos, min: round(min), pts: a.pts, reb: a.reb, ast: a.ast, injury: injuryFor(injuries, p)?.status || null };
-      });
-    return games.map((g) => ({ ...g, homePlayers: top(g.home), awayPlayers: top(g.away) }));
+    // the model's projection for tonight, ranked by projected minutes (same as the Pages build)
+    const top = (g, team) => teamCards(L, { date: L.today, gameId: g.gameId, team, opp: team === g.home ? g.away : g.home, home: team === g.home, tipoff: g.tipoff }, injuries, DEFAULTS);
+    return games.map((g) => ({ ...g, homePlayers: top(g, g.home), awayPlayers: top(g, g.away) }));
   });
 
   get('/api/teams', async () => {

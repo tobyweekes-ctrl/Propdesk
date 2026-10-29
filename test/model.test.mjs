@@ -202,6 +202,30 @@ test('absence impact: a teammate out raises minutes and output against the no-ab
   assert.equal(absenceImpact(L, p.id, game, [], DEFAULTS), null); // nobody out: nothing to report
 });
 
+test('game cards: model projections ranked by projected minutes, the same numbers as Who benefits', async () => {
+  const { absenceImpact, teamCards } = await import('../server/model/impact.mjs');
+  const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'G');
+  const game = { date: L.today, team: p.team, opp: p.team === 'BOS' ? 'NYK' : 'BOS', home: true };
+  const mate = buildContext(L, p.id, game).availableMates.sort((a, b) => b.min - a.min)[0];
+  const injuries = [{ name: mate.name, team: p.team, status: 'Out', injury: 'Knee' }];
+  const cards = teamCards(L, game, injuries, DEFAULTS);
+  assert.ok(cards.length && cards.length <= 5);
+  assert.ok(!cards.some((c) => c.id === mate.id), 'players ruled out are left off');
+  for (let i = 1; i < cards.length; i++) assert.ok(cards[i - 1].min >= cards[i].min, 'sorted by projected minutes');
+  for (const c of cards) assert.ok(L.playerLogs(c.id).filter((r) => r.team === p.team).length >= 3, 'enough games with the team');
+  // a player who hasn't played for the team this season (end-of-last-season minutes only) isn't on the card
+  const teamCur = L.bySeason[L.current].teamGames.filter((t) => t.team === p.team).length;
+  for (const c of cards) assert.ok(L.playerLogs(c.id).filter((r) => r.team === p.team && r.season === L.current).length >= Math.min(2, teamCur), `${c.name} has played this season`);
+  const { inRotation } = await import('../server/model/impact.mjs');
+  const benchOnly = [...L.players.values()].find((x) => x.team === p.team && L.playerLogs(x.id).filter((r) => r.team === p.team).length >= 3
+    && !L.playerLogs(x.id).some((r) => r.season === L.current));
+  if (benchOnly && teamCur >= 2) assert.equal(inRotation(L, benchOnly, p.team), false);
+  const me = cards.find((c) => c.id === p.id) || teamCards(L, game, injuries, DEFAULTS, 20).find((c) => c.id === p.id);
+  const i = absenceImpact(L, p.id, game, injuries, DEFAULTS);
+  assert.equal(me.pts, Math.round(i.pts.with * 10) / 10);
+  assert.equal(me.min, Math.round(i.minutes.with * 10) / 10);
+});
+
 test('recent results mix into the distribution: a share of the last 20, total probability kept', async () => {
   const { mixRecent } = await import('../server/model/projection.mjs');
   const dist = { pmf: [0.5, 0.5], mean: 0.5, sd: 0.5 };

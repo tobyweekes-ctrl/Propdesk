@@ -134,15 +134,14 @@ td.why { text-align: left; white-space: normal; color: var(--dim); font: 12px va
 .game header { flex-wrap: wrap; row-gap: 8px; }
 .game header .time { font: 600 12px var(--mono); color: var(--pos); }
 .game header .sp { flex: 1; }
-/* generate-slip menu */
-.gen { position: relative; font: 600 12px var(--sans); letter-spacing: 0; }
+/* generated slips */
 .gen-btn { white-space: nowrap; }
-.gen-menu { position: absolute; z-index: 20; top: calc(100% + 6px); right: 0; min-width: 230px; padding: 4px; background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: var(--r); box-shadow: 0 12px 30px rgba(0, 0, 0, .45); display: flex; flex-direction: column; }
-.gen-menu button { display: flex; flex-direction: column; gap: 2px; text-align: left; background: none; border: 0; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: var(--text); }
-.gen-menu button:hover:not(:disabled), .gen-menu button:focus-visible { background: var(--raise); }
-.gen-menu button:disabled { opacity: .45; cursor: default; }
-.gen-menu b, .gen-big b { font: 700 15px var(--cond); letter-spacing: .05em; text-transform: uppercase; }
-.gen-menu small, .gen-big small { font: 11.5px var(--mono); color: var(--dim); }
+.gen-big b { font: 700 15px var(--cond); letter-spacing: .05em; text-transform: uppercase; }
+.gen-big small { font: 11.5px var(--mono); color: var(--dim); }
+.gen-odds { font: 700 22px/1.15 var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.proj-note { margin: 0; padding: 8px 14px 10px; border-top: 1px solid var(--line); font: 11px var(--mono); color: var(--faint); }
+.best-rec { margin: 0; text-decoration: none; }
+.best-rec:hover { text-decoration: underline; }
 .gen-all { margin-top: 18px; }
 .gen-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
 .gen-big { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 14px 16px; background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: var(--r); cursor: pointer; color: var(--text); }
@@ -363,7 +362,7 @@ svg .season-label.strong { fill: var(--dim); font-weight: 600; }
   .small-n { display: block; margin: 2px 0 0; }
   /* best value: one card per pick */
   table.best tr:first-child { display: none; }
-  table.best tr { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: 'who who who add' 'pick pick pick add' 'price model ev add'; column-gap: 14px; row-gap: 2px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  table.best tr { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: 'who who who add' 'pick pick conf add' 'price model ev add'; column-gap: 14px; row-gap: 2px; padding: 9px 0; border-bottom: 1px solid var(--line); }
   table.best tr:last-child { border-bottom: 0; }
   table.best td { border: 0; padding: 0; text-align: left; white-space: normal; }
   table.best tr:hover td { background: none; }
@@ -371,7 +370,10 @@ svg .season-label.strong { fill: var(--dim); font-weight: 600; }
   table.best .c-add { grid-area: add; align-self: center; }
   table.best .c-price { grid-area: price; } table.best .c-model { grid-area: model; } table.best .c-ev { grid-area: ev; }
   table.best .c-model::after { content: ' model'; color: var(--faint); } table.best .c-ev::after { content: ' EV'; color: var(--faint); }
-  table.best .c-min, table.best .c-conf { display: none; }
+  table.best .c-min { display: none; }
+  table.best .c-conf { grid-area: conf; justify-self: end; font: 11px var(--mono); color: var(--dim); }
+  table.best .c-conf::before { content: '●'; margin-right: 4px; color: var(--warn); }
+  table.best .c-conf.high::before { color: var(--pos); }
   /* game cards: teams stacked so names fit */
   .sides { grid-template-columns: 1fr; }
   .side + .side { border-left: 0; border-top: 1px solid var(--line); }

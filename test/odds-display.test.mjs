@@ -50,3 +50,13 @@ test('league lines carry snapped prices; the ladder check runs on the raw ones',
   assert.equal(lad.length, 2);
   assert.ok(Math.abs(lad[0].price - 2.05) < 1e-9);
 });
+
+test('tip-off times read as a UK user expects: 24-hour clock, after-midnight games belong to the night before', async () => {
+  const { tipLabel } = await import('../web/js/ui.js');
+  process.env.TZ = 'UTC'; // London is on GMT in late October
+  const now = Date.parse('2026-10-29T13:00:00Z'); // Thursday afternoon
+  assert.equal(tipLabel('2026-10-30T00:00:00Z', now), 'Thu night · 00:00 · in 11h');
+  assert.equal(tipLabel('2026-10-29T23:30:00Z', now), 'Thu · 23:30 · in 10h 30m');
+  assert.equal(tipLabel('2026-10-30T02:30:00Z', now), 'Thu night · 02:30 · in 13h 30m');
+  assert.equal(tipLabel('2026-10-29T12:30:00Z', now), 'Thu · 12:30 · started');
+});

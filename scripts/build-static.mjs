@@ -11,7 +11,7 @@ import { join, dirname, relative, resolve } from 'node:path';
 import { ROOT, config } from '../server/env.mjs';
 import { loadSeason, getSlate, getInjuries, eventProps, today, getLeague, linesFor, injuryFor, averages } from '../server/data/store.mjs';
 import { analyse, DEFAULTS } from '../server/model/index.mjs';
-import { absenceImpact } from '../server/model/impact.mjs';
+import { absenceImpact, teamCards, inRotation } from '../server/model/impact.mjs';
 import { mergePicks, gradeRecord } from '../server/model/record.mjs';
 import { quota } from '../server/providers/oddsApi.mjs';
 import { STATS } from '../server/stats.mjs';
@@ -102,7 +102,6 @@ const L = await getLeague();
 const OUT = /^(out|suspended)/i;
 const picks = [];
 const pool = []; // every priced line with the model's lean (generated slips)
-const minutesFor = new Map(); // playerId -> projected minutes
 for (const g of slates[day]) {
   const o = odds.games[g.gameId];
   if (!o) continue;
@@ -117,7 +116,6 @@ for (const g of slates[day]) {
       if (!lines.length) continue;
       const a = analyse({ L, playerId: id, game, stat, lines, opts: { injuries } });
       if (a.error) continue;
-      minutesFor.set(id, a.projection.minutes.proj);
       const h = a.headline;
       if (!h || h.stale) continue;
       const side = h.side;
@@ -138,10 +136,15 @@ for (const g of slates[day]) {
   }
 }
 // best value: medium confidence or better (near coin-flip picks at evens turn a small model error into a loss),
-// one per player (picks on one player win or lose together)
-const seenBest = new Set();
+// one per player (picks on one player win or lose together) and at most 2 per game (a game's pace and blowout
+// risk move all its picks together, so a list from one game is one bet, not several)
+const seenBest = new Set(), perGame = new Map();
 const best = picks.filter((x) => x.side && (x.confidence === 'MEDIUM' || x.confidence === 'HIGH')).sort((a, b) => b.ev - a.ev)
-  .filter((x) => !seenBest.has(x.playerId) && seenBest.add(x.playerId)).slice(0, 12);
+  .filter((x) => {
+    if (seenBest.has(x.playerId) || (perGame.get(x.gameId) || 0) >= 2) return false;
+    seenBest.add(x.playerId); perGame.set(x.gameId, (perGame.get(x.gameId) || 0) + 1);
+    return true;
+  }).slice(0, 12);
 console.log(`picks: ${picks.filter((x) => x.side).length} published (${picks.length} lines priced), ${picks.filter((x) => x.verdict === 'CHECK').length} flagged CHECK`);
 
 // ---------- archive + public record ----------
@@ -169,7 +172,7 @@ const benefits = [];
 for (const g of slates[day]) {
   for (const team of [g.away, g.home]) {
     const game = { date: day, gameId: g.gameId, team, opp: team === g.home ? g.away : g.home, home: team === g.home };
-    const roster = [...L.players.values()].filter((p) => p.team === team && L.playerLogs(p.id).filter((r) => r.team === team).length >= 3);
+    const roster = [...L.players.values()].filter((p) => p.team === team && inRotation(L, p, team));
     const gainers = [];
     let outs = null;
     for (const p of roster) {
@@ -199,21 +202,15 @@ benefits.sort((a, b) => lift(b) - lift(a));
 console.log(`benefits: ${benefits.length} teams with rotation players out, ${benefits.reduce((a, b) => a + b.gainers.length, 0)} gainers`);
 
 // ---------- landing (served without loading the season files, so the first visit is quick) ----------
-const top = (team) => [...L.players.values()]
-  .filter((p) => p.team === team && !OUT.test(injuryFor(injuries, p)?.status || ''))
-  .map((p) => ({ p, recent: L.playerLogs(p.id).filter((r) => r.team === team).slice(-10) }))
-  .filter((x) => x.recent.length >= 3)
-  .sort((a, b) => (minutesFor.get(b.p.id) ?? b.recent.reduce((s, r) => s + r.min, 0) / b.recent.length) - (minutesFor.get(a.p.id) ?? a.recent.reduce((s, r) => s + r.min, 0) / a.recent.length))
-  .slice(0, 5)
-  .map(({ p, recent }) => {
-    const av = averages(recent);
-    return { id: p.id, name: p.name, pos: p.pos, min: av.min, minProj: minutesFor.get(p.id) ?? null, pts: av.pts, reb: av.reb, ast: av.ast, injury: injuryFor(injuries, p)?.status || null };
-  });
+// game cards: the model's projection for tonight (the same numbers as Who benefits), ranked by projected minutes
+const cardsFor = (g, team) => teamCards(L, { date: day, gameId: g.gameId, team, opp: team === g.home ? g.away : g.home, home: team === g.home, tipoff: g.tipoff }, injuries, DEFAULTS);
 writeFileSync(join(DIST, 'data', 'landing.json'), JSON.stringify({
-  date: day, games: slates[day].map((g) => ({ ...g, awayPlayers: top(g.away), homePlayers: top(g.home) })), best, benefits,
+  date: day, games: slates[day].map((g) => ({ ...g, awayPlayers: cardsFor(g, g.away), homePlayers: cardsFor(g, g.home) })), best, benefits,
+  // the track record of recommended picks (the rule this list uses), for the line next to its title
+  bestRecord: { ...record.recommended, nights: record.nights },
   // compact pool for generated slips, rounded to keep the file small
-  // (only lines a generated slip could use: no CHECK, a published pick or a fair-ish price; see web/js/autoslip.js)
-  pool: pool.filter((x) => x.verdict !== 'CHECK' && (x.side || x.evLean >= 0))
+  // (only lines a generated slip could use: published picks, no CHECK; see web/js/autoslip.js)
+  pool: pool.filter((x) => x.verdict !== 'CHECK' && x.side)
     .map(({ stale, verdict, ...x }) => ({ ...x, verdict, pLean: Math.round(x.pLean * 1e3) / 1e3, evLean: Math.round(x.evLean * 1e3) / 1e3 })),
 }));
 

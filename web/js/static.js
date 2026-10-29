@@ -129,7 +129,7 @@ const light = {
   '/api/slate/players': async () => {
     const m = await meta();
     const l = await getJson(`data/landing.json?v=${encodeURIComponent(m.generated)}`);
-    return l.date === todayET() ? Object.assign(l.games, { best: l.best, pool: l.pool || [], benefits: l.benefits || [] }) : null; // a day old: fall through to the full data
+    return l.date === todayET() ? Object.assign(l.games, { best: l.best, pool: l.pool || [], benefits: l.benefits || [], bestRecord: l.bestRecord || null }) : null; // a day old: fall through to the full data
   },
   '/api/record': async () => getJson(`data/record.json?v=${encodeURIComponent((await meta()).generated)}`),
 };

@@ -133,14 +133,19 @@ export function parsePrice(input) {
 }
 
 /** "Tue 28 Oct 00:00 · in 2h 10m" in the viewer's time zone (or "started" once tip-off has passed) */
-export function tipLabel(iso) {
+export function tipLabel(iso, now = Date.now()) {
   if (!iso) return '';
   const t = new Date(iso);
   if (Number.isNaN(t.getTime())) return '';
-  const when = t.toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  const mins = Math.round((t - Date.now()) / 60000);
-  const until = mins <= 0 ? 'started' : mins < 60 ? `in ${mins}m` : mins < 24 * 60 ? `in ${Math.floor(mins / 60)}h ${mins % 60}m` : `in ${Math.round(mins / 1440)}d`;
-  return `${when} · ${until}`;
+  // 24-hour clock in the reader's time zone; a game starting after midnight (before 6am) belongs to the night
+  // before, so Thursday's late games read "Thu night · 00:30" rather than "Fri 12:30 AM"
+  const clock = t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const night = t.getHours() < 6;
+  const day = new Date(t.getTime() - (night ? 6 * 3600e3 : 0)).toLocaleDateString('en-GB', { weekday: 'short' });
+  const far = t - now > 6 * 86400e3 ? ` ${t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : '';
+  const mins = Math.round((t - now) / 60000);
+  const until = mins <= 0 ? 'started' : mins < 60 ? `in ${mins}m` : mins < 24 * 60 ? `in ${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ''}` : `in ${Math.round(mins / 1440)}d`;
+  return `${day}${night ? ' night' : ''}${far} · ${clock} · ${until}`;
 }
 
 /** page for a bad link or an unknown route */

@@ -5,6 +5,9 @@ import { esc, fmt, pct, signed, api, slip, odds, parsePrice, state, toast, debou
 const S = { mode: 'singles', accaStake: 5, analysis: null, error: null, busy: false };
 const legLabel = (l) => (l.kind === 'atleast' ? `${l.line + 0.5}+ ${state.stats[l.stat]?.short}` : `${l.side === 'over' ? 'Over' : 'Under'} ${l.line} ${state.stats[l.stat]?.short}`);
 
+/** A generated slip says how it is meant to be bet: singles, or a small acca. */
+export const preferMode = (mode) => { S.mode = mode === 'acca' ? 'acca' : 'singles'; };
+
 export async function renderSlip(view) {
   const legs = slip.get();
   view.innerHTML = `
