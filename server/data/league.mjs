@@ -97,6 +97,9 @@ export function searchPlayers(L, q, limit = 10) {
 export function averages(rows) {
   const o = { gp: rows.length, min: round(mean(rows.map((r) => r.min))), usg: round(mean(rows.map((r) => r.usg).filter((x) => x != null))) };
   for (const k of Object.keys(STATS)) o[k] = round(mean(rows.map((r) => statValue(r, k))));
+  o.fga = round(mean(rows.map((r) => r.fga ?? 0)));
+  o.fg3a = round(mean(rows.map((r) => r.fg3a ?? 0)));
+  o.gs = rows.filter((r) => r.starter).length;
   return o;
 }
 

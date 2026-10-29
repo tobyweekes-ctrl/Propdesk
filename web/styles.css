@@ -406,6 +406,33 @@ svg .season-label.strong { fill: var(--dim); font-weight: 600; }
 .cnote .ci { font: 12px/20px var(--mono); text-align: center; }
 .cnote b { font: 600 14px var(--sans); }
 .cnote p { margin: 2px 0 0; color: var(--dim); font: 13px/1.5 var(--sans); }
+.ctx-quiet { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
+.ctx-quiet summary { cursor: pointer; font: 600 12px var(--sans); color: var(--faint); letter-spacing: .04em; }
+.ctx-quiet .cnote b { font-weight: 500; color: var(--dim); }
+.ctx-quiet .cnote p { font-size: 12px; }
+/* key numbers strip: tap a tile for its game-by-game graph */
+.keynums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 14px 0 4px; }
+.kn { display: flex; flex-direction: column; gap: 3px; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 11px 13px; color: var(--text); font: inherit; cursor: pointer; min-width: 0; }
+.kn:hover, .kn:focus-visible { border-color: var(--line-strong); background: var(--panel-2); }
+.kn .kl { font: 600 10.5px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kn .kl .dim { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.kn .kv { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kn .kv b { font: 700 26px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.kn .ks { font: 11.5px var(--mono); color: var(--dim); }
+.kn .kd { font-family: var(--mono); }
+.spark polyline { fill: none; stroke: var(--team); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; opacity: .9; }
+@media (max-width: 820px) { .keynums { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kn .kv b { font-size: 22px; } .spark { width: 64px; } }
+.trend { width: min(860px, calc(100vw - 32px)); }
+.trend-wrap { margin-top: 12px; }
+svg .trend { fill: none; stroke: var(--dim); stroke-width: 1.5; stroke-linejoin: round; }
+svg .tdot { fill: var(--panel-2); stroke: var(--dim); stroke-width: 1.5; cursor: pointer; }
+svg .tdot.cur { fill: var(--team); stroke: var(--panel); }
+svg .tdot.on { stroke: var(--text); stroke-width: 2.5; }
+svg .guide { stroke-width: 1.2; stroke-dasharray: 5 4; }
+svg .guide.cur { stroke: var(--pos); } svg .guide.prev { stroke: var(--faint); }
+svg .gl { font: 600 10.5px var(--mono); } svg .gl.cur { fill: var(--pos); } svg .gl.prev { fill: var(--dim); }
+svg .brk { stroke: var(--line-strong); stroke-dasharray: 2 3; }
+.trend-cap { min-height: 1.4em; color: var(--text); }
 @media (max-width: 720px) {
   .ctx { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
   .ctx-in { padding: 16px; }

@@ -233,7 +233,7 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
     const gp = tPace + oPace - lgPace;
     const diff = gp - lgPace;
     script.push({ key: 'pace', tone: diff > 1.5 ? 'up' : diff < -1.5 ? 'down' : 'flat', title: `${diff > 1.5 ? 'Fast' : diff < -1.5 ? 'Slow' : 'Average'} pace`,
-      text: `Possessions per game: ${paceSide(g.team, tPace, lgPace)}, ${paceSide(g.opp, oPace, lgPace)}, league ${f1(lgPace)}. Each team's gap from average adds up, so expect about ${Math.round(gp)} tonight. ${Math.abs(diff) > 1.5 ? `${diff > 0 ? 'More' : 'Fewer'} possessions mean ${diff > 0 ? 'more' : 'fewer'} chances for every counting stat.` : 'No real pace effect.'}` });
+      text: `Possessions a game: ${paceSide(g.team, tPace, lgPace)}, ${paceSide(g.opp, oPace, lgPace)}, league ${f1(lgPace)}. Expect about ${Math.round(gp)} tonight${Math.abs(diff) > 1.5 ? `: ${diff > 0 ? 'more' : 'fewer'} chances for every stat.` : ', so no real pace effect.'}` });
   }
   const em = m.expectedMargin;
   const bstep = m.steps.find((s) => s.key === 'blowout');
@@ -275,13 +275,18 @@ export function contextNotes(ctx, pp, sp, cfg, line = null) {
       : `Tonight's context moves ${name}'s projection ${totalMove > 0 ? 'up' : 'down'} ${signedPct(totalMove).replace(/^[+−]/, '')}, from ${f1(projBase)} to ${f1(projCtx)} ${short}: minutes ${f1(m.base)} → ${f1(m.proj)} (${signedPct(m.base > 0 ? m.proj / m.base - 1 : 0)}), per-minute output ${Math.abs(rateMove) < 0.005 ? 'unchanged' : signedPct(rateMove)}.`) + mixText,
   };
 
+  // quiet: didn't move the projection and isn't about this player (team-level background reads the same for
+  // everyone facing this opponent tonight), so the panel folds it away instead of leading with it
+  // an opponent out counts only when it matters here (a centre out, for rebounds); otherwise their sub takes the role
+  const PERSONAL = /^(mate:|opp:|h2h$|h2h-last|thin|traded|injury|absent|returned)/;
+  const mark = (notes) => notes.map((x) => ({ ...x, quiet: x.tone === 'flat' || x.tone === 'info' ? !PERSONAL.test(x.key) || (x.key.startsWith('opp:') && x.tone === 'flat') : false }));
   return {
     summary,
     sections: [
-      { title: 'Availability', notes: avail },
-      { title: `History vs ${g.opp}`, notes: hist },
-      { title: `${g.opp} defence`, notes: def },
-      { title: 'Game script', notes: script },
+      { title: 'Availability', notes: mark(avail) },
+      { title: `History vs ${g.opp}`, notes: mark(hist) },
+      { title: `${g.opp} defence`, notes: mark(def) },
+      { title: 'Game script', notes: mark(script) },
     ],
     basis: `Team numbers: ${ps.label}. Built from box scores and the injury report only.`,
   };

@@ -5,6 +5,7 @@
 //   Context panel (c): plain-English notes on availability, the matchup and the game script
 import { $, $$, esc, fmt, pct, edge, signed, api, debounce, state, refreshStatus, odds, slip, toast, teamColour, parsePrice, tipLabel, notFound } from './ui.js';
 import { barChart } from './chart.js';
+import { keyTiles, keyStrip, openTrend } from './keynums.js';
 
 const S = { id: null, stat: 'pts', profile: null, res: null, splits: null, minutes: null, preview: null, selLine: null, window: 20, checks: null };
 const SMALL_N = 5;
@@ -22,6 +23,9 @@ export async function renderPlayer(view, id, stat) {
     S.profile = profile; S.res = res; S.splits = splits;
     view.innerHTML = shell(profile);
     view.style.setProperty('--team', teamColour(profile.player.team));
+    const tiles = keyTiles(profile, stat);
+    $('#keynums', view).innerHTML = keyStrip(tiles);
+    $('#keynums', view).onclick = (e) => { const b = e.target.closest('.kn'); if (b) openTrend(tiles[Number(b.dataset.i)], profile.player.name); };
     $('.chips', view).onclick = (e) => { const b = e.target.closest('button'); if (b) location.hash = `#/p/${S.id}/${b.dataset.s}`; };
     renderModel();
     refreshStatus();
@@ -66,6 +70,7 @@ function shell(d) {
       <button class="btn ctx-btn" id="ctxbtn" disabled aria-haspopup="dialog">Context</button>
       <span class="kbd-hint"><kbd>1</kbd>–<kbd>8</kbd> stat · <kbd>c</kbd> context · <kbd>/</kbd> search</span>
     </div>
+    <section id="keynums" aria-label="Key numbers"></section>
     <div class="result">
       <div class="col-a">
         <section id="verdict" class="o-verdict"></section>
@@ -354,11 +359,14 @@ function openContext() {
     const [icon, cls, label] = TONE[x.tone] || TONE.flat;
     return `<li class="cnote ${x.tone}"><span class="ci ${cls}" title="${label}" aria-label="${label}">${icon}</span><div><b>${esc(x.title)}</b><p>${esc(x.text)}</p></div></li>`;
   };
+  // background that reads the same for everyone facing this opponent is folded away, so the panel leads with what matters
+  const quiet = n.sections.flatMap((sec) => sec.notes.filter((x) => x.quiet));
   d.innerHTML = `<div class="ctx-in">
     <header><div><h2 id="ctx-title">${esc(p.name)} · ${short()}</h2><span class="sub">${g.home ? 'vs' : '@'} ${esc(g.opp)}${g.tipoff ? ` · ${tipLabel(g.tipoff)}` : ''}</span></div>
       <button class="mini ghost" data-close aria-label="Close">Esc ×</button></header>
     <p class="ctx-sum ${TONE[n.summary.tone]?.[1] || ''}">${esc(n.summary.text)}</p>
-    ${n.sections.map((sec) => `<section><h3>${esc(sec.title)}</h3><ul>${sec.notes.map(note).join('')}</ul></section>`).join('')}
+    ${n.sections.filter((sec) => sec.notes.some((x) => !x.quiet)).map((sec) => `<section><h3>${esc(sec.title)}</h3><ul>${sec.notes.filter((x) => !x.quiet).map(note).join('')}</ul></section>`).join('')}
+    ${quiet.length ? `<details class="ctx-quiet"><summary>Also checked, nothing that changes this pick (${quiet.length})</summary><ul>${quiet.map(note).join('')}</ul></details>` : ''}
     <p class="hint">▲ ▼ moved the projection up or down · ◦ background the model doesn't use · • neutral. ${esc(n.basis)}</p>
   </div>`;
   d.showModal();

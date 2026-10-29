@@ -175,6 +175,14 @@ test('context notes: every section present, tones valid, matchup facts match the
   const h2h = n.sections[1].notes[0];
   assert.ok(ctx0.h2hRows.length ? h2h.text.startsWith(`${ctx0.h2hRows.length} game`) : h2h.key === 'h2h-none');
   assert.ok(/^Tonight.s context/.test(n.summary.text));
+  // notes that moved the projection, or are about this player, stay up front; team-level background that reads the
+  // same for every player facing this opponent is marked quiet (the panel folds it away)
+  const flat = n.sections.flatMap((s) => s.notes);
+  for (const x of flat) {
+    if (x.tone === 'up' || x.tone === 'down') assert.ok(!x.quiet, `${x.key} moved the projection, so it is not quiet`);
+    if (['clear', 'h2h-none', 'style-none', 'drtg', 'rest'].includes(x.key)) assert.equal(x.quiet, true, `${x.key} is quiet`);
+    if (/^(mate:|h2h$|h2h-last|thin|traded|injury|absent|returned)/.test(x.key)) assert.ok(!x.quiet, `${x.key} is about this player`);
+  }
   // an absent player gets a first-game-back note
   const ret = demoInternals.storyPlayer(demoInternals.STORY.find((s) => s[2] === 'returning'));
   const r = analyse({ L, playerId: ret.id, game: { date: L.today, team: ret.team, opp: 'BOS', home: true }, stat: 'pts' });
