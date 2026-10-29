@@ -153,7 +153,10 @@ if (ARCHIVE) {
   for (const f of readdirSync(join(ARCHIVE, 'picks')).filter((x) => /^\d{4}-\d{2}-\d{2}\.json$/.test(x))) {
     days[f.slice(0, 10)] = JSON.parse(readFileSync(join(ARCHIVE, 'picks', f), 'utf8'));
   }
-  days[day] = mergePicks(days[day], picks.filter((x) => x.side), new Date().toISOString());
+  // "recommended" is locked at first save: medium confidence or better with 3%+ expected return (the best-value rule);
+  // every priced line, picked or not, refreshes the closing price of a pick already saved
+  const rec = (x) => ({ ...x, recommended: (x.confidence === 'MEDIUM' || x.confidence === 'HIGH') && (x.ev ?? 0) >= DEFAULTS.minEv });
+  days[day] = mergePicks(days[day], picks.filter((x) => x.side).map(rec), new Date().toISOString(), picks);
   writeFileSync(join(ARCHIVE, 'picks', `${day}.json`), JSON.stringify(days[day], null, 1));
 }
 const record = gradeRecord(L, days);

@@ -17,6 +17,7 @@ on:
     - cron: '17 13 * * *'   # morning: last night's box scores, new injury report
     - cron: '47 19 * * *'   # afternoon: injury updates
     - cron: '23 22 * * *'   # pre-tip: injuries + prop lines (the only scheduled run that spends Odds API credits)
+    - cron: '52 22,23,0,1,2 * * *'   # through tip-offs: late injuries and closing prices for the record (free ESPN prices only)
 
 permissions:
   contents: write   # push the odds archive to the data branch

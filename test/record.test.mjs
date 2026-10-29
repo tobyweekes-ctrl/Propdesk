@@ -92,3 +92,46 @@ test('closing-line value split into beat, same and worse', () => {
   const r = gradeRecord(L, { '2026-11-01': { a: mk('p1', 1.8, 2.02), b: mk('p2', 1.91, 1.91), c: mk('p3', 2.02, 1.8) } });
   assert.deepEqual([r.clv.beat, r.clv.same, r.clv.worse], [1, 1, 1]);
 });
+
+test('mergePicks updates the close for every tracked line, recommended or not, until tip-off', () => {
+  let day = mergePicks({}, [pick({})], '2026-11-01T13:00:00Z');
+  // later build: the model no longer picks it (price moved against it), but the line is still priced
+  day = mergePicks(day, [], '2026-11-01T22:00:00Z', [{ ...pick({ side: null }), over: 1.7, under: 2.2 }]);
+  const p = day[pickKey(pick({}))];
+  assert.deepEqual([p.close.over, p.close.under, p.close.at], [1.7, 2.2, '2026-11-01T22:00:00Z']);
+  assert.equal(p.side, 'over'); // the pick itself is unchanged
+});
+
+test('the counted pick per player is the first one saved, not the best one found later', () => {
+  const L = { today: '2026-11-03', playerLogs: () => [{ date: '2026-11-01', pts: 25, reb: 3 }], teamDates: new Map([['AAA', ['2026-11-01']]]) };
+  const r = gradeRecord(L, { '2026-11-01': {
+    a: { ...pick({ line: 30.5, ev: 0.04 }), firstSeen: '2026-11-01T13:00:00Z' },               // first saved: a loss
+    b: { ...pick({ stat: 'reb', line: 5.5, side: 'under', ev: 0.12 }), firstSeen: '2026-11-01T22:00:00Z' }, // later, better EV: a win
+  } });
+  assert.equal(r.overall.settled, 1);
+  assert.equal(r.overall.won, 0);
+});
+
+test('calibration buckets cover every settled pick, plus-money ones included', () => {
+  const L = { today: '2026-11-03', playerLogs: (id) => [{ date: '2026-11-01', pts: 25 }], teamDates: new Map([['AAA', ['2026-11-01']]]) };
+  const ps = {};
+  [0.29, 0.39, 0.49, 0.52, 0.57, 0.63, 0.68, 0.74].forEach((p, i) => { ps[i] = pick({ playerId: `p${i}`, pWin: p }); });
+  const r = gradeRecord(L, { '2026-11-01': ps });
+  assert.equal(r.calibration.reduce((a, b) => a + b.n, 0), r.overall.settled);
+});
+
+test('market-implied hit rate, closing-line coverage, baselines and the recommended split', () => {
+  const L = { today: '2026-11-03', playerLogs: (id) => [{ date: '2026-11-01', pts: id === 'p1' ? 25 : 10 }], teamDates: new Map([['AAA', ['2026-11-01']]]) };
+  const r = gradeRecord(L, { '2026-11-01': {
+    a: { ...pick({ playerId: 'p1', over: 1.8, under: 2.02, confidence: 'MEDIUM', ev: 0.05 }), firstSeen: 'a', close: { over: 1.7, under: 2.15, at: 'b' } }, // over wins
+    b: { ...pick({ playerId: 'p2', over: 1.91, under: 1.91, confidence: 'LOW', ev: 0.02 }), firstSeen: 'a', close: { over: 1.91, under: 1.91, at: 'a' } },  // over loses, no later close
+  } });
+  assert.ok(r.overall.marketHitRate > 0.5 && r.overall.marketHitRate < 0.53);
+  assert.equal(r.clv.noClose, 1);
+  assert.equal(r.clv.beat + r.clv.same + r.clv.worse + r.clv.noClose, r.overall.settled);
+  assert.equal(r.recommended.settled, 1);
+  assert.equal(r.recommended.won, 1);
+  assert.equal(r.baselines.allUnders.settled, 2);
+  assert.ok(Math.abs(r.baselines.allUnders.roi - ((2.02 - 1) * 0 + 0.91 - 1) / 2) < 1e-9); // under lost for p1, won for p2
+  assert.ok(Math.abs(r.baselines.favourites.roi - ((1.8 - 1) - 1) / 2) < 1e-9);            // p1 favourite over won; p2 coin flip -> over lost
+});
