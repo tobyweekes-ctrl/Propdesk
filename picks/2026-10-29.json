@@ -174,9 +174,9 @@
   "recommended": false,
   "firstSeen": "2026-10-29T12:27:50.009Z",
   "close": {
-   "over": 2.25,
-   "under": 1.5714285714285714,
-   "at": "2026-10-29T12:53:09.286Z"
+   "over": 2.375,
+   "under": 1.5333333333333332,
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "2490149|pr|DraftKings|18.5": {
@@ -204,9 +204,9 @@
   "recommended": true,
   "firstSeen": "2026-10-29T12:27:50.009Z",
   "close": {
-   "over": 1.8333333333333335,
-   "under": 1.8333333333333335,
-   "at": "2026-10-29T12:53:09.286Z"
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "4066328|pra|DraftKings|23.5": {
@@ -294,9 +294,9 @@
   "recommended": true,
   "firstSeen": "2026-10-29T12:27:50.009Z",
   "close": {
-   "over": 1.8333333333333335,
-   "under": 1.8333333333333335,
-   "at": "2026-10-29T12:53:09.286Z"
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "4278039|fg3m|DraftKings|2.5": {
@@ -356,7 +356,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-10-29T12:53:09.286Z"
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "4278039|pr|DraftKings|21.5": {
@@ -386,7 +386,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-10-29T12:53:09.286Z"
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "4432158|reb|DraftKings|9.5": {
@@ -444,9 +444,9 @@
   "recommended": true,
   "firstSeen": "2026-10-29T12:27:50.009Z",
   "close": {
-   "over": 1.7272727272727273,
-   "under": 1.9523809523809523,
-   "at": "2026-10-29T12:53:09.286Z"
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "4576087|pra|DraftKings|21.5": {
@@ -954,9 +954,9 @@
   "recommended": false,
   "firstSeen": "2026-10-29T12:27:50.009Z",
   "close": {
-   "over": 1.8333333333333335,
-   "under": 1.9090909090909092,
-   "at": "2026-10-29T12:53:09.286Z"
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "4279888|pra|DraftKings|27.5": {
@@ -986,7 +986,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-10-29T12:53:09.286Z"
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "4279888|ra|DraftKings|9.5": {
@@ -1074,9 +1074,9 @@
   "recommended": true,
   "firstSeen": "2026-10-29T12:27:50.009Z",
   "close": {
-   "over": 1.7272727272727273,
+   "over": 1.8,
    "under": 1.9523809523809523,
-   "at": "2026-10-29T12:38:42.395Z"
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "5041935|ast|DraftKings|3.5": {
@@ -1166,7 +1166,7 @@
   "close": {
    "over": 1.9090909090909092,
    "under": 1.8,
-   "at": "2026-10-29T12:53:09.286Z"
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "5105565|pts|DraftKings|10.5": {
@@ -1224,9 +1224,9 @@
   "recommended": true,
   "firstSeen": "2026-10-29T12:27:50.009Z",
   "close": {
-   "over": 1.9523809523809523,
-   "under": 1.8,
-   "at": "2026-10-29T12:53:09.286Z"
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-10-29T18:57:53.339Z"
   }
  },
  "4066328|pr|DraftKings|21.5": {
@@ -1257,6 +1257,516 @@
    "over": 1.8333333333333335,
    "under": 1.9090909090909092,
    "at": "2026-10-29T12:53:09.286Z"
+  }
+ },
+ "2490149|pa|DraftKings|18.5": {
+  "date": "2026-10-29",
+  "gameId": "401909893",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "2490149",
+  "name": "CJ McCollum",
+  "team": "ATL",
+  "opp": "CLE",
+  "home": true,
+  "stat": "pa",
+  "line": 18.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9090909090909092,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5889624977274504,
+  "edge": 0.07425661537450923,
+  "ev": 0.060132495909410666,
+  "minutes": 26.446302397620588,
+  "projection": 20.787560320715606,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9090909090909092,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4066328|pr|DraftKings|22.5": {
+  "date": "2026-10-29",
+  "gameId": "401909893",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4066328",
+  "name": "Jarrett Allen",
+  "team": "CLE",
+  "opp": "ATL",
+  "home": false,
+  "stat": "pr",
+  "line": 22.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5342593865105909,
+  "edge": 0.06484762180470854,
+  "ev": 0.04307784985401075,
+  "minutes": 27.428099047980623,
+  "projection": 24.199053147040956,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4397020|pts|DraftKings|7.5": {
+  "date": "2026-10-29",
+  "gameId": "401909893",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4397020",
+  "name": "Luguentz Dort",
+  "team": "ATL",
+  "opp": "CLE",
+  "home": true,
+  "stat": "pts",
+  "line": 7.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "LOW",
+  "pWin": 0.5398916907482534,
+  "edge": 0.05459757310119473,
+  "ev": 0.03070231870121104,
+  "minutes": 23.02171411206506,
+  "projection": 8.082898028333705,
+  "recommended": false,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4432158|reb|DraftKings|8.5": {
+  "date": "2026-10-29",
+  "gameId": "401909893",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4432158",
+  "name": "Evan Mobley",
+  "team": "CLE",
+  "opp": "ATL",
+  "home": false,
+  "stat": "reb",
+  "line": 8.5,
+  "book": "DraftKings",
+  "over": 1.7272727272727273,
+  "under": 1.9523809523809523,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6014934572838626,
+  "edge": 0.07090522198974492,
+  "ev": 0.03894324439939906,
+  "minutes": 31.615407837291855,
+  "projection": 9.837906888485902,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.7272727272727273,
+   "under": 1.9523809523809523,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4576087|pra|DraftKings|20.5": {
+  "date": "2026-10-29",
+  "gameId": "401909893",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4576087",
+  "name": "Peyton Watson",
+  "team": "CLE",
+  "opp": "ATL",
+  "home": false,
+  "stat": "pra",
+  "line": 20.5,
+  "book": "DraftKings",
+  "over": 1.7272727272727273,
+  "under": 1.9523809523809523,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5327430851969969,
+  "edge": 0.0633313204911145,
+  "ev": 0.04011745205127959,
+  "minutes": 30.73397815714448,
+  "projection": 20.827030931549803,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.7272727272727273,
+   "under": 1.9523809523809523,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4576087|pa|DraftKings|16.5": {
+  "date": "2026-10-29",
+  "gameId": "401909893",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4576087",
+  "name": "Peyton Watson",
+  "team": "CLE",
+  "opp": "ATL",
+  "home": false,
+  "stat": "pa",
+  "line": 16.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5970286860024502,
+  "edge": 0.06644045070833249,
+  "ev": 0.031231366731504895,
+  "minutes": 30.73397815714448,
+  "projection": 16.273254030086296,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4869342|pa|DraftKings|15.5": {
+  "date": "2026-10-29",
+  "gameId": "401909893",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4869342",
+  "name": "Dyson Daniels",
+  "team": "ATL",
+  "opp": "CLE",
+  "home": true,
+  "stat": "pa",
+  "line": 15.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5733308575096152,
+  "edge": 0.07333085750961521,
+  "ev": 0.05110657210096131,
+  "minutes": 29.25729919717235,
+  "projection": 17.212663887037756,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4397688|pts|DraftKings|18.5": {
+  "date": "2026-10-29",
+  "gameId": "401909894",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4397688",
+  "name": "Trey Murphy III",
+  "team": "NOP",
+  "opp": "SAC",
+  "home": true,
+  "stat": "pts",
+  "line": 18.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.598050660512464,
+  "edge": 0.06746242521834633,
+  "ev": 0.03299659543061967,
+  "minutes": 33.77951811042218,
+  "projection": 17.24997631297289,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4397688|pr|DraftKings|22.5": {
+  "date": "2026-10-29",
+  "gameId": "401909894",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4397688",
+  "name": "Trey Murphy III",
+  "team": "NOP",
+  "opp": "SAC",
+  "home": true,
+  "stat": "pr",
+  "line": 22.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9090909090909092,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.545149847978543,
+  "edge": 0.05985573033148428,
+  "ev": 0.04074061886812769,
+  "minutes": 33.77951811042218,
+  "projection": 22.103577780085722,
+  "recommended": false,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9090909090909092,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4397688|pa|DraftKings|21.5": {
+  "date": "2026-10-29",
+  "gameId": "401909894",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "4397688",
+  "name": "Trey Murphy III",
+  "team": "NOP",
+  "opp": "SAC",
+  "home": true,
+  "stat": "pa",
+  "line": 21.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5759110850805289,
+  "edge": 0.0759110850805289,
+  "ev": 0.05583698931430309,
+  "minutes": 33.77951811042218,
+  "projection": 20.635797420230706,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "5144091|pra|DraftKings|18.5": {
+  "date": "2026-10-29",
+  "gameId": "401909894",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "5144091",
+  "name": "Jeremiah Fears",
+  "team": "NOP",
+  "opp": "SAC",
+  "home": true,
+  "stat": "pra",
+  "line": 18.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5780555834390362,
+  "edge": 0.07805558343903618,
+  "ev": 0.05976856963823307,
+  "minutes": 26.594003022372448,
+  "projection": 21.907285949334238,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "5144091|pr|DraftKings|15.5": {
+  "date": "2026-10-29",
+  "gameId": "401909894",
+  "tipoff": "2026-10-30T00:00Z",
+  "playerId": "5144091",
+  "name": "Jeremiah Fears",
+  "team": "NOP",
+  "opp": "SAC",
+  "home": true,
+  "stat": "pr",
+  "line": 15.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5737156744825399,
+  "edge": 0.0737156744825399,
+  "ev": 0.051812069884656586,
+  "minutes": 26.594003022372448,
+  "projection": 18.802652907022576,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4431736|reb|DraftKings|3.5": {
+  "date": "2026-10-29",
+  "gameId": "401909895",
+  "tipoff": "2026-10-30T02:00Z",
+  "playerId": "4431736",
+  "name": "Toumani Camara",
+  "team": "POR",
+  "opp": "MEM",
+  "home": true,
+  "stat": "reb",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 1.6153846153846154,
+  "under": 2.2,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.4828318710575274,
+  "edge": 0.05944477428333389,
+  "ev": 0.06223011632656039,
+  "minutes": 29.74030751552769,
+  "projection": 3.7849546934914438,
+  "recommended": false,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.6153846153846154,
+   "under": 2.2,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "4903027|reb|DraftKings|6.5": {
+  "date": "2026-10-29",
+  "gameId": "401909895",
+  "tipoff": "2026-10-30T02:00Z",
+  "playerId": "4903027",
+  "name": "Cedric Coward",
+  "team": "MEM",
+  "opp": "POR",
+  "home": false,
+  "stat": "reb",
+  "line": 6.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5758029357171933,
+  "edge": 0.07580293571719332,
+  "ev": 0.05563871548152116,
+  "minutes": 26.580226972262864,
+  "projection": 6.175939089480523,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "5105565|pts|DraftKings|9.5": {
+  "date": "2026-10-29",
+  "gameId": "401909895",
+  "tipoff": "2026-10-30T02:00Z",
+  "playerId": "5105565",
+  "name": "Donovan Clingan",
+  "team": "POR",
+  "opp": "MEM",
+  "home": true,
+  "stat": "pts",
+  "line": 9.5,
+  "book": "DraftKings",
+  "over": 1.7272727272727273,
+  "under": 1.9523809523809523,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6063096254804587,
+  "edge": 0.07572139018634105,
+  "ev": 0.047262080375337856,
+  "minutes": 25.434680622757124,
+  "projection": 11.6313584665551,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.7272727272727273,
+   "under": 1.9523809523809523,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "5105565|pa|DraftKings|12.5": {
+  "date": "2026-10-29",
+  "gameId": "401909895",
+  "tipoff": "2026-10-30T02:00Z",
+  "playerId": "5105565",
+  "name": "Donovan Clingan",
+  "team": "POR",
+  "opp": "MEM",
+  "home": true,
+  "stat": "pa",
+  "line": 12.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.538527749154132,
+  "edge": 0.06911598444824968,
+  "ev": 0.05141131977711488,
+  "minutes": 25.434680622757124,
+  "projection": 13.629103153134709,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-10-29T18:57:53.339Z"
+  }
+ },
+ "5112087|reb|DraftKings|3.5": {
+  "date": "2026-10-29",
+  "gameId": "401909895",
+  "tipoff": "2026-10-30T02:00Z",
+  "playerId": "5112087",
+  "name": "Jaylen Wells",
+  "team": "MEM",
+  "opp": "POR",
+  "home": false,
+  "stat": "reb",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 2.25,
+  "under": 1.5714285714285714,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.662423212783528,
+  "edge": 0.07363816605455609,
+  "ev": 0.040950762945544006,
+  "minutes": 24.786330130584595,
+  "projection": 2.93336029850245,
+  "recommended": true,
+  "firstSeen": "2026-10-29T18:57:53.339Z",
+  "close": {
+   "over": 2.25,
+   "under": 1.5714285714285714,
+   "at": "2026-10-29T18:57:53.339Z"
   }
  }
 }
