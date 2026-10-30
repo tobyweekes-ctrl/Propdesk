@@ -281,7 +281,7 @@ test('similar players for threes: matched on three-point attempts, non-shooters 
     assert.ok(att >= 1, `${x.name} tries ${att.toFixed(1)} threes a game`);
     assert.ok(Math.abs(x.att - att) < 1e-9);
   }
-  assert.equal(similarVsOpp(L, p.id, opp, 'ast').matchOn, 'ast');
+  assert.equal(similarVsOpp(L, p.id, opp, 'pra').matchOn, 'pra');
 });
 
 test('similar players for points: matched on shots attempted and points per game together', async () => {
@@ -318,6 +318,24 @@ test('similar players for rebounds: matched on minutes and rebounds per game tog
     // close enough to count as similar: each measure within half of his
     const reb = same.reduce((a, row) => a + statValue(row, 'reb'), 0) / same.length;
     assert.ok(Math.abs(reb - r.myAvg) <= 0.5 * Math.max(1, r.myAvg), `${x.name} ${reb.toFixed(1)} rebounds vs ${r.myAvg.toFixed(1)}`);
+    assert.ok(Math.abs(x.att - r.myAtt) <= 0.5 * Math.max(1, r.myAtt));
+  }
+});
+
+test('similar players for assists: matched on usage and assists per game together', async () => {
+  const { similarVsOpp } = await import('../server/model/matchup.mjs');
+  const { statValue } = await import('../server/stats.mjs');
+  const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'G');
+  const opp = p.team === 'BOS' ? 'NYK' : 'BOS';
+  const r = similarVsOpp(L, p.id, opp, 'ast');
+  assert.equal(r.matchOn, 'usg+ast');
+  const mine = L.playerLogs(p.id).slice(-20);
+  assert.ok(Math.abs(r.myAtt - mine.reduce((a, x) => a + (x.usg || 0), 0) / mine.length) < 1e-9);
+  assert.ok(Math.abs(r.myAvg - mine.reduce((a, x) => a + statValue(x, 'ast'), 0) / mine.length) < 1e-9);
+  for (const x of r.rows) {
+    const g = L.playerLogs(x.id).find((row) => row.date === x.date);
+    const same = L.playerLogs(x.id).filter((row) => row.season === g.season && row.date !== x.date);
+    assert.ok(Math.abs(x.att - same.reduce((a, row) => a + (row.usg || 0), 0) / same.length) < 1e-9, 'att = their usage');
     assert.ok(Math.abs(x.att - r.myAtt) <= 0.5 * Math.max(1, r.myAtt));
   }
 });

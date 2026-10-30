@@ -40,7 +40,8 @@ export function defenceCard(ctx, cfg) {
  * game left out. The 10 most like this player (last 20 games) are kept, newest first: matched on the stat's average,
  * except points, matched on shots attempted and points per game together (a volume shooter and an efficient
  * finisher can score the same), rebounds, matched on minutes and rebounds per game together (a starter and a
- * high-rate backup can average the same), and threes, matched on three-point attempts (volume drives makes; a centre who never
+ * high-rate backup can average the same), assists, matched on usage and assists per game together (how much of
+ * the offence runs through him, not just the total), and threes, matched on three-point attempts (volume drives makes; a centre who never
  * shoots them tells nothing, so players under 1 attempt a game are left out). Every measure must be within half of
  * his, so the list can be shorter than 10.
  * One game per row, so it is noisy: background beside the model, not part of it.
@@ -48,10 +49,10 @@ export function defenceCard(ctx, cfg) {
  */
 export function similarVsOpp(L, playerId, opp, stat, { limit = 10, oppGames = 15 } = {}) {
   const group = L.groupOf(playerId);
-  const matchOn = { fg3m: 'fg3a', pts: 'fga+pts', reb: 'min+reb' }[stat] || stat;
+  const matchOn = { fg3m: 'fg3a', pts: 'fga+pts', reb: 'min+reb', ast: 'usg+ast' }[stat] || stat;
   // what "similar" is measured on: one or two per-game averages; the attempts one (if any) is shown on the card
   const keysOf = (r) => (matchOn === 'fg3a' ? [r.fg3a || 0] : matchOn === 'fga+pts' ? [r.fga || 0, statValue(r, 'pts')]
-    : matchOn === 'min+reb' ? [r.min || 0, statValue(r, 'reb')] : [statValue(r, stat)]);
+    : matchOn === 'min+reb' ? [r.min || 0, statValue(r, 'reb')] : matchOn === 'usg+ast' ? [r.usg || 0, statValue(r, 'ast')] : [statValue(r, stat)]);
   const avgKeys = (rows) => {
     const sums = rows.reduce((acc, r) => keysOf(r).map((v, i) => (acc[i] || 0) + v), []);
     return sums.map((v) => (rows.length ? v / rows.length : 0));
