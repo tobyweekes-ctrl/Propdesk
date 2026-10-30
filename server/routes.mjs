@@ -4,7 +4,7 @@
 // Handlers receive (params, URLSearchParams, body) and return JSON-able values.
 import { STATS } from './stats.mjs';
 import { round } from './util.mjs';
-import { searchPlayers, averages, injuryFor } from './data/league.mjs';
+import { searchPlayers, averages, injuryFor, mainLine } from './data/league.mjs';
 import { grade, summariseBets } from './data/entries.mjs';
 import { analyse, buildContext, projectPlayer, projectStat, DEFAULTS } from './model/index.mjs';
 import { analyseSlip, legLabel } from './model/slip.mjs';
@@ -85,7 +85,7 @@ export function createRoutes(B) {
         last5: averages(logs.slice(-5)),
         last10: averages(logs.slice(-10)),
       },
-      logs: logs.slice(-40).reverse().map((r) => ({ ...r, usg: round(r.usg) })),
+      logs: logs.slice(-100).reverse().map((r) => ({ ...r, usg: round(r.usg) })),
     };
   });
 
@@ -97,6 +97,15 @@ export function createRoutes(B) {
     const [g, injuries] = await Promise.all([B.gameFor(p.team), B.getInjuries().catch(() => [])]);
     const opp = g ? (g.home === p.team ? g.away : g.home) : null;
     return computeSplits(L, id, stat, { opp, injuries });
+  });
+
+  // the main line of every stat, for the stat chips ("PTS 19.5")
+  get('/api/player/:id/mainlines', async ({ id }) => {
+    const L = await B.getLeague();
+    const p = L.players.get(id) || fail(404, 'player not found');
+    const out = {};
+    for (const stat of Object.keys(STATS)) out[stat] = mainLine((await B.getPlayerLines(p, stat)).lines);
+    return out;
   });
 
   get('/api/player/:id/lines', async ({ id }, q) => {

@@ -60,3 +60,11 @@ test('tip-off times read as a UK user expects: 24-hour clock, after-midnight gam
   assert.equal(tipLabel('2026-10-30T02:30:00Z', now), 'Thu night · 02:30 · in 13h 30m');
   assert.equal(tipLabel('2026-10-29T12:30:00Z', now), 'Thu · 12:30 · started');
 });
+
+test('main line: the two-sided line priced closest to evens, stale lines last', async () => {
+  const { mainLine } = await import('../server/data/league.mjs');
+  assert.equal(mainLine([]), null);
+  assert.equal(mainLine([{ line: 18.5, over: 1.5, under: 2.6 }, { line: 19.5, over: 1.9, under: 1.9 }, { line: 20.5, over: 2.4, under: 1.55 }]), 19.5);
+  assert.equal(mainLine([{ line: 19.5, over: 1.9, under: 1.9, stale: true }, { line: 20.5, over: 2.1, under: 1.7 }]), 20.5);
+  assert.equal(mainLine([{ line: 3, over: 2 }]), null); // one-sided only
+});

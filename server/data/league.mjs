@@ -139,3 +139,10 @@ export function ladderFor(rows, player, stat) {
   const ok = out.every((x, i) => i === 0 || (x.k > out[i - 1].k && x.price > out[i - 1].price));
   return ok ? out.map((x) => ({ ...x, rawPrice: x.price, price: snapDown(x.price) })) : [];
 }
+
+/** The main line for a market: two-sided, fresh before stale, priced closest to evens. Null if there is none. */
+export function mainLine(lines) {
+  const two = lines.filter((l) => l.over && l.under);
+  const gap = (l) => Math.abs(1 / l.over - 1 / l.under) + (l.stale ? 10 : 0);
+  return two.length ? two.reduce((b, l) => (gap(l) < gap(b) ? l : b)).line : null;
+}

@@ -226,6 +226,26 @@ test('game cards: model projections ranked by projected minutes, the same number
   assert.equal(me.min, Math.round(i.minutes.with * 10) / 10);
 });
 
+test('defence vs position card: blended factor and rank for each stat, rank 1 = allows the most', async () => {
+  const { defenceCard } = await import('../server/model/matchup.mjs');
+  const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'C');
+  const game = { date: L.today, team: p.team, opp: p.team === 'BOS' ? 'NYK' : 'BOS', home: false };
+  const ctx = buildContext(L, p.id, game);
+  const d = defenceCard(ctx, DEFAULTS);
+  assert.equal(d.opp, game.opp);
+  assert.equal(d.group, 'C');
+  assert.deepEqual(d.stats.map((x) => x.stat), ['pts', 'reb', 'ast', 'fg3m']);
+  for (const x of d.stats) {
+    assert.ok(x.rank >= 1 && x.rank <= x.of && x.of >= 2, `${x.stat} rank ${x.rank}/${x.of}`);
+    assert.ok(x.factor > 0.5 && x.factor < 1.6);
+    // every team's factor, the same blend: the opponent's rank is its place in that list
+    const all = d.all[x.stat];
+    assert.equal(all.findIndex(([t]) => t === game.opp) + 1, x.rank);
+    for (let i = 1; i < all.length; i++) assert.ok(all[i - 1][1] >= all[i][1]);
+  }
+  assert.ok(d.basis.length);
+});
+
 test('recent results mix into the distribution: a share of the last 20, total probability kept', async () => {
   const { mixRecent } = await import('../server/model/projection.mjs');
   const dist = { pmf: [0.5, 0.5], mean: 0.5, sd: 0.5 };

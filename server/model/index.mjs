@@ -10,6 +10,7 @@
 import { DEFAULTS, mergeConfig } from './config.mjs';
 import { buildContext } from './context.mjs';
 import { projectPlayer, projectStat } from './projection.mjs';
+import { defenceCard } from './matchup.mjs';
 import { evaluateMarket, quality, hitRates } from './evaluate.mjs';
 import { contextNotes } from './notes.mjs';
 
@@ -41,6 +42,7 @@ export function analyse({ L, playerId, game, stat, lines = [], opts = {}, config
     ...market,
     hitRates: { line: mainLine, ...hitRates(ctx.logs, stat, mainLine, ctx.cur) },
     notes: contextNotes(ctx, pp, sp, cfg, mainLine),
+    defence: (({ all, ...d }) => d)(defenceCard(ctx, cfg)),
   };
 }
 

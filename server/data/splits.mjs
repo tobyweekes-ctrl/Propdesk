@@ -76,8 +76,9 @@ export function computeSplits(L, playerId, stat, { opp = null, injuries = [], ma
     if (!without.length && !isOut) continue; // never apart: the pair would just repeat his average
     if (!withM.length) continue; // never together (e.g. out since he arrived): nothing to compare
     const last = m.name.split(' ').slice(1).join(' ') || m.name;
-    out.push(row('Teammates', `with:${m.id}`, `With ${last}`, withM, stat, { mate: m.name, outTonight: isOut }));
-    out.push(row('Teammates', `without:${m.id}`, `Without ${last}`, without, stat, { mate: m.name, outTonight: isOut }));
+    // dates let the chart filter to games with or without them
+    out.push(row('Teammates', `with:${m.id}`, `With ${last}`, withM, stat, { mate: m.name, outTonight: isOut, dates: withM.map((r) => r.date) }));
+    out.push(row('Teammates', `without:${m.id}`, `Without ${last}`, without, stat, { mate: m.name, outTonight: isOut, dates: without.map((r) => r.date) }));
   }
   return out;
 }

@@ -7,20 +7,21 @@ import { $, $$, esc, fmt, pct, edge, signed, api, debounce, state, refreshStatus
 import { barChart } from './chart.js';
 import { keyTiles, keyStrip, openTrend } from './keynums.js';
 
-const S = { id: null, stat: 'pts', profile: null, res: null, splits: null, minutes: null, preview: null, selLine: null, window: 20, checks: null };
+const S = { id: null, stat: 'pts', profile: null, res: null, splits: null, minutes: null, preview: null, selLine: null, window: 'L10', filters: { venue: null, minutes: false, without: '' }, checks: null, mainlines: {} };
 const SMALL_N = 5;
 const FLAG_LABEL = { returning: 'Return ramp', 'first-game-back': 'First game back', 'no-history': 'No history', 'manual-minutes': 'Manual minutes' };
 const statOf = (row) => state.stats[S.stat].parts.reduce((a, k) => a + (row[k] ?? 0), 0);
 const short = () => state.stats[S.stat].short;
 
 export async function renderPlayer(view, id, stat) {
-  if (S.id !== id) { S.minutes = null; S.preview = null; S.checks = null; }
+  if (S.id !== id) { S.minutes = null; S.preview = null; S.checks = null; S.filters = { venue: null, minutes: false, without: '' }; S.window = 'L10'; S.mainlines = {}; }
   if (S.id !== id || S.stat !== stat) { S.selLine = null; S.checks = null; }
   S.id = id; S.stat = stat;
   view.innerHTML = '<p class="empty">Loading…</p>';
   try {
-    const [profile, res, splits] = await Promise.all([api(`/api/player/${id}`), fetchAnalysis(), api(`/api/player/${id}/splits?stat=${stat}`)]);
-    S.profile = profile; S.res = res; S.splits = splits;
+    const [profile, res, splits, mainlines] = await Promise.all([api(`/api/player/${id}`), fetchAnalysis(), api(`/api/player/${id}/splits?stat=${stat}`),
+      api(`/api/player/${id}/mainlines`).catch(() => ({}))]);
+    S.profile = profile; S.res = res; S.splits = splits; S.mainlines = mainlines;
     view.innerHTML = shell(profile);
     view.style.setProperty('--team', teamColour(profile.player.team));
     const tiles = keyTiles(profile, stat);
@@ -66,7 +67,7 @@ function shell(d) {
       <span class="flags">${flags(d)}</span>
     </div>
     <div class="statbar">
-      <div class="chips" role="group" aria-label="Stat">${keys.map((s, i) => `<button aria-pressed="${s === S.stat}" data-s="${s}" title="${esc(state.stats[s].label)} (${i + 1})">${state.stats[s].short}</button>`).join('')}</div>
+      <div class="chips" role="group" aria-label="Stat">${keys.map((s, i) => `<button aria-pressed="${s === S.stat}" data-s="${s}" title="${esc(state.stats[s].label)}${S.mainlines[s] != null ? `, DraftKings line ${S.mainlines[s]}` : ''} (${i + 1})">${state.stats[s].short}${S.mainlines[s] != null ? `<small>${fmt(S.mainlines[s])}</small>` : ''}</button>`).join('')}</div>
       <button class="btn ctx-btn" id="ctxbtn" disabled aria-haspopup="dialog">Context</button>
       <span class="kbd-hint"><kbd>1</kbd>–<kbd>8</kbd> stat · <kbd>c</kbd> context · <kbd>/</kbd> search</span>
     </div>
@@ -75,6 +76,7 @@ function shell(d) {
       <div class="col-a">
         <section id="verdict" class="o-verdict"></section>
         <section id="chart-block" class="card o-chart"></section>
+        <section id="matchup" class="card o-matchup" hidden></section>
         <section id="splits" class="card o-splits"></section>
       </div>
       <div class="col-b">
@@ -415,31 +417,129 @@ function hitOf(values, line) {
   const over = values.filter((v) => v > line).length;
   return { n: values.length, over, rate: values.length ? over / values.length : null };
 }
+// games behind the chart and hit rates: the filters (venue, minutes like tonight's, without a teammate), then a window
+const WINDOWS = [['L5', 'Last 5'], ['L10', 'Last 10'], ['L20', 'Last 20'], ['season', 'This season'], ['h2h', 'vs opp']];
+function filterInfo() {
+  const proj = S.res.analysis?.projection?.minutes?.proj;
+  const minCut = proj != null ? Math.max(10, Math.floor(proj) - 3) : null;
+  const mates = S.splits.filter((x) => x.key.startsWith('without:') && x.dates);
+  return { minCut, mates };
+}
+function filteredLogs() {
+  const f = S.filters, { minCut, mates } = filterInfo();
+  const without = f.without ? new Set(mates.find((m) => m.key === f.without)?.dates || []) : null;
+  return S.profile.logs.filter((r) => (!f.venue || (f.venue === 'home') === Boolean(r.home))
+    && (!f.minutes || minCut == null || r.min >= minCut) && (!without || without.has(r.date)));
+}
+function windowRows(rows, w) {
+  const opp = S.res.game?.opp;
+  if (w === 'season') return rows.filter((r) => r.season === Object.keys(S.profile.averages)[0]); // current season first
+  if (w === 'h2h') return opp ? rows.filter((r) => r.opp === opp) : [];
+  return rows.slice(0, Number(w.slice(1)));
+}
+const median = (xs) => { if (!xs.length) return null; const a = [...xs].sort((x, y) => x - y), m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
+
 function renderLineParts() {
   const line = S.selLine;
-  const logs = S.profile.logs;
   const team = S.profile.player.team;
-  const games = logs.slice(0, S.window).reverse().map((r) => ({ date: r.date, opp: r.opp, home: r.home, min: r.min, season: r.season, team: r.team, old: r.team !== team, value: statOf(r) }));
+  const rows = filteredLogs();
+  const { minCut, mates } = filterInfo();
+  const opp = S.res.game?.opp;
+  const f = S.filters;
+  const anyFilter = f.venue || f.minutes || f.without;
+  const strip = WINDOWS.filter(([w]) => w !== 'h2h' || opp).map(([w, label]) => {
+    const v = windowRows(rows, w).map(statOf);
+    return { w, label: w === 'h2h' ? `vs ${opp}` : label, ...hitOf(v, line), avg: v.length ? v.reduce((a, b) => a + b, 0) / v.length : null };
+  });
+  const changed = S.profile.logs.some((r) => r.team !== team);
+  const sel = windowRows(rows, S.window);
+  const selVals = sel.map(statOf);
+  const games = sel.slice().reverse().map((r) => ({ date: r.date, opp: r.opp, home: r.home, min: r.min, season: r.season, team: r.team, old: r.team !== team, value: statOf(r) }));
   const proj = S.res.analysis?.projection?.mean ?? null;
-  const vals = logs.map(statOf);
-  const cur = S.splits.find((x) => x.key === 'cur'), prev = S.splits.find((x) => x.key === 'prev');
-  const withTeam = logs.filter((r) => r.team === team);
-  const changed = withTeam.length < logs.length;
-  const hits = [['L5', vals.slice(0, 5)], ['L10', vals.slice(0, 10)], ['L20', vals.slice(0, 20)], ['Season', cur?.values || []],
-    changed ? [`With ${team}`, withTeam.map(statOf)] : ['Last season', prev?.values || []]].map(([k, v]) => ({ k, ...hitOf(v, line) }));
-  $('#chart-block').innerHTML = `
-    <div class="chart-head"><h3>Last ${games.length} · ${short()}${line != null ? ` vs ${fmt(line)}` : ''}</h3>
-      <div class="legend"><span><i class="sw b-over"></i>Over</span><span><i class="sw b-under"></i>Under</span><span><i class="ln"></i>Line</span>${proj != null ? '<span><i class="ln proj"></i>Projection</span>' : ''}</div>
-      ${logs.length > 10 ? `<div class="seg" role="group" aria-label="Games shown">${[10, 20].map((w) => `<button aria-pressed="${S.window === w}" data-w="${w}">L${w}</button>`).join('')}</div>` : ''}</div>
-    <div id="chart"></div>
-    ${changed ? `<p class="hint">Faded bars are games for his previous team; "With ${team}" counts only games since he joined.</p>` : ''}
-    <div class="hits">${hits.map((h) => `<div><dt>${h.k}${line == null ? ' avg' : ''}</dt><dd>${!h.n ? '–' : line == null ? `${fmt(h.avg)} <span class="dim">${h.n}g</span>` : `${h.over}/${h.n} <span class="${h.rate >= 0.5 ? 'pos' : 'neg'}">${pct(h.rate, 0)}</span>`}</dd></div>`).join('')}</div>
-    ${line == null ? '<p class="hint">No line to measure against, so these are averages. Hit rates appear when there is a line (a game today, or one you enter).</p>' : ''}`;
+  const winLabel = (WINDOWS.find(([w]) => w === S.window) || [])[1] || '';
+  const block = $('#chart-block');
+  if (!block.querySelector('#chart')) {
+    block.innerHTML = `<div class="chart-head"><h3 id="chart-title"></h3>
+        <div class="legend"><span><i class="sw b-over"></i>Over</span><span><i class="sw b-under"></i>Under</span><span><i class="ln"></i>Line</span>${proj != null ? '<span><i class="ln proj"></i>Projection</span>' : ''}</div></div>
+      <div class="hitstrip" id="hitstrip" role="group" aria-label="Games shown"></div>
+      <div class="filters" id="filters"></div>
+      <div id="chart"></div>
+      <div class="linectl" id="linectl"></div>
+      <p class="hint" id="chart-note"></p>`;
+  }
+  $('#chart-title').textContent = `${S.window === 'h2h' ? `vs ${opp}` : winLabel} · ${short()}${line != null ? ` vs ${fmt(line)}` : ''}`;
+  $('#hitstrip').innerHTML = strip.map((h) => `<button data-w="${h.w}" aria-pressed="${S.window === h.w}" ${h.n ? '' : 'disabled'}>
+      <span class="hl">${esc(h.label)}</span>
+      <b class="${h.rate == null ? '' : h.rate >= 0.5 ? 'pos' : 'neg'}">${!h.n ? '–' : line == null ? fmt(h.avg) : pct(h.rate, 0)}</b>
+      <small>${!h.n ? 'no games' : line == null ? `${h.n} game${h.n === 1 ? '' : 's'}` : `${h.over} of ${h.n}`}</small>${h.n && line != null ? `<small>avg ${fmt(h.avg)}</small>` : ''}</button>`).join('');
+  $('#filters').innerHTML = `<span class="fl">Filter</span>
+    <button class="fchip" data-f="home" aria-pressed="${f.venue === 'home'}">Home</button>
+    <button class="fchip" data-f="away" aria-pressed="${f.venue === 'away'}">Away</button>
+    ${minCut != null ? `<button class="fchip" data-f="min" aria-pressed="${f.minutes}" title="Games where he played about as long as tonight's projection or longer">${minCut}+ min</button>` : ''}
+    ${mates.length ? `<label class="fsel"><span class="sr">Without a teammate</span><select data-f="without"><option value="">With or without anyone</option>${mates.map((m) => `<option value="${esc(m.key)}" ${f.without === m.key ? 'selected' : ''}>${esc(m.label)} (${m.dates.length}g)${m.outTonight ? ' · out tonight' : ''}</option>`).join('')}</select></label>` : ''}
+    ${anyFilter ? '<button class="fchip clear" data-f="clear">Clear</button>' : ''}`;
   barChart($('#chart'), games, { line, projection: proj, label: `${S.profile.player.name} ${short()}` });
-  const seg = $('#chart-block .seg');
-  if (seg) seg.onclick = (e) => { const b = e.target.closest('button'); if (b) { S.window = Number(b.dataset.w); renderLineParts(); } };
+  if (!games.length) $('#chart').innerHTML = `<p class="empty">No games match${anyFilter ? ' these filters' : ''}.</p>`;
+  renderLineCtl();
+  const notes = [];
+  if (selVals.length) notes.push(`Average ${fmt(selVals.reduce((a, b) => a + b, 0) / selVals.length)} · median ${fmt(median(selVals))} over ${selVals.length} game${selVals.length === 1 ? '' : 's'}${anyFilter ? ' that match the filters' : ''}.`);
+  if (changed) notes.push(`Faded bars are games for his previous team.`);
+  if (selVals.length && selVals.length < SMALL_N) notes.push('Small sample: treat the hit rate lightly.');
+  $('#chart-note').textContent = notes.join(' ');
   renderSplits(line);
+  renderMatchup();
   $$('.lrow[data-line]').forEach((r) => r.classList.toggle('sel', Number(r.dataset.line) === line));
+}
+
+// drag the line: hit rates, the chart and the model's chance follow it
+function renderLineCtl() {
+  const el = $('#linectl');
+  const a = S.res.analysis;
+  const line = S.selLine;
+  if (line == null) { el.innerHTML = ''; return; }
+  const vals = S.profile.logs.slice(0, 40).map(statOf);
+  const proj = a?.projection?.mean ?? line;
+  const lo = 0.5, hi = Math.max(line, proj * 2, ...vals) + 0.5;
+  const pmf = a?.projection?.pmf;
+  const po = pmf ? pOverLine(pmf, line) : null;
+  const ev = a?.evals?.find((e) => e.line === line && e.source !== 'preview');
+  const lad = (S.res.ladder || []).find((l) => l.k === Math.floor(line) + 1);
+  const book = ev ? `DraftKings over ${odds(ev.over)} · under ${odds(ev.under)}` : lad ? `DraftKings ${lad.k}+ at ${odds(lad.price)}` : 'no DraftKings price at this line';
+  const main = a?.headline?.line ?? a?.consensus?.line ?? null;
+  const info = `${po != null ? `Model: over ${pct(po, 0)} (fair ${odds(1 / Math.max(po, 0.001), 'up')}) · under ${pct(1 - po, 0)} (fair ${odds(1 / Math.max(1 - po, 0.001), 'up')}) · ` : ''}${book}`;
+  if (!el.querySelector('input')) {
+    el.innerHTML = `<button class="mini ghost" data-ln="-1" aria-label="Line down">−</button>
+      <label class="lrange"><span class="sr">Line</span><input type="range" min="${lo}" max="${hi}" step="0.5" value="${line}"></label>
+      <button class="mini ghost" data-ln="1" aria-label="Line up">+</button>
+      <b class="lval"></b><span class="linfo"></span><button class="mini ghost lreset" data-ln="0" hidden>Back to ${fmt(main)}</button>`;
+  }
+  const input = el.querySelector('input');
+  if (Number(input.value) !== line) input.value = line;
+  el.querySelector('.lval').textContent = `Line ${fmt(line)}`;
+  el.querySelector('.linfo').textContent = info;
+  el.querySelector('.lreset').hidden = main == null || main === line;
+}
+
+// tonight's opponent against his position, for each stat, ranked out of every team
+function renderMatchup() {
+  const el = $('#matchup');
+  const d = S.res.analysis?.defence;
+  if (!d || !d.stats?.length) { el.hidden = true; return; }
+  el.hidden = false;
+  const parts = state.stats[S.stat].parts;
+  const ORD = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
+  const rankText = (x) => (x.rank <= x.of / 2 ? `${ORD(x.rank)} most` : `${ORD(x.of + 1 - x.rank)} fewest`);
+  const word = (x) => (x.factor >= 1.04 ? ['soft', 'pos'] : x.factor <= 0.96 ? ['tough', 'neg'] : ['average', 'dim']);
+  el.innerHTML = `<div class="card-head"><h3>${esc(d.opp)} defence vs ${esc(d.groupLabel)}</h3><span class="hint" style="margin:0">rank of ${d.stats[0].of}</span></div>
+    <div class="mu-grid">${d.stats.map((x) => {
+      const [w, cls] = word(x);
+      // soft (allows the most) on the right, like a meter
+      const pos = x.of > 1 ? (1 - (x.rank - 1) / (x.of - 1)) * 100 : 50;
+      return `<div class="mu ${parts.includes(x.stat) ? 'on' : ''}"><span class="mu-l">${esc(state.stats[x.stat]?.label || x.stat)} allowed</span>
+        <b class="${cls}">${x.factor >= 1 ? '+' : '−'}${Math.abs(Math.round((x.factor - 1) * 100))}%</b><small>vs league · ${rankText(x)} · ${w}</small>
+        <span class="meter" aria-hidden="true"><i style="left:${pos.toFixed(0)}%"></i></span></div>`;
+    }).join('')}</div>
+    <p class="hint">Per minute, to ${esc(d.groupLabel)}, against the league average: ${esc(d.basis)}. Left of the bar is tough, right is soft. Highlighted: the parts of ${esc(state.stats[S.stat].label.toLowerCase())}. These numbers are noisy, so the model applies half of the difference${d.games && d.games < 10 ? `, and with ${d.games} game${d.games === 1 ? '' : 's'} this season most of it comes from last season` : ''}.</p>`;
 }
 
 function renderSplits(line) {
@@ -480,7 +580,30 @@ function bind() {
     if (t.closest('#cmore')) { S.checks.push({ k: '', price: '' }); redrawCheck(); return $$('.crow input[name=k]').at(-1)?.focus(); }
     if (t.closest('#minreset')) { S.minutes = null; return rerun(); }
     const row = t.closest('.lrow[data-line]');
-    if (row && !t.closest('button')) { S.selLine = Number(row.dataset.line); renderLineParts(); }
+    if (row && !t.closest('button')) { S.selLine = Number(row.dataset.line); renderLineParts(); return; }
+    const w = t.closest('#hitstrip [data-w]');
+    if (w && !w.disabled) { S.window = w.dataset.w; return renderLineParts(); }
+    const fc = t.closest('.fchip[data-f]');
+    if (fc) {
+      const k = fc.dataset.f;
+      if (k === 'clear') S.filters = { venue: null, minutes: false, without: '' };
+      else if (k === 'min') S.filters.minutes = !S.filters.minutes;
+      else S.filters.venue = S.filters.venue === k ? null : k;
+      return renderLineParts();
+    }
+    const ln = t.closest('[data-ln]');
+    if (ln) {
+      const a = S.res.analysis;
+      const step = Number(ln.dataset.ln);
+      S.selLine = step === 0 ? a?.headline?.line ?? a?.consensus?.line ?? S.selLine : Math.max(0.5, S.selLine + step);
+      return renderLineParts();
+    }
+  };
+  view.onchange = (e) => {
+    if (e.target.matches('select[data-f=without]')) { S.filters.without = e.target.value; renderLineParts(); }
+  };
+  view.oninput = (e) => {
+    if (e.target.matches('#linectl input[type=range]')) { S.selLine = Number(e.target.value); renderLineParts(); }
   };
   // price checker inputs: recompute in place, keep focus
   $('#check').oninput = debounce((e) => {

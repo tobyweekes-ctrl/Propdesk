@@ -20,7 +20,7 @@ export function keyTiles(d, stat) {
       ? { key: 'fg3a', label: 'Threes tried', unit: 'a game', a: A.fg3a, b: B.gp ? B.fg3a : null, r: R.fg3a, of: (r) => r.fg3a }
       : { key: 'fga', label: 'Shots', unit: 'a game', a: A.fga, b: B.gp ? B.fga : null, r: R.fga, of: (r) => r.fga },
     { key: 'stat', label: st.label, unit: 'a game', a: A[stat], b: B.gp ? B[stat] : null, r: R[stat], of: statOf },
-  ].map((t) => ({ ...t, cur, prev, games: d.logs.slice().reverse().map((r) => ({ date: r.date, opp: r.opp, home: r.home, season: r.season, value: t.of(r) })).filter((g) => g.value != null) }));
+  ].map((t) => ({ ...t, cur, prev, games: d.logs.slice(0, 40).reverse().map((r) => ({ date: r.date, opp: r.opp, home: r.home, season: r.season, value: t.of(r) })).filter((g) => g.value != null) }));
 }
 
 const delta = (a, b) => {
