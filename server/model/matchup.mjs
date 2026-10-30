@@ -38,17 +38,25 @@ export function defenceCard(ctx, cfg) {
  * How tonight's opponent has treated players like this one lately: same-position rotation players' games against
  * them (20+ minutes, in the opponent's last 15 games), each against that player's own average that season with the
  * game left out. The 10 most like this player (last 20 games) are kept, newest first: matched on the stat's average,
- * except threes, matched on three-point attempts (volume drives makes; a centre who never shoots them tells nothing,
- * so players under 1 attempt a game are left out).
+ * except points, matched on shots attempted and points per game together (a volume shooter and an efficient
+ * finisher can score the same), and threes, matched on three-point attempts (volume drives makes; a centre who never
+ * shoots them tells nothing, so players under 1 attempt a game are left out).
  * One game per row, so it is noisy: background beside the model, not part of it.
  * @returns { opp, group, current, matchOn, rows: [{ id, name, team, date, season, min, value, avg, att }], avgDelta }
  */
 export function similarVsOpp(L, playerId, opp, stat, { limit = 10, oppGames = 15 } = {}) {
   const group = L.groupOf(playerId);
-  const matchOn = stat === 'fg3m' ? 'fg3a' : stat;
-  const keyOf = (r) => (matchOn === 'fg3a' ? r.fg3a || 0 : statValue(r, stat));
-  const mine = L.playerLogs(playerId).slice(-20).map(keyOf);
-  const myKey = mine.length ? mine.reduce((a, b) => a + b, 0) / mine.length : 0;
+  const matchOn = stat === 'fg3m' ? 'fg3a' : stat === 'pts' ? 'fga+pts' : stat;
+  // what "similar" is measured on: one or two per-game averages; the attempts one (if any) is shown on the card
+  const keysOf = (r) => (matchOn === 'fg3a' ? [r.fg3a || 0] : matchOn === 'fga+pts' ? [r.fga || 0, statValue(r, 'pts')] : [statValue(r, stat)]);
+  const avgKeys = (rows) => {
+    const sums = rows.reduce((acc, r) => keysOf(r).map((v, i) => (acc[i] || 0) + v), []);
+    return sums.map((v) => (rows.length ? v / rows.length : 0));
+  };
+  const myKey = avgKeys(L.playerLogs(playerId).slice(-20));
+  // relative gap on each measure, added up, so shots and points count equally
+  const dist = (k) => k.reduce((a, v, i) => a + Math.abs(v - myKey[i]) / Math.max(1, myKey[i]), 0);
+  const attOf = (k) => (matchOn === 'fg3a' || matchOn === 'fga+pts' ? k[0] : undefined);
   const recent = new Set((L.teamGameList.get(opp) || []).slice(-oppGames).map((g) => g.gameId));
   const rows = [];
   for (const p of L.players.values()) {
@@ -61,12 +69,12 @@ export function similarVsOpp(L, playerId, opp, stat, { limit = 10, oppGames = 15
       const avgMin = same.reduce((a, r) => a + r.min, 0) / same.length;
       if (avgMin < 20) continue;
       const avg = same.reduce((a, r) => a + statValue(r, stat), 0) / same.length;
-      const key = same.reduce((a, r) => a + keyOf(r), 0) / same.length;
-      if (matchOn === 'fg3a' && key < 1) continue;
-      rows.push({ id: p.id, name: p.name, team: g.team, date: g.date, season: g.season, min: Math.round(g.min), value: statValue(g, stat), avg, att: matchOn === 'fg3a' ? key : undefined, key });
+      const key = avgKeys(same);
+      if (matchOn === 'fg3a' && key[0] < 1) continue;
+      rows.push({ id: p.id, name: p.name, team: g.team, date: g.date, season: g.season, min: Math.round(g.min), value: statValue(g, stat), avg, att: attOf(key), d: dist(key) });
     }
   }
-  const near = rows.sort((a, b) => Math.abs(a.key - myKey) - Math.abs(b.key - myKey)).slice(0, limit)
-    .sort((a, b) => b.date.localeCompare(a.date)).map(({ key, ...x }) => x);
-  return { opp, group, current: L.current, matchOn, myAtt: matchOn === 'fg3a' ? myKey : undefined, rows: near, avgDelta: near.length ? near.reduce((a, x) => a + (x.value - x.avg), 0) / near.length : null };
+  const near = rows.sort((a, b) => a.d - b.d).slice(0, limit)
+    .sort((a, b) => b.date.localeCompare(a.date)).map(({ d, ...x }) => x);
+  return { opp, group, current: L.current, matchOn, myAtt: attOf(myKey), myAvg: myKey.at(-1), rows: near, avgDelta: near.length ? near.reduce((a, x) => a + (x.value - x.avg), 0) / near.length : null };
 }
