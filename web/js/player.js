@@ -21,7 +21,7 @@ export async function renderPlayer(view, id, stat) {
   try {
     const [profile, res, splits, mainlines] = await Promise.all([api(`/api/player/${id}`), fetchAnalysis(), api(`/api/player/${id}/splits?stat=${stat}`),
       api(`/api/player/${id}/mainlines`).catch(() => ({}))]);
-    S.profile = profile; S.res = res; S.splits = splits; S.mainlines = mainlines;
+    S.profile = profile; S.res = res; S.splits = splits; S.mainlines = mainlines; S.similar = null;
     view.innerHTML = shell(profile);
     view.style.setProperty('--team', teamColour(profile.player.team));
     const tiles = keyTiles(profile, stat);
@@ -30,6 +30,8 @@ export async function renderPlayer(view, id, stat) {
     $('.chips', view).onclick = (e) => { const b = e.target.closest('button'); if (b) location.hash = `#/p/${S.id}/${b.dataset.s}`; };
     renderModel();
     refreshStatus();
+    // background beside the model: loads after the page is up
+    api(`/api/player/${id}/similar?stat=${stat}`).then((x) => { if (S.id === id && S.stat === stat) { S.similar = x; renderSimilar(); } }).catch(() => {});
   } catch (e) {
     view.innerHTML = /not found/i.test(e.message) ? notFound('That player link doesn\'t match anyone in the data.') : `<p class="err">${esc(e.message)}</p>`;
   }
@@ -77,6 +79,7 @@ function shell(d) {
         <section id="verdict" class="o-verdict"></section>
         <section id="chart-block" class="card o-chart"></section>
         <section id="matchup" class="card o-matchup" hidden></section>
+        <section id="similar" class="card o-similar" hidden></section>
         <section id="splits" class="card o-splits"></section>
       </div>
       <div class="col-b">
@@ -518,6 +521,22 @@ function renderLineCtl() {
   el.querySelector('.lval').textContent = `Line ${fmt(line)}`;
   el.querySelector('.linfo').textContent = info;
   el.querySelector('.lreset').hidden = main == null || main === line;
+}
+
+// same-position players' recent games against tonight's opponent, each against their own average
+function renderSimilar() {
+  const el = $('#similar');
+  const d = S.similar;
+  if (!el) return;
+  if (!d || !d.rows?.length) { el.hidden = true; return; }
+  el.hidden = false;
+  const delta = (v) => `<span class="${v > 0.05 ? 'pos' : v < -0.05 ? 'neg' : 'dim'}">${v > 0 ? '+' : v < 0 ? '−' : ''}${fmt(Math.abs(v))}</span>`;
+  const above = d.rows.filter((x) => x.value > x.avg).length;
+  el.innerHTML = `<div class="card-head"><h3>Similar players vs ${esc(d.opp)}</h3><span class="hint" style="margin:0">${d.rows.length} game${d.rows.length === 1 ? '' : 's'}</span></div>
+    <p class="sim-sum">Players at his position with similar ${esc(state.stats[S.stat].label.toLowerCase())} numbers put up ${delta(d.avgDelta)} on average against their own average when they faced ${esc(d.opp)}; ${above} of ${d.rows.length} beat it.</p>
+    <div class="scroll"><table class="sim"><tr><th class="l">Player</th><th>Date</th><th>Min</th><th>${short()}</th><th>Their avg</th><th>Vs avg</th></tr>
+    ${d.rows.map((x) => `<tr class="${x.season !== d.current ? 'old' : ''}"><td class="l"><a href="#/p/${esc(x.id)}/${esc(S.stat)}"><b>${esc(x.name)}</b></a> <span class="dim">${esc(x.team)}</span></td><td>${x.date.slice(5).replace('-', '/')}</td><td>${x.min}</td><td>${fmt(x.value, 0)}</td><td class="dim">${fmt(x.avg)}</td><td>${delta(x.value - x.avg)}</td></tr>`).join('')}</table></div>
+    <p class="hint">Same-position players who played 20+ minutes against ${esc(d.opp)} in their last 15 games, picked for averages closest to his. ${d.rows.some((x) => x.season !== d.current) ? ' Faded rows are from last season.' : ''} One game each, so it swings a lot: background next to the model, which doesn't use it.</p>`;
 }
 
 // tonight's opponent against his position, for each stat, ranked out of every team

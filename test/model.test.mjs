@@ -246,6 +246,28 @@ test('defence vs position card: blended factor and rank for each stat, rank 1 = 
   assert.ok(d.basis.length);
 });
 
+test('similar players vs the opponent: same position, recent games against them, against their own average', async () => {
+  const { similarVsOpp } = await import('../server/model/matchup.mjs');
+  const { statValue } = await import('../server/stats.mjs');
+  const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'G');
+  const opp = p.team === 'BOS' ? 'NYK' : 'BOS';
+  const r = similarVsOpp(L, p.id, opp, 'pts');
+  assert.ok(r.rows.length > 0 && r.rows.length <= 10);
+  for (const x of r.rows) {
+    assert.notEqual(x.id, p.id);
+    assert.equal(L.groupOf(x.id), 'G');
+    const g = L.playerLogs(x.id).find((row) => row.date === x.date);
+    assert.equal(g.opp, opp);
+    assert.ok(g.min >= 20);
+    assert.equal(x.value, statValue(g, 'pts'));
+    // their average that season, this game left out
+    const same = L.playerLogs(x.id).filter((row) => row.season === g.season && row.date !== x.date);
+    assert.ok(Math.abs(x.avg - same.reduce((a, row) => a + statValue(row, 'pts'), 0) / same.length) < 1e-9);
+  }
+  for (let i = 1; i < r.rows.length; i++) assert.ok(r.rows[i - 1].date >= r.rows[i].date, 'newest first');
+  assert.ok(Math.abs(r.avgDelta - r.rows.reduce((a, x) => a + (x.value - x.avg), 0) / r.rows.length) < 1e-9);
+});
+
 test('recent results mix into the distribution: a share of the last 20, total probability kept', async () => {
   const { mixRecent } = await import('../server/model/projection.mjs');
   const dist = { pmf: [0.5, 0.5], mean: 0.5, sd: 0.5 };

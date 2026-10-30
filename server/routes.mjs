@@ -9,6 +9,7 @@ import { grade, summariseBets } from './data/entries.mjs';
 import { analyse, buildContext, projectPlayer, projectStat, DEFAULTS } from './model/index.mjs';
 import { analyseSlip, legLabel } from './model/slip.mjs';
 import { teamCards } from './model/impact.mjs';
+import { similarVsOpp } from './model/matchup.mjs';
 import { computeSplits } from './data/splits.mjs';
 import { parsePrice } from './model/odds.mjs';
 
@@ -97,6 +98,17 @@ export function createRoutes(B) {
     const [g, injuries] = await Promise.all([B.gameFor(p.team), B.getInjuries().catch(() => [])]);
     const opp = g ? (g.home === p.team ? g.away : g.home) : null;
     return computeSplits(L, id, stat, { opp, injuries });
+  });
+
+  // same-position players' recent games against tonight's opponent, against their own averages
+  get('/api/player/:id/similar', async ({ id }, q) => {
+    const L = await B.getLeague();
+    const p = L.players.get(id) || fail(404, 'player not found');
+    const stat = q.get('stat') || 'pts';
+    if (!STATS[stat]) fail(400, `unknown stat ${stat}`);
+    const g = await B.gameFor(p.team);
+    if (!g) return null;
+    return similarVsOpp(L, id, g.home === p.team ? g.away : g.home, stat);
   });
 
   // the main line of every stat, for the stat chips ("PTS 19.5")

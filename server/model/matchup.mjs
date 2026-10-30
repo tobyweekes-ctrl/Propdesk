@@ -2,6 +2,7 @@
 // guards, forwards or centres, relative to the league, with a rank out of every team. The same numbers the model
 // uses (at half weight, see config.adjust.defWeight) and the context notes describe; this shapes them for a card.
 import { seasonWeight } from './blend.mjs';
+import { statValue } from '../stats.mjs';
 
 const STAT = ['pts', 'reb', 'ast', 'fg3m'];
 const GROUP = { G: 'guards', F: 'forwards', C: 'centres' };
@@ -31,4 +32,35 @@ export function defenceCard(ctx, cfg) {
   const basis = !Object.keys(ctx.teams.prev).length ? 'this season'
     : games ? `this season (${games} game${games === 1 ? '' : 's'}) blended with last season` : 'last season';
   return { opp: ctx.game.opp, group, groupLabel: GROUP[group], games, basis, stats, all };
+}
+
+/**
+ * How tonight's opponent has treated players like this one lately: same-position rotation players' games against
+ * them (20+ minutes, in the opponent's last 15 games), each against that player's own average that season with the
+ * game left out. The 10 whose average is closest to this player's (last 20 games) are kept, newest first.
+ * One game per row, so it is noisy: background beside the model, not part of it.
+ * @returns { opp, group, current, rows: [{ id, name, team, date, season, min, value, avg }], avgDelta }
+ */
+export function similarVsOpp(L, playerId, opp, stat, { limit = 10, oppGames = 15 } = {}) {
+  const group = L.groupOf(playerId);
+  const mine = L.playerLogs(playerId).slice(-20).map((r) => statValue(r, stat));
+  const myAvg = mine.length ? mine.reduce((a, b) => a + b, 0) / mine.length : 0;
+  const recent = new Set((L.teamGameList.get(opp) || []).slice(-oppGames).map((g) => g.gameId));
+  const rows = [];
+  for (const p of L.players.values()) {
+    if (p.id === playerId || L.groupOf(p.id) !== group) continue;
+    const logs = L.playerLogs(p.id);
+    for (const g of logs) {
+      if (g.opp !== opp || !recent.has(g.gameId) || g.min < 20) continue;
+      const same = logs.filter((r) => r.season === g.season && r.gameId !== g.gameId);
+      if (same.length < 3) continue;
+      const avgMin = same.reduce((a, r) => a + r.min, 0) / same.length;
+      if (avgMin < 20) continue;
+      const avg = same.reduce((a, r) => a + statValue(r, stat), 0) / same.length;
+      rows.push({ id: p.id, name: p.name, team: g.team, date: g.date, season: g.season, min: Math.round(g.min), value: statValue(g, stat), avg });
+    }
+  }
+  const near = rows.sort((a, b) => Math.abs(a.avg - myAvg) - Math.abs(b.avg - myAvg)).slice(0, limit)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  return { opp, group, current: L.current, rows: near, avgDelta: near.length ? near.reduce((a, x) => a + (x.value - x.avg), 0) / near.length : null };
 }

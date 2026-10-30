@@ -279,6 +279,9 @@ svg .hit { fill: transparent; cursor: crosshair; }
 .linectl input[type=range] { width: 100%; accent-color: var(--pos); }
 .linectl .lval { font: 700 14px var(--mono); white-space: nowrap; }
 .linectl .linfo { flex: 1 1 100%; font: 12px var(--mono); color: var(--dim); }
+.sim-sum { margin: 0 0 8px; font: 13px var(--sans); }
+table.sim a { text-decoration: none; }
+table.sim tr.old td { opacity: .6; }
 .mu-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .mu { display: flex; flex-direction: column; gap: 3px; background: var(--panel-2); border: 1px solid transparent; border-radius: 6px; padding: 9px 11px; min-width: 0; }
 .mu.on { border-color: var(--line-strong); }
@@ -342,7 +345,7 @@ details.more .sub-h { font: 700 13px var(--cond); letter-spacing: .1em; text-tra
   .result, .slip-grid { display: flex; flex-direction: column; }
   .col-a, .col-b { display: contents; }
   .result > *, .result section, .slip-grid > * { min-width: 0; max-width: 100%; width: 100%; }
-  .o-verdict { order: 1; } .o-lines { order: 2; } .o-chart { order: 3; } .o-matchup { order: 4; } .o-check { order: 5; } .o-splits { order: 6; }
+  .o-verdict { order: 1; } .o-lines { order: 2; } .o-chart { order: 3; } .o-matchup { order: 4; } .o-check { order: 5; } .o-similar { order: 6; } .o-splits { order: 7; }
 }
 @media (max-width: 720px) {
   .top { grid-template-columns: auto auto; gap: 10px; padding: 10px 14px; }
