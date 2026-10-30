@@ -268,18 +268,23 @@ test('similar players vs the opponent: same position, recent games against them,
   assert.ok(Math.abs(r.avgDelta - r.rows.reduce((a, x) => a + (x.value - x.avg), 0) / r.rows.length) < 1e-9);
 });
 
-test('similar players for threes: matched on three-point attempts, non-shooters left out', async () => {
+test('similar players for threes: matched on minutes and three-point attempts together, non-shooters left out', async () => {
   const { similarVsOpp } = await import('../server/model/matchup.mjs');
   const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'G');
   const opp = p.team === 'BOS' ? 'NYK' : 'BOS';
   const r = similarVsOpp(L, p.id, opp, 'fg3m');
-  assert.equal(r.matchOn, 'fg3a');
+  assert.equal(r.matchOn, 'fg3a+min');
+  const mine = L.playerLogs(p.id).slice(-20);
+  assert.ok(Math.abs(r.myMin - mine.reduce((a, x) => a + x.min, 0) / mine.length) < 1e-9);
   for (const x of r.rows) {
     const g = L.playerLogs(x.id).find((row) => row.date === x.date);
     const same = L.playerLogs(x.id).filter((row) => row.season === g.season && row.date !== x.date);
     const att = same.reduce((a, row) => a + (row.fg3a || 0), 0) / same.length;
+    const min = same.reduce((a, row) => a + row.min, 0) / same.length;
     assert.ok(att >= 1, `${x.name} tries ${att.toFixed(1)} threes a game`);
     assert.ok(Math.abs(x.att - att) < 1e-9);
+    assert.ok(Math.abs(x.minAvg - min) < 1e-9);
+    assert.ok(Math.abs(min - r.myMin) <= 0.5 * Math.max(1, r.myMin));
   }
   assert.equal(similarVsOpp(L, p.id, opp, 'pra').matchOn, 'pra');
 });
