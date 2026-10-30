@@ -39,16 +39,19 @@ export function defenceCard(ctx, cfg) {
  * them (20+ minutes, in the opponent's last 15 games), each against that player's own average that season with the
  * game left out. The 10 most like this player (last 20 games) are kept, newest first: matched on the stat's average,
  * except points, matched on shots attempted and points per game together (a volume shooter and an efficient
- * finisher can score the same), and threes, matched on three-point attempts (volume drives makes; a centre who never
- * shoots them tells nothing, so players under 1 attempt a game are left out).
+ * finisher can score the same), rebounds, matched on minutes and rebounds per game together (a starter and a
+ * high-rate backup can average the same), and threes, matched on three-point attempts (volume drives makes; a centre who never
+ * shoots them tells nothing, so players under 1 attempt a game are left out). Every measure must be within half of
+ * his, so the list can be shorter than 10.
  * One game per row, so it is noisy: background beside the model, not part of it.
  * @returns { opp, group, current, matchOn, rows: [{ id, name, team, date, season, min, value, avg, att }], avgDelta }
  */
 export function similarVsOpp(L, playerId, opp, stat, { limit = 10, oppGames = 15 } = {}) {
   const group = L.groupOf(playerId);
-  const matchOn = stat === 'fg3m' ? 'fg3a' : stat === 'pts' ? 'fga+pts' : stat;
+  const matchOn = { fg3m: 'fg3a', pts: 'fga+pts', reb: 'min+reb' }[stat] || stat;
   // what "similar" is measured on: one or two per-game averages; the attempts one (if any) is shown on the card
-  const keysOf = (r) => (matchOn === 'fg3a' ? [r.fg3a || 0] : matchOn === 'fga+pts' ? [r.fga || 0, statValue(r, 'pts')] : [statValue(r, stat)]);
+  const keysOf = (r) => (matchOn === 'fg3a' ? [r.fg3a || 0] : matchOn === 'fga+pts' ? [r.fga || 0, statValue(r, 'pts')]
+    : matchOn === 'min+reb' ? [r.min || 0, statValue(r, 'reb')] : [statValue(r, stat)]);
   const avgKeys = (rows) => {
     const sums = rows.reduce((acc, r) => keysOf(r).map((v, i) => (acc[i] || 0) + v), []);
     return sums.map((v) => (rows.length ? v / rows.length : 0));
@@ -56,7 +59,7 @@ export function similarVsOpp(L, playerId, opp, stat, { limit = 10, oppGames = 15
   const myKey = avgKeys(L.playerLogs(playerId).slice(-20));
   // relative gap on each measure, added up, so shots and points count equally
   const dist = (k) => k.reduce((a, v, i) => a + Math.abs(v - myKey[i]) / Math.max(1, myKey[i]), 0);
-  const attOf = (k) => (matchOn === 'fg3a' || matchOn === 'fga+pts' ? k[0] : undefined);
+  const attOf = (k) => (k.length > 1 || matchOn === 'fg3a' ? k[0] : undefined);
   const recent = new Set((L.teamGameList.get(opp) || []).slice(-oppGames).map((g) => g.gameId));
   const rows = [];
   for (const p of L.players.values()) {
@@ -71,6 +74,8 @@ export function similarVsOpp(L, playerId, opp, stat, { limit = 10, oppGames = 15
       const avg = same.reduce((a, r) => a + statValue(r, stat), 0) / same.length;
       const key = avgKeys(same);
       if (matchOn === 'fg3a' && key[0] < 1) continue;
+      // similar means close on every measure (within half of his), not just the nearest of whoever played them
+      if (key.some((v, i) => Math.abs(v - myKey[i]) > 0.5 * Math.max(1, myKey[i]))) continue;
       rows.push({ id: p.id, name: p.name, team: g.team, date: g.date, season: g.season, min: Math.round(g.min), value: statValue(g, stat), avg, att: attOf(key), d: dist(key) });
     }
   }
