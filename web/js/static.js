@@ -1,10 +1,11 @@
 // In-browser backend for the static (GitHub Pages) build. Runs the same routes as the Node
 // server (server/routes.mjs) over prebuilt data files (refreshed by the scheduled GitHub Action),
-// and keeps manual lines + the bet log in this browser's storage. If the data is from an earlier
+// and keeps manual lines + the bet log in this browser's storage. The injury report is fetched live from ESPN. If the data is from an earlier
 // day, tonight's slate is fetched from ESPN directly as a fallback.
 import { createRoutes, dispatch } from '../server/routes.mjs';
 import { indexLeague, linesFor, ladderFor } from '../server/data/league.mjs';
 import { teamAbbr } from '../server/teams.mjs';
+import { liveInjuries } from '../server/data/injuries.mjs';
 import { todayET } from '../server/util.mjs';
 import { expandSeason } from './expand.js';
 
@@ -27,6 +28,9 @@ const files = () => (filesP ||= meta().then((m) => {
   ]);
 }));
 export const prefetch = () => { files().catch(() => { filesP = null; }); };
+
+// tonight's injury report as of now, not as of the last build
+const injuriesNow = liveInjuries({ fetchJson: getJson, fallback: () => load().then((d) => d.injuries) });
 
 let ready;
 function load() {
@@ -95,7 +99,8 @@ async function backend() {
     today: () => D.today,
     getSlate: async (date = D.today) => (date === D.today ? liveSlate(D) : D.slates[date] || []),
     gameFor: async (team) => (await B.getSlate()).find((g) => g.home === team || g.away === team) || null,
-    getInjuries: async () => D.injuries,
+    // the live ESPN report (checked every 5 minutes), the build's copy if ESPN can't be reached
+    getInjuries: () => injuriesNow(),
     async getPlayerLines(player, stat) {
       const game = await B.gameFor(player.team);
       if (!game) return { game: null, lines: [], ladder: [], source: null };

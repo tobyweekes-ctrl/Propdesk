@@ -17,7 +17,7 @@ on:
     - cron: '17 13 * * *'   # morning: last night's box scores, new injury report
     - cron: '47 19 * * *'   # afternoon: injury updates
     - cron: '23 22 * * *'   # pre-tip: injuries + prop lines (the only scheduled run that spends Odds API credits)
-    # closing prices through the evening: closing.yml (one long run; hourly triggers here were mostly dropped)
+    # through the evening: closing.yml starts this workflow every 30 minutes (hourly triggers here were mostly dropped)
 
 permissions:
   contents: write   # push the odds archive to the data branch
@@ -70,8 +70,8 @@ jobs:
           cd archive
           git add -A
           git commit -qm "Archive $(date -u +%F' '%H:%M)" || { echo "nothing new to archive"; exit 0; }
-          # closing.yml may have pushed closing prices since this run started: replay this archive on top
-          # (on a clash this run's file wins; the closing run rewrites any lost closing price 30 minutes later)
+          # another run may have pushed since this one started: replay this archive on top
+          # (on a clash this run's file wins; the next evening rebuild rewrites any lost closing price)
           for i in 1 2 3; do git push -q origin HEAD:data && exit 0; git pull -q --rebase -X theirs origin data; done
           echo "could not push the archive"; exit 1
 

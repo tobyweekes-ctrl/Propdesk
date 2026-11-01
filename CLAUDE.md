@@ -17,9 +17,10 @@ NBA player-prop analyser. Live site: https://tobyweekes-ctrl.github.io/Propdesk/
 ## Deploy
 
 Push to `main` deploys (Pages source is "GitHub Actions"). The workflow also runs at 13:17, 19:47 and
-22:23 UTC and on manual dispatch. `closing.yml` starts at 22:41 UTC and stays running, refreshing tracked picks'
-closing prices in the archive every 30 minutes until 03:45 (GitHub drops many short scheduled runs, so don't go
-back to hourly triggers). The `data` branch holds the archive: `picks/<date>.json` (graded into
+22:23 UTC and on manual dispatch. `closing.yml` (Evening refresh) starts at 22:41 UTC and stays running, starting
+pages.yml every 30 minutes until 03:45 for late injury news and closing prices (GitHub drops many short scheduled
+runs, so don't go back to hourly triggers). In the browser, injuries are fetched live from ESPN
+(`server/data/injuries.mjs`), with the build's copy as fallback. The `data` branch holds the archive: `picks/<date>.json` (graded into
 the Record page) and `odds/<date>.jsonl`. Never rewrite it.
 
 ## Architecture

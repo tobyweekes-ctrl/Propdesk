@@ -46,6 +46,7 @@ function copyClosure(file) {
 }
 copyClosure(join(ROOT, 'server/routes.mjs'));
 copyClosure(join(ROOT, 'server/teams.mjs')); // used by the stale-data slate fallback
+copyClosure(join(ROOT, 'server/data/injuries.mjs')); // the live injury report in the browser
 for (const f of seen) if (/env\.mjs|cache\.mjs|store\.mjs|userdata\.mjs/.test(f)) throw new Error(`Node-only module in browser build: ${f}`);
 console.log(`modules: ${seen.size} copied`);
 

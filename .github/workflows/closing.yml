@@ -1,9 +1,10 @@
-# Closing prices for the public record. GitHub drops many scheduled runs when it is busy (an hourly trigger
-# through the evening fired about one time in three), so this starts once before the first tip-off and stays
-# running, refreshing every tracked pick's closing price every 30 minutes until the last game has started.
-# Free ESPN prices only (no Odds API credits). It updates the "data" branch archive; the site itself is
-# rebuilt by pages.yml on its own schedule and reads the archive then.
-name: Closing prices
+# Evening refresh: the site rebuilt every 30 minutes from before the first tip-off until the last game has started,
+# for late injury news (home page, best value, game cards) and closing prices for the public record (each build
+# refreshes the closing price of every tracked pick before its tip-off).
+# GitHub drops many scheduled runs when it is busy (an hourly trigger through the evening fired about one time in
+# three), so this starts once and stays running, starting pages.yml itself each time; runs started that way
+# aren't dropped. Free ESPN prices only (fetch_odds=false: no Odds API credits).
+name: Evening refresh
 
 on:
   schedule:
@@ -11,50 +12,27 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # push the archive to the data branch
+  actions: write   # start pages.yml
 
 concurrency:
-  group: closing
+  group: evening
   cancel-in-progress: false
 
 jobs:
-  closing:
+  refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - uses: actions/cache@v4
-        with:
-          path: cache
-          key: espn-closing-${{ github.run_id }}
-          restore-keys: espn-
-
-      - name: Refresh closing prices every 30 minutes until 03:45 UTC
+      - name: Rebuild the site every 30 minutes until 03:45 UTC
         env:
-          FETCH_ODDS: 'false'
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
-          git config user.name "propdesk-bot"
-          git config user.email "propdesk-bot@users.noreply.github.com"
-          git fetch -q origin data
-          git worktree add -q -B data archive origin/data
           # the stop time: 03:45 UTC on the morning after the day this run started
           end=$(date -u -d "$( [ "$(date -u +%H)" -ge 12 ] && echo tomorrow || echo today ) 03:45" +%s)
           while :; do
-            for attempt in 1 2 3; do
-              # start from the newest archive each time (pages.yml writes to it too), so a push never
-              # overwrites picks or prices saved in between; the build is safe to repeat
-              (cd archive && git fetch -q origin data && git reset -q --hard origin/data)
-              ARCHIVE_DIR=archive node scripts/build-static.mjs > build.log 2>&1 || { tail -20 build.log; break; }
-              grep -E '^(picks|record):' build.log || true
-              (cd archive && git add picks && { git diff --cached --quiet && echo "no change"; } \
-                || { git commit -qm "Closing prices $(date -u +%F' '%H:%M)" && git push -q origin HEAD:data; }) && break
-              echo "push raced another update, retrying ($attempt)"
-            done
+            gh workflow run pages.yml --repo "$REPO" --ref main -f fetch_odds=false && echo "rebuild started $(date -u +%H:%M)" \
+              || echo "could not start a rebuild $(date -u +%H:%M)"
             [ $(( $(date -u +%s) + 1800 )) -lt "$end" ] || break
             sleep 1800
           done
