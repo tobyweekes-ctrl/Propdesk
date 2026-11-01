@@ -83,13 +83,24 @@ export function projectMinutes(ctx, cfg) {
     const w = withM.slice(-40), wo = without.slice(-40);
     const s = w.length >= 3 ? seasonWeight(wo.length, C.teammateK) : 0;
     const emp = s > 0 ? mean(wo) - mean(w) : 0;
+    // who soaks up his minutes: by minutes played (default), equally, or by room left under the maximum
+    const shareOf = (x) => (C.shareWeight === 'flat' ? 1 : C.shareWeight === 'room' ? Math.max(1, C.max - x.min) : x.min);
     const weights = [...ctx.availableMates, { id: '_self', group: ctx.group, min: base }]
-      .map((x) => x.min * (x.group === m.group ? C.sameGroupWeight : 1));
+      .map((x) => shareOf(x) * (x.group === m.group ? C.sameGroupWeight : 1));
     const myShare = weights.at(-1) / weights.reduce((x, y) => x + y, 0);
     const fb = m.min * C.redistributeShare * myShare;
-    const delta = s * emp + (1 - s) * fb;
+    let delta = s * emp + (1 - s) * fb;
+    // relative: base minutes come from recent games, which already hold any games he missed, so only the share
+    // of those games he actually played is new tonight (the rate side does the same, adjust.absorbRelative)
+    let playedShare = 1;
+    if (C.mateRelative) {
+      const recent = ctx.logs.filter((r) => r.team === ctx.game.team).slice(-C.mateRelativeWindow);
+      if (recent.length) playedShare = recent.filter((r) => ctx.lineup(r).has(m.id)).length / recent.length;
+      delta *= playedShare;
+    }
     proj += delta;
-    steps.push({ key: `mate:${m.id}`, label: `${m.name} out`, value: delta, note: s > 0 ? `${wo.length}g without him: ${emp >= 0 ? '+' : ''}${emp.toFixed(1)} (weight ${Math.round(s * 100)}%), positional share ${fb.toFixed(1)}` : `positional share of his ${m.min.toFixed(0)} min` });
+    steps.push({ key: `mate:${m.id}`, label: `${m.name} out`, value: delta, note: (s > 0 ? `${wo.length}g without him: ${emp >= 0 ? '+' : ''}${emp.toFixed(1)} (weight ${Math.round(s * 100)}%), positional share ${fb.toFixed(1)}` : `positional share of his ${m.min.toFixed(0)} min`)
+      + (playedShare < 1 ? `; he missed ${Math.round((1 - playedShare) * 100)}% of the recent games behind the base, already counted` : '') });
   }
 
   // 4. blowout risk

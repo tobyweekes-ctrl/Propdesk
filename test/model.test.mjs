@@ -345,6 +345,22 @@ test('similar players for assists: matched on usage and assists per game togethe
   }
 });
 
+test('teammate out: the minutes bump counts only the recent games he actually played', async () => {
+  const { projectPlayer } = await import('../server/model/projection.mjs');
+  const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'G');
+  const game = { date: L.today, team: p.team, opp: p.team === 'BOS' ? 'NYK' : 'BOS', home: true };
+  const mate = buildContext(L, p.id, game).availableMates.sort((a, b) => b.min - a.min)[0];
+  const ctx = buildContext(L, p.id, game, { teammatesOut: [mate.id] });
+  const step = (cfg) => projectPlayer(ctx, cfg).minutes.steps.find((s) => s.key === `mate:${mate.id}`).value;
+  const off = mergeConfig(DEFAULTS, { minutes: { mateRelative: false } });
+  const on = mergeConfig(DEFAULTS, { minutes: { mateRelative: true } });
+  const recent = ctx.logs.filter((r) => r.team === p.team).slice(-on.minutes.mateRelativeWindow);
+  const played = recent.filter((r) => ctx.lineup(r).has(mate.id)).length / recent.length;
+  assert.ok(Math.abs(step(on) - step(off) * played) < 1e-9, `${step(on)} = ${step(off)} x ${played}`);
+  assert.equal(DEFAULTS.minutes.mateRelative, true);
+  assert.equal(DEFAULTS.minutes.shareWeight, 'room');
+});
+
 test('recent results mix into the distribution: a share of the last 20, total probability kept', async () => {
   const { mixRecent } = await import('../server/model/projection.mjs');
   const dist = { pmf: [0.5, 0.5], mean: 0.5, sd: 0.5 };

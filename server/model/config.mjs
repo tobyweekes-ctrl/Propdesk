@@ -64,6 +64,17 @@ export const DEFAULTS = {
     teammateK: 25,           // shrinkage (games) for with/without-teammate minutes
     redistributeShare: 0.25, // share of an absent teammate's minutes credited to this player's group
     sameGroupWeight: 1.6,    // same position group absorbs more of those minutes
+    // Relative minutes (mateRelative): base minutes come from recent games, which already hold the games an absent
+    // teammate missed, so the bump is scaled by the share of his last 30 team games he played. And his minutes go
+    // to teammates by room left under the maximum (shareWeight 'room'), not by minutes already played: a 36-minute
+    // star can't take much more. Backtest 2025-26: with 30+ points of teammates out, top scorers (20+ a game) were
+    // projected 2.7 minutes and 2.0 points too high (Oct-Feb); now 1.1 and 1.0. Per-minute rates were already
+    // right. Minutes error 4.668 -> 4.548; points 5.138 -> 5.110, rebounds 2.007 -> 1.997, assists 1.539 -> 1.534,
+    // PRA 6.513 -> 6.463; better on every stat in both halves (to 15 Jan and after). Sharing more of the absent
+    // player's minutes (0.35, 0.5) cut the bias further but made accuracy worse, so the share stays 0.25.
+    mateRelative: true,
+    mateRelativeWindow: 30,
+    shareWeight: 'room',     // 'min' (old), 'flat' or 'room'
     restriction: { minMissed: 5, window: 5, firstGameFactor: 0.75, rampPerGame: 1.5, sdBoost: 2.5 },
     // ratingShrink: raw net-rating gaps overstate real margins; spreads rarely exceed ~15 points
     blowout: { margin: 18, marginSd: 12.5, homeAdv: 1.5, starterRatio: 0.86, benchRatio: 1.12, k: 15, starterMin: 28, ratingShrink: 0.6, maxMargin: 15 },
