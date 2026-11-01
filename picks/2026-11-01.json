@@ -536,7 +536,7 @@
   "close": {
    "over": 2.1,
    "under": 1.6153846153846154,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4709138|fg3m|DraftKings|2.5": {
@@ -714,9 +714,9 @@
   "recommended": true,
   "firstSeen": "2026-11-01T08:13:31.003Z",
   "close": {
-   "over": 1.8,
-   "under": 1.9523809523809523,
-   "at": "2026-11-01T08:13:31.003Z"
+   "over": 1.7272727272727273,
+   "under": 2,
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4395625|ra|DraftKings|8.5": {
@@ -746,7 +746,7 @@
   "close": {
    "over": 1.6666666666666665,
    "under": 2.05,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4395724|pra|DraftKings|26.5": {
@@ -776,7 +776,7 @@
   "close": {
    "over": 1.8,
    "under": 1.9090909090909092,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4433136|pr|DraftKings|23.5": {
@@ -1406,7 +1406,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4997536|fg3m|DraftKings|0.5": {
@@ -1466,7 +1466,7 @@
   "close": {
    "over": 1.9523809523809523,
    "under": 1.8,
-   "at": "2026-11-01T18:25:45.758Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "3907498|reb|DraftKings|2.5": {
@@ -1916,7 +1916,7 @@
   "close": {
    "over": 2,
    "under": 1.7272727272727273,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "5175737|reb|DraftKings|7.5": {
@@ -2726,7 +2726,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-01T18:25:45.758Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4684272|pr|DraftKings|15.5": {
@@ -2934,9 +2934,9 @@
   "recommended": true,
   "firstSeen": "2026-11-01T18:25:45.758Z",
   "close": {
-   "over": 1.8333333333333335,
-   "under": 1.8333333333333335,
-   "at": "2026-11-01T21:41:10.881Z"
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4395724|pr|DraftKings|20.5": {
@@ -2966,7 +2966,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4251|pa|DraftKings|22.5": {
@@ -3386,7 +3386,7 @@
   "close": {
    "over": 1.8,
    "under": 1.9090909090909092,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "4997536|pr|DraftKings|14.5": {
@@ -3446,7 +3446,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
   }
  },
  "3945274|ast|DraftKings|6.5": {
@@ -3506,7 +3506,337 @@
   "close": {
    "over": 1.7272727272727273,
    "under": 1.9523809523809523,
-   "at": "2026-11-01T21:41:10.881Z"
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "3064514|pts|DraftKings|21.5": {
+  "date": "2026-11-01",
+  "gameId": "401909904",
+  "tipoff": "2026-11-01T22:00Z",
+  "playerId": "3064514",
+  "name": "Julius Randle",
+  "team": "BKN",
+  "opp": "IND",
+  "home": false,
+  "stat": "pts",
+  "line": 21.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.9090909090909092,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5406974651403864,
+  "edge": 0.050818922630264884,
+  "ev": 0.032240615268010475,
+  "minutes": 32.686197341315015,
+  "projection": 21.07630235272386,
+  "recommended": false,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.9090909090909092,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "3064514|pra|DraftKings|34.5": {
+  "date": "2026-11-01",
+  "gameId": "401909904",
+  "tipoff": "2026-11-01T22:00Z",
+  "playerId": "3064514",
+  "name": "Julius Randle",
+  "team": "BKN",
+  "opp": "IND",
+  "home": false,
+  "stat": "pra",
+  "line": 34.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5735869438252565,
+  "edge": 0.07358694382525655,
+  "ev": 0.051576063679637074,
+  "minutes": 32.686197341315015,
+  "projection": 33.23685792200357,
+  "recommended": true,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "3149673|pts|DraftKings|24.5": {
+  "date": "2026-11-01",
+  "gameId": "401909904",
+  "tipoff": "2026-11-01T22:00Z",
+  "playerId": "3149673",
+  "name": "Pascal Siakam",
+  "team": "IND",
+  "opp": "BKN",
+  "home": true,
+  "stat": "pts",
+  "line": 24.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9523809523809523,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5418997896558233,
+  "edge": 0.06220435818374209,
+  "ev": 0.057994827423274,
+  "minutes": 32.561688737489966,
+  "projection": 24.192267893116558,
+  "recommended": true,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "3149673|pr|DraftKings|32.5": {
+  "date": "2026-11-01",
+  "gameId": "401909904",
+  "tipoff": "2026-11-01T22:00Z",
+  "playerId": "3149673",
+  "name": "Pascal Siakam",
+  "team": "IND",
+  "opp": "BKN",
+  "home": true,
+  "stat": "pr",
+  "line": 32.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5663087645701304,
+  "edge": 0.06630876457013035,
+  "ev": 0.03823273504523905,
+  "minutes": 32.561688737489966,
+  "projection": 31.42183160371863,
+  "recommended": true,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "3149673|pa|DraftKings|29.5": {
+  "date": "2026-11-01",
+  "gameId": "401909904",
+  "tipoff": "2026-11-01T22:00Z",
+  "playerId": "3149673",
+  "name": "Pascal Siakam",
+  "team": "IND",
+  "opp": "BKN",
+  "home": true,
+  "stat": "pa",
+  "line": 29.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5807898450687969,
+  "edge": 0.06608396271585582,
+  "ev": 0.045421721123834524,
+  "minutes": 32.561688737489966,
+  "projection": 28.28117695311308,
+  "recommended": true,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "4395712|pts|DraftKings|17.5": {
+  "date": "2026-11-01",
+  "gameId": "401909904",
+  "tipoff": "2026-11-01T22:00Z",
+  "playerId": "4395712",
+  "name": "Andrew Nembhard",
+  "team": "IND",
+  "opp": "BKN",
+  "home": true,
+  "stat": "pts",
+  "line": 17.5,
+  "book": "DraftKings",
+  "over": 1.7272727272727273,
+  "under": 1.9523809523809523,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5299514720986679,
+  "edge": 0.060539707392785524,
+  "ev": 0.03466715981168489,
+  "minutes": 32.405486482180144,
+  "projection": 17.662618854556026,
+  "recommended": true,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.7272727272727273,
+   "under": 1.9523809523809523,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "4397040|pts|DraftKings|13.5": {
+  "date": "2026-11-01",
+  "gameId": "401909905",
+  "tipoff": "2026-11-02T01:30Z",
+  "playerId": "4397040",
+  "name": "Brandon Williams",
+  "team": "GSW",
+  "opp": "LAC",
+  "home": true,
+  "stat": "pts",
+  "line": 13.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9523809523809523,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5564407534546543,
+  "edge": 0.07674532198257306,
+  "ev": 0.0863843281733726,
+  "minutes": 20.176140838000503,
+  "projection": 13.131951315991136,
+  "recommended": true,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "3945274|pts|DraftKings|33.5": {
+  "date": "2026-11-01",
+  "gameId": "401909906",
+  "tipoff": "2026-11-02T02:00Z",
+  "playerId": "3945274",
+  "name": "Luka Doncic",
+  "team": "LAL",
+  "opp": "TOR",
+  "home": true,
+  "stat": "pts",
+  "line": 33.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8333333333333335,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "LOW",
+  "pWin": 0.5440904167175363,
+  "edge": 0.0542118742074148,
+  "ev": 0.03871806827893304,
+  "minutes": 36.11930120957454,
+  "projection": 35.480735470924884,
+  "recommended": false,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8333333333333335,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "4433136|pts|DraftKings|12.5": {
+  "date": "2026-11-01",
+  "gameId": "401909906",
+  "tipoff": "2026-11-02T02:00Z",
+  "playerId": "4433136",
+  "name": "Walker Kessler",
+  "team": "LAL",
+  "opp": "TOR",
+  "home": true,
+  "stat": "pts",
+  "line": 12.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "LOW",
+  "pWin": 0.538006239075223,
+  "edge": 0.058310807603141834,
+  "ev": 0.05039313343257834,
+  "minutes": 30.824456697853936,
+  "projection": 14.136457233766762,
+  "recommended": false,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "4433136|ra|DraftKings|11.5": {
+  "date": "2026-11-01",
+  "gameId": "401909906",
+  "tipoff": "2026-11-02T02:00Z",
+  "playerId": "4433136",
+  "name": "Walker Kessler",
+  "team": "LAL",
+  "opp": "TOR",
+  "home": true,
+  "stat": "ra",
+  "line": 11.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5995443190390821,
+  "edge": 0.06895608374496442,
+  "ev": 0.03557655106750551,
+  "minutes": 30.824456697853936,
+  "projection": 11.065818366842032,
+  "recommended": true,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-11-01T23:08:18.472Z"
+  }
+ },
+ "4684272|pr|DraftKings|14.5": {
+  "date": "2026-11-01",
+  "gameId": "401909906",
+  "tipoff": "2026-11-02T02:00Z",
+  "playerId": "4684272",
+  "name": "Ja'Kobe Walter",
+  "team": "TOR",
+  "opp": "LAL",
+  "home": false,
+  "stat": "pr",
+  "line": 14.5,
+  "book": "DraftKings",
+  "over": 1.7272727272727273,
+  "under": 1.9523809523809523,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5326001418328675,
+  "edge": 0.06318837712698516,
+  "ev": 0.03983837214988417,
+  "minutes": 26.866690292225204,
+  "projection": 14.548667445390787,
+  "recommended": true,
+  "firstSeen": "2026-11-01T23:08:18.472Z",
+  "close": {
+   "over": 1.7272727272727273,
+   "under": 1.9523809523809523,
+   "at": "2026-11-01T23:08:18.472Z"
   }
  }
 }
