@@ -44,7 +44,11 @@ export const DEFAULTS = {
     // means, worse probabilities: players whose new-team rate ran 20%+ hot went over 47%, the model already
     // says 49%), trusting the new-team rate harder (tradedRateScale 0.1 / 0.05), a new-team-only home/away split.
     tradedMixMinGames: 3,
-    minutesK: 5,             // role shows up quickly
+    // role shows up quickly: this season's minutes get n/(n+k) of the weight. Backtest 2025-26: k 5 -> 2 cut
+    // minutes error 4.548 -> 4.512 over the season and 4.606 -> 4.522 to 1 Dec (when the blend matters), points
+    // 5.110 -> 5.108, PRA 6.463 -> 6.454; k=1 was a touch better again but swings more on one odd game.
+    // Weighting the end of last season more (decayed mean) was tested and made it slightly worse.
+    minutesK: 2,
     minutesKTraded: 2,       // changed team: last season's minutes barely count
     teamK: 15,               // team pace / defence, in team games
     priorGames: 4,           // weight (in games) of a typical rotation player at his position; only matters for very thin samples
