@@ -86,7 +86,8 @@ export function createRoutes(B) {
         last5: averages(logs.slice(-5)),
         last10: averages(logs.slice(-10)),
       },
-      logs: logs.slice(-100).reverse().map((r) => ({ ...r, usg: round(r.usg) })),
+      // every game in the data (this season and last): filters and head-to-head reach back a full season
+      logs: logs.slice().reverse().map((r) => ({ ...r, usg: round(r.usg) })),
     };
   });
 

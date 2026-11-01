@@ -79,6 +79,7 @@ function shell(d) {
         <section id="verdict" class="o-verdict"></section>
         <section id="chart-block" class="card o-chart"></section>
         <section id="matchup" class="card o-matchup" hidden></section>
+        <section id="h2h" class="card o-h2h" hidden></section>
         <section id="similar" class="card o-similar" hidden></section>
         <section id="splits" class="card o-splits"></section>
       </div>
@@ -491,6 +492,7 @@ function renderLineParts() {
   $('#chart-note').textContent = notes.join(' ');
   renderSplits(line);
   renderMatchup();
+  renderH2H(line);
   $$('.lrow[data-line]').forEach((r) => r.classList.toggle('sel', Number(r.dataset.line) === line));
 }
 
@@ -521,6 +523,36 @@ function renderLineCtl() {
   el.querySelector('.lval').textContent = `Line ${fmt(line)}`;
   el.querySelector('.linfo').textContent = info;
   el.querySelector('.lreset').hidden = main == null || main === line;
+}
+
+// every game he has played against tonight's opponent (this season and last), against the selected line
+function renderH2H(line) {
+  const el = $('#h2h');
+  const opp = S.res.game?.opp;
+  if (!el) return;
+  if (!opp) { el.hidden = true; return; }
+  el.hidden = false;
+  const logs = S.profile.logs;
+  const games = logs.filter((r) => r.opp === opp);
+  const [cur, prev] = Object.keys(S.profile.averages);
+  const seasonLabel = (s) => (s && /^\d{4}-\d{2}$/.test(s) ? `${s.slice(2, 4)}/${s.slice(5)}` : s || '');
+  const name = S.profile.player.name.split(' ').at(-1);
+  const head = `<div class="card-head"><h3>${esc(name)} vs ${esc(opp)}</h3><span class="hint" style="margin:0">this season and last</span></div>`;
+  if (!games.length) {
+    const nPrev = logs.filter((r) => r.season === prev).length, nCur = logs.filter((r) => r.season === cur).length;
+    el.innerHTML = `${head}<p class="empty" style="padding:4px 0">No games against ${esc(opp)} in ${seasonLabel(prev)} or ${seasonLabel(cur)}${nPrev < 41 ? ` (he played ${nPrev} game${nPrev === 1 ? '' : 's'} last season${nCur ? ` and ${nCur} this season` : ''})` : ''}. The model leaves head-to-head out.</p>`;
+    return;
+  }
+  const vals = games.map(statOf);
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const all = logs.map(statOf), allAvg = all.reduce((a, b) => a + b, 0) / Math.max(1, all.length);
+  const overs = line != null ? vals.filter((v) => v > line).length : null;
+  const d = avg - allAvg;
+  el.innerHTML = `${head}
+    <p class="sim-sum">${games.length} game${games.length === 1 ? '' : 's'}: ${fmt(avg)} ${esc(state.stats[S.stat].label.toLowerCase())} a game against ${esc(opp)}, <span class="${d > 0.05 ? 'pos' : d < -0.05 ? 'neg' : 'dim'}">${d >= 0 ? '+' : '−'}${fmt(Math.abs(d))}</span> on his average over both seasons (${fmt(allAvg)})${overs != null ? `. Over ${fmt(line)} in ${overs} of ${games.length}` : ''}.</p>
+    <div class="scroll"><table class="sim"><tr><th class="l">Date</th><th>Season</th><th>For</th><th>Min</th><th>${esc(short())}</th><th>Pts · Reb · Ast</th>${line != null ? `<th>vs ${fmt(line)}</th>` : ''}</tr>
+    ${games.map((r, i) => `<tr class="${r.season !== cur ? 'old' : ''}"><td class="l">${r.date.slice(5).replace('-', '/')} ${r.home ? 'v' : '@'} ${esc(opp)}</td><td>${seasonLabel(r.season)}</td><td>${esc(r.team)}</td><td>${fmt(r.min, 0)}</td><td><b>${fmt(vals[i], 0)}</b></td><td class="dim">${r.pts} · ${r.reb} · ${r.ast}</td>${line != null ? `<td class="${vals[i] > line ? 'pos' : vals[i] < line ? 'neg' : 'dim'}">${vals[i] > line ? 'over' : vals[i] < line ? 'under' : 'push'}</td>` : ''}</tr>`).join('')}</table></div>
+    <p class="hint">${games.length < 3 ? 'Fewer than 3 games, so the model ignores head-to-head. ' : 'The model gives head-to-head a small weight (a handful of games is mostly noise). '}Faded rows are from last season. The line follows the slider above.</p>`;
 }
 
 // same-position players' recent games against tonight's opponent, each against their own average
