@@ -10,7 +10,7 @@ on:
   schedule:
     # UTC. Weekend games tip as early as 17:00-20:30, and GitHub can start a scheduled run hours late (on 1 Nov the
     # 22:41 start ran at 01:47), so there are several starts: if one is still running, the next waits behind it
-    # (same concurrency group) and only adds a refresh or two at the end.
+    # (same concurrency group). A run hands over to a fresh one before GitHub's 6-hour job limit.
     - cron: '41 15 * * *'
     - cron: '11 18 * * *'
     - cron: '41 21 * * *'
@@ -26,7 +26,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 350
     steps:
       - name: Rebuild the site every 30 minutes until 03:45 UTC
         env:
@@ -35,9 +35,16 @@ jobs:
         run: |
           # the stop time: 03:45 UTC on the morning after the day this run started
           end=$(date -u -d "$( [ "$(date -u +%H)" -ge 12 ] && echo tomorrow || echo today ) 03:45" +%s)
+          # a job may run 6 hours at most: hand over to a fresh run after 5h20m
+          cap=$(( $(date -u +%s) + 320 * 60 ))
           while :; do
             gh workflow run pages.yml --repo "$REPO" --ref main -f fetch_odds=false && echo "rebuild started $(date -u +%H:%M)" \
               || echo "could not start a rebuild $(date -u +%H:%M)"
-            [ $(( $(date -u +%s) + 1800 )) -lt "$end" ] || break
+            next=$(( $(date -u +%s) + 1800 ))
+            [ "$next" -lt "$end" ] || break
+            if [ "$next" -ge "$cap" ]; then
+              gh workflow run closing.yml --repo "$REPO" --ref main && echo "handed over to a new run"
+              break
+            fi
             sleep 1800
           done
