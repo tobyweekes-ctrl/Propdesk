@@ -1,4 +1,4 @@
-# Evening refresh: the site rebuilt every 30 minutes from before the first tip-off until the last game has started,
+# Evening refresh: the site rebuilt every 30 minutes from the afternoon until the last game has started,
 # for late injury news (home page, best value, game cards) and closing prices for the public record (each build
 # refreshes the closing price of every tracked pick before its tip-off).
 # GitHub drops many scheduled runs when it is busy (an hourly trigger through the evening fired about one time in
@@ -8,7 +8,12 @@ name: Evening refresh
 
 on:
   schedule:
-    - cron: '41 22 * * *'   # UTC, before the first tip-off (~23:00); a late start just shortens the loop
+    # UTC. Weekend games tip as early as 17:00-20:30, and GitHub can start a scheduled run hours late (on 1 Nov the
+    # 22:41 start ran at 01:47), so there are several starts: if one is still running, the next waits behind it
+    # (same concurrency group) and only adds a refresh or two at the end.
+    - cron: '41 15 * * *'
+    - cron: '11 18 * * *'
+    - cron: '41 21 * * *'
   workflow_dispatch:
 
 permissions:
