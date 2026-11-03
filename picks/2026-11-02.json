@@ -13348,5 +13348,35 @@
    "under": 1.9090909090909092,
    "at": "2026-11-03T03:13:24.269Z"
   }
+ },
+ "4702352|pr|DraftKings|13.5": {
+  "date": "2026-11-02",
+  "gameId": "401909920",
+  "tipoff": "2026-11-03T03:00Z",
+  "playerId": "4702352",
+  "name": "Kobe Sanders",
+  "team": "LAC",
+  "opp": "TOR",
+  "home": true,
+  "stat": "pr",
+  "line": 13.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9090909090909092,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5524243762184061,
+  "edge": 0.06713025857134736,
+  "ev": 0.05462835459877535,
+  "minutes": 24.899536674522746,
+  "projection": 13.115513444558552,
+  "recommended": true,
+  "firstSeen": "2026-11-03T03:31:04.694Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9090909090909092,
+   "at": "2026-11-03T03:31:04.694Z"
+  }
  }
 }
