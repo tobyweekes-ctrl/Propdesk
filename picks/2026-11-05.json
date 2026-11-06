@@ -1798,5 +1798,35 @@
    "under": 2.1,
    "at": "2026-11-06T03:00:21.272Z"
   }
+ },
+ "4709138|pra|DraftKings|25.5": {
+  "date": "2026-11-05",
+  "gameId": "401909937",
+  "tipoff": "2026-11-06T03:00Z",
+  "playerId": "4709138",
+  "name": "Brandin Podziemski",
+  "team": "GSW",
+  "opp": "MIA",
+  "home": true,
+  "stat": "pra",
+  "line": 25.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5748352045387118,
+  "edge": 0.07483520453871184,
+  "ev": 0.053864541654305154,
+  "minutes": 33.32977820403663,
+  "projection": 27.414956783623506,
+  "recommended": true,
+  "firstSeen": "2026-11-06T03:30:27.711Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-06T03:30:27.711Z"
+  }
  }
 }
