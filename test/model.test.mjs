@@ -361,6 +361,22 @@ test('teammate out: the minutes bump counts only the recent games he actually pl
   assert.equal(DEFAULTS.minutes.shareWeight, 'room');
 });
 
+test('teammates out: their production is shared more evenly, so role players get a bigger part', async () => {
+  const { projectPlayer, projectStat } = await import('../server/model/projection.mjs');
+  const star = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'G');
+  const game = { date: L.today, team: star.team, opp: star.team === 'BOS' ? 'NYK' : 'BOS', home: true };
+  const mates = buildContext(L, star.id, game).availableMates.sort((a, b) => (b.avg?.pts || 0) - (a.avg?.pts || 0));
+  const out = mates[0], role = mates.at(-1);
+  const factor = (cfg) => {
+    const ctx = buildContext(L, role.id, game, { teammatesOut: [out.id] });
+    return projectStat(projectPlayer(ctx, cfg), ctx, 'pts', cfg).factors.find((f) => f.key === 'mates')?.value ?? 1;
+  };
+  const prop = mergeConfig(DEFAULTS, { adjust: { absorbPower: 1 } });
+  assert.ok(factor(DEFAULTS) >= factor(prop), `${factor(DEFAULTS)} >= ${factor(prop)}`);
+  assert.equal(DEFAULTS.adjust.absorbPower, 0.5);
+  assert.equal(DEFAULTS.adjust.absorb.pts, 0.4);
+});
+
 test('recent results mix into the distribution: a share of the last 20, total probability kept', async () => {
   const { mixRecent } = await import('../server/model/projection.mjs');
   const dist = { pmf: [0.5, 0.5], mean: 0.5, sd: 0.5 };

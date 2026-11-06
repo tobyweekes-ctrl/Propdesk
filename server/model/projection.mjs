@@ -92,7 +92,8 @@ function componentRate(ctx, s, cfg, minutes) {
   };
   const absorb = A.absorb[s] || 0;
   if (absorb > 0 && myGame > 0) {
-    const w = (x, g, m) => x * (g === m.group ? A.absorbSameGroup : 1);
+    // share weight: production to the power absorbPower (1 = in proportion, 0 = equal shares)
+    const w = (x, g, m) => Math.max(0, x) ** A.absorbPower * (g === m.group ? A.absorbSameGroup : 1);
     // his share of what m leaves, among the given teammates plus himself
     const shareOf = (m, mates) => {
       const pool = mates.reduce((a, x) => a + w(x.avg?.[s] || 0, x.group, m), 0) + w(myGame, ctx.group, m);

@@ -15,6 +15,8 @@ export const DEFAULTS = {
 
   // Last season vs this season: weight on this season = n / (n + k), n = games this season
   blend: {
+    // Retested Nov 2026 (after the minutes changes): 8 or 5 no better, 3 worse (value 6.0% -> 5.5%); to 1 Dec, 6
+    // helped points a hair and hurt rebounds and assists. Recent form already enters through recency and recentMix.
     rateK: 12,               // per-minute production (pts, reb, ast)
     fg3mRateK: 20,           // 3PM is noisier, so it needs more games
     // Changed team: multiplies rateK / fg3mRateK, so the new team's per-minute numbers count sooner (a new
@@ -65,6 +67,8 @@ export const DEFAULTS = {
     b2bFactor: 0.97,
     // Teammates out: with/without samples are small and confounded (rest days, rotation changes),
     // and the full-strength version made real-data projections worse, so it is applied gently.
+    // Trusting the with/without samples sooner was retested (Nov 2026): teammateK 12 -> minutes error 4.512 ->
+    // 4.553, value on estimated lines 6.2% -> 5.2%; 6 worse again. The samples are too small and noisy.
     teammateK: 25,           // shrinkage (games) for with/without-teammate minutes
     redistributeShare: 0.25, // share of an absent teammate's minutes credited to this player's group
     sameGroupWeight: 1.6,    // same position group absorbs more of those minutes
@@ -104,8 +108,15 @@ export const DEFAULTS = {
     // with nobody out to -1.01 with 45+ points of teammates missing (rates learned from past games already hold
     // their usual absences). Now +0.10 to -0.05; points error 5.139 -> 5.116 (Oct-Jan) and 5.183 -> 5.162
     // (Jan-Apr), PRA 6.503 -> 6.476 and 6.575 -> 6.549, assists and Brier better in both halves.
-    absorb: { pts: 0.3, reb: 0.25, ast: 0.3, fg3m: 0 },
+    // Who takes it, and how much: shares go by production to the power absorbPower (0.5: a 25-point scorer gets
+    // about twice a 6-point scorer's share, not four times), and 40% of points and assists are passed on (was 30%,
+    // shared in proportion). Backtest 2025-26, with 20+ points of teammates out: top scorers' per-minute rate was
+    // overrated (actual/model 0.977 with 30+ out, now 0.99) and role players underrated. Points 5.108 -> 5.103,
+    // PRA 6.454 -> 6.448, assists 1.533 -> 1.532; better in both halves; value on estimated lines 6.0% -> 6.2%.
+    // Tried: equal shares (0: about the same), 50-60% passed on (no better, value lower), rebounds 0.35 (no change).
+    absorb: { pts: 0.4, reb: 0.25, ast: 0.4, fg3m: 0 },
     absorbSameGroup: 4,
+    absorbPower: 0.5,
     replacementLevel: 0.25,  // a replacement produces this share of a typical player at the position
     absorbFrom: { reb: ['C'] }, // rebounds only shift when a centre is missing (forwards: no effect in the backtest)
     absorbCap: 0.25,         // max +25% per-minute from absences
