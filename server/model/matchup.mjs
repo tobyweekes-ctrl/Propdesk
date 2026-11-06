@@ -3,6 +3,8 @@
 // uses (at half weight, see config.adjust.defWeight) and the context notes describe; this shapes them for a card.
 import { seasonWeight } from './blend.mjs';
 import { statValue } from '../stats.mjs';
+import { injuryFor } from '../data/league.mjs';
+import { inRotation } from './impact.mjs';
 
 const STAT = ['pts', 'reb', 'ast', 'fg3m'];
 const GROUP = { G: 'guards', F: 'forwards', C: 'centres' };
@@ -83,4 +85,68 @@ export function similarVsOpp(L, playerId, opp, stat, { limit = 10, oppGames = 15
   const near = rows.sort((a, b) => a.d - b.d).slice(0, limit)
     .sort((a, b) => b.date.localeCompare(a.date)).map(({ d, ...x }) => x);
   return { opp, group, current: L.current, matchOn, myAtt: attOf(myKey), myAvg: myKey.at(-1), myMin: matchOn === 'fg3a+min' ? myKey[1] : undefined, rows: near, avgDelta: near.length ? near.reduce((a, x) => a + (x.value - x.avg), 0) / near.length : null };
+}
+
+/**
+ * Likely matchup, inferred from positions (box scores have no tracking data): the other team's rotation players at
+ * his position, starters and big minutes first; one for centres, two for guards and forwards (teams switch). For
+ * each: his defence this season (minutes, blocks, steals, fouls, with ranks at the position), what opposing
+ * players at the position did per 36 minutes in his team's games he played vs missed, and the games the two met.
+ * Background only: the model doesn't use it.
+ * @returns { opp, group, groupLabel, defenders: [{ id, name, gp, starts, min, blk, stl, pf, rank: { blk, stl, of },
+ *   onOff: { with: { games, per36 }, without: { games, per36 } }, h2h: [{ date, season, min, value }] }] }
+ */
+export function likelyMatchup(L, playerId, opp, stat, injuries = []) {
+  const group = L.groupOf(playerId);
+  const OUT = /^(out|suspended|doubtful)/i;
+  const per = (rows, f) => (rows.length ? rows.reduce((a, r) => a + f(r), 0) / rows.length : 0);
+  // this season's games for that team, else last season's (early season, a player back from injury)
+  const teamRows = (id, team) => {
+    const rows = L.playerLogs(id).filter((r) => r.team === team);
+    const cur = rows.filter((r) => r.season === L.current);
+    return cur.length ? cur : rows.filter((r) => r.season === L.previous);
+  };
+  const cands = [];
+  for (const p of L.players.values()) {
+    if (p.team !== opp || L.groupOf(p.id) !== group) continue;
+    if (OUT.test(injuryFor(injuries, p)?.status || '')) continue;
+    if (!inRotation(L, p, opp)) continue; // this season's rotation, not just end-of-last-season minutes
+    const rows = teamRows(p.id, opp);
+    if (rows.length < 2) continue;
+    const min = per(rows, (r) => r.min), startRate = per(rows, (r) => (r.starter ? 1 : 0));
+    if (min < 15) continue;
+    cands.push({ p, rows, min, score: min + 12 * startRate });
+  }
+  cands.sort((a, b) => b.score - a.score);
+  // ranks among rotation players at the position this season (15+ minutes, 3+ games)
+  const peers = [];
+  for (const x of L.players.values()) {
+    if (L.groupOf(x.id) !== group) continue;
+    const rows = L.playerLogs(x.id).filter((r) => r.season === L.current);
+    if (rows.length >= 3 && per(rows, (r) => r.min) >= 15) peers.push({ blk: per(rows, (r) => r.blk || 0), stl: per(rows, (r) => r.stl || 0) });
+  }
+  const rankOf = (key, v) => 1 + peers.filter((x) => x[key] > v + 1e-9).length;
+  const defenders = cands.slice(0, group === 'C' ? 1 : 2).map(({ p, rows, min }) => {
+    const blk = per(rows, (r) => r.blk || 0), stl = per(rows, (r) => r.stl || 0);
+    // opposing players at the position against this team, in seasons he played for it
+    const seasons = new Set(L.playerLogs(p.id).filter((r) => r.team === opp).map((r) => r.season));
+    const split = { with: { ids: new Set(), stat: 0, min: 0 }, without: { ids: new Set(), stat: 0, min: 0 } };
+    for (const s of seasons) {
+      for (const r of L.bySeason[s]?.rows || []) {
+        if (r.opp !== opp || !(r.min > 0) || L.groupOf(r.playerId) !== group) continue;
+        const k = L.lineup(r.gameId, opp).has(p.id) ? split.with : split.without;
+        k.ids.add(r.gameId); k.stat += statValue(r, stat); k.min += r.min;
+      }
+    }
+    const side = (k) => ({ games: k.ids.size, per36: k.min > 0 ? (k.stat / k.min) * 36 : null });
+    const h2h = L.playerLogs(playerId).filter((r) => r.opp === opp && L.lineup(r.gameId, opp).has(p.id))
+      .map((r) => ({ date: r.date, season: r.season, min: Math.round(r.min), value: statValue(r, stat) })).reverse();
+    return {
+      id: p.id, name: p.name, gp: rows.length, starts: rows.filter((r) => r.starter).length, season: rows[0]?.season,
+      min, blk, stl, pf: per(rows, (r) => r.pf || 0),
+      rank: { blk: rankOf('blk', blk), stl: rankOf('stl', stl), of: peers.length },
+      onOff: { with: side(split.with), without: side(split.without) }, h2h,
+    };
+  });
+  return { opp, group, groupLabel: GROUP[group], current: L.current, defenders };
 }

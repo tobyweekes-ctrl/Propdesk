@@ -32,6 +32,7 @@ export async function renderPlayer(view, id, stat) {
     refreshStatus();
     // background beside the model: loads after the page is up
     api(`/api/player/${id}/similar?stat=${stat}`).then((x) => { if (S.id === id && S.stat === stat) { S.similar = x; renderSimilar(); } }).catch(() => {});
+    api(`/api/player/${id}/matchup?stat=${stat}`).then((x) => { if (S.id === id && S.stat === stat) renderLikely(x); }).catch(() => {});
   } catch (e) {
     view.innerHTML = /not found/i.test(e.message) ? notFound('That player link doesn\'t match anyone in the data.') : `<p class="err">${esc(e.message)}</p>`;
   }
@@ -79,6 +80,7 @@ function shell(d) {
         <section id="verdict" class="o-verdict"></section>
         <section id="chart-block" class="card o-chart"></section>
         <section id="matchup" class="card o-matchup" hidden></section>
+        <section id="likely" class="card o-likely" hidden></section>
         <section id="h2h" class="card o-h2h" hidden></section>
         <section id="similar" class="card o-similar" hidden></section>
         <section id="splits" class="card o-splits"></section>
@@ -523,6 +525,31 @@ function renderLineCtl() {
   el.querySelector('.lval').textContent = `Line ${fmt(line)}`;
   el.querySelector('.linfo').textContent = info;
   el.querySelector('.lreset').hidden = main == null || main === line;
+}
+
+// likely defender(s) tonight, inferred from positions: their defence, and the position with them on vs off
+function renderLikely(d) {
+  const el = $('#likely');
+  if (!el) return;
+  if (!d || !d.defenders?.length) { el.hidden = true; return; }
+  el.hidden = false;
+  const ORD = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
+  const label = state.stats[S.stat].label.toLowerCase();
+  const name = S.profile.player.name.split(' ').at(-1);
+  const seasonLabel = (s) => (s && /^\d{4}-\d{2}$/.test(s) ? `${s.slice(2, 4)}/${s.slice(5)}` : s || '');
+  const one = (x) => {
+    const w = x.onOff.with, wo = x.onOff.without;
+    const diff = w.per36 != null && wo.per36 != null ? w.per36 - wo.per36 : null;
+    const onOff = !w.games ? '' : `<p class="lk-line">${esc(d.groupLabel[0].toUpperCase() + d.groupLabel.slice(1))} against ${esc(d.opp)}: <b>${fmt(w.per36)}</b> ${esc(label)} per 36 minutes in ${w.games} game${w.games === 1 ? '' : 's'} with him${wo.games ? `, <b>${fmt(wo.per36)}</b> in ${wo.games} without him${diff != null && wo.games >= 3 && Math.abs(diff) >= 0.5 ? ` <span class="${diff < 0 ? 'neg' : 'pos'}">(${diff < 0 ? 'tougher' : 'easier'} with him)</span>` : ''}` : ' (he has missed none)'}.${wo.games && wo.games < 5 ? ' <span class="dim">Few games without him: treat lightly.</span>' : ''}</p>`;
+    const h = x.h2h.length ? `<p class="lk-line">${esc(name)} against ${esc(d.opp)} in games he played: ${x.h2h.slice(0, 6).map((g) => `<b>${fmt(g.value, 0)}</b> <span class="dim">${g.date.slice(5).replace('-', '/')}${g.season !== d.current ? ` '${g.season.slice(2, 4)}` : ''}</span>`).join(' · ')}${x.h2h.length > 6 ? ' …' : ''}</p>` : `<p class="lk-line dim">No games against ${esc(d.opp)} with him playing.</p>`;
+    return `<div class="lk">
+      <div class="lk-head"><a href="#/p/${esc(x.id)}/pts"><b>${esc(x.name)}</b></a> <span class="dim">${esc(d.opp)} · started ${x.starts} of ${x.gp}${x.season !== d.current ? ` (${seasonLabel(x.season)})` : ''}</span></div>
+      <dl class="lk-stats"><div><dt>Minutes</dt><dd>${fmt(x.min)}</dd></div><div><dt>Blocks</dt><dd>${fmt(x.blk)} <small>${ORD(x.rank.blk)}</small></dd></div><div><dt>Steals</dt><dd>${fmt(x.stl)} <small>${ORD(x.rank.stl)}</small></dd></div><div><dt>Fouls</dt><dd>${fmt(x.pf)}</dd></div></dl>
+      ${onOff}${h}</div>`;
+  };
+  el.innerHTML = `<div class="card-head"><h3>Likely matchup</h3><span class="hint" style="margin:0">based on positions</span></div>
+    ${d.defenders.map(one).join('')}
+    <p class="hint">${d.defenders.length > 1 ? 'Teams switch on the perimeter, so the two likeliest are shown. ' : ''}Inferred from positions and minutes: box scores don't say who guarded whom. Ranks are per game among ${esc(d.groupLabel)} playing 15+ minutes this season (of ${d.defenders[0].rank.of}). Background only: the model doesn't use it.</p>`;
 }
 
 // every game he has played against tonight's opponent (this season and last), against the selected line

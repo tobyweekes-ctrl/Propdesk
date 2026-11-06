@@ -377,6 +377,39 @@ test('teammates out: their production is shared more evenly, so role players get
   assert.equal(DEFAULTS.adjust.absorb.pts, 0.4);
 });
 
+test('likely matchup: same-position rotation starters on the other side, their defence, with vs without them', async () => {
+  const { likelyMatchup } = await import('../server/model/matchup.mjs');
+  const { statValue } = await import('../server/stats.mjs');
+  const p = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'C');
+  const opp = p.team === 'BOS' ? 'NYK' : 'BOS';
+  const m = likelyMatchup(L, p.id, opp, 'reb', []);
+  assert.equal(m.group, 'C');
+  assert.equal(m.defenders.length, 1, 'centres: one likely defender');
+  const d = m.defenders[0];
+  assert.equal(L.players.get(d.id).team, opp);
+  assert.equal(L.groupOf(d.id), 'C');
+  assert.ok(d.min > 0 && d.gp > 0 && d.blk >= 0 && d.rank.blk >= 1 && d.rank.blk <= d.rank.of);
+  // with / without: opposing centres' rebounds per 36 in this team's games he played vs missed
+  for (const k of ['with', 'without']) assert.ok(d.onOff[k].games >= 0);
+  if (d.onOff.with.games) assert.ok(d.onOff.with.per36 >= 0);
+  // head to head: games the two both played, newest first, with his stat
+  for (const g of d.h2h) {
+    const row = L.playerLogs(p.id).find((r) => r.date === g.date);
+    assert.equal(row.opp, opp);
+    assert.equal(g.value, statValue(row, 'reb'));
+    assert.ok(L.lineup(row.gameId, opp).has(d.id));
+  }
+  // only players in the team's rotation this season (end-of-last-season minutes alone don't count)
+  const teamCur = L.bySeason[L.current].teamGames.filter((t) => t.team === opp).length;
+  for (const x of m.defenders) assert.ok(L.playerLogs(x.id).filter((r) => r.team === opp && r.season === L.current).length >= Math.min(2, teamCur));
+  // ruled out tonight: someone else is the likely defender
+  const out = likelyMatchup(L, p.id, opp, 'reb', [{ name: d.name, team: opp, status: 'Out' }]);
+  assert.ok(!out.defenders.some((x) => x.id === d.id));
+  // guards and forwards: the two likeliest
+  const g = [...L.players.values()].find((x) => L.playerLogs(x.id).length > 60 && L.groupOf(x.id) === 'G');
+  assert.ok(likelyMatchup(L, g.id, g.team === 'BOS' ? 'NYK' : 'BOS', 'pts', []).defenders.length <= 2);
+});
+
 test('recent results mix into the distribution: a share of the last 20, total probability kept', async () => {
   const { mixRecent } = await import('../server/model/projection.mjs');
   const dist = { pmf: [0.5, 0.5], mean: 0.5, sd: 0.5 };
