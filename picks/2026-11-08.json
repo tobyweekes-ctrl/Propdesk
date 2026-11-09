@@ -1436,7 +1436,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-09T00:56:45.425Z"
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "4395628|reb|DraftKings|5.5": {
@@ -1584,9 +1584,9 @@
   "recommended": true,
   "firstSeen": "2026-11-08T18:21:46.158Z",
   "close": {
-   "over": 2.05,
-   "under": 1.6666666666666665,
-   "at": "2026-11-09T00:56:45.425Z"
+   "over": 2.1,
+   "under": 1.6153846153846154,
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "4431679|pr|DraftKings|14.5": {
@@ -2546,7 +2546,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-09T00:56:45.425Z"
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "3448|pra|DraftKings|19.5": {
@@ -2575,8 +2575,8 @@
   "firstSeen": "2026-11-08T19:55:56.170Z",
   "close": {
    "over": 1.8,
-   "under": 1.9090909090909092,
-   "at": "2026-11-09T00:56:45.425Z"
+   "under": 1.9523809523809523,
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "3064440|pts|DraftKings|20.5": {
@@ -2664,9 +2664,9 @@
   "recommended": true,
   "firstSeen": "2026-11-08T19:55:56.170Z",
   "close": {
-   "over": 1.8333333333333335,
-   "under": 1.8333333333333335,
-   "at": "2026-11-09T00:56:45.425Z"
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "5142620|ast|DraftKings|6.5": {
@@ -3326,7 +3326,7 @@
   "close": {
    "over": 1.9523809523809523,
    "under": 1.7272727272727273,
-   "at": "2026-11-09T00:56:45.425Z"
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "5142620|pts|DraftKings|23.5": {
@@ -3866,7 +3866,7 @@
   "close": {
    "over": 1.8,
    "under": 1.9090909090909092,
-   "at": "2026-11-09T00:56:45.425Z"
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "3059319|pr|DraftKings|14.5": {
@@ -3924,9 +3924,9 @@
   "recommended": true,
   "firstSeen": "2026-11-08T22:56:05.001Z",
   "close": {
-   "over": 1.9523809523809523,
-   "under": 1.8,
-   "at": "2026-11-09T00:56:45.425Z"
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "3064440|pra|DraftKings|27.5": {
@@ -4134,9 +4134,9 @@
   "recommended": false,
   "firstSeen": "2026-11-08T23:11:41.270Z",
   "close": {
-   "over": 1.7272727272727273,
-   "under": 1.9523809523809523,
-   "at": "2026-11-09T00:56:45.425Z"
+   "over": 1.6666666666666665,
+   "under": 2.1,
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "4431679|pts|DraftKings|8.5": {
@@ -4225,8 +4225,8 @@
   "firstSeen": "2026-11-08T23:26:03.430Z",
   "close": {
    "over": 1.8,
-   "under": 1.9090909090909092,
-   "at": "2026-11-09T00:56:45.425Z"
+   "under": 1.9523809523809523,
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "5144091|pa|DraftKings|18.5": {
@@ -4254,9 +4254,9 @@
   "recommended": true,
   "firstSeen": "2026-11-08T23:26:03.430Z",
   "close": {
-   "over": 1.9523809523809523,
-   "under": 1.7272727272727273,
-   "at": "2026-11-08T23:26:03.430Z"
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "4433247|pr|DraftKings|20.5": {
@@ -4406,7 +4406,7 @@
   "close": {
    "over": 1.7272727272727273,
    "under": 2,
-   "at": "2026-11-09T00:56:45.425Z"
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "3032976|pts|DraftKings|9.5": {
@@ -4764,9 +4764,9 @@
   "recommended": false,
   "firstSeen": "2026-11-09T00:26:11.692Z",
   "close": {
-   "over": 1.5714285714285714,
+   "over": 1.6153846153846154,
    "under": 2.2,
-   "at": "2026-11-09T00:56:45.425Z"
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "3155942|pa|DraftKings|19.5": {
@@ -4824,9 +4824,9 @@
   "recommended": false,
   "firstSeen": "2026-11-09T00:26:11.692Z",
   "close": {
-   "over": 1.8333333333333335,
+   "over": 1.8,
    "under": 1.9090909090909092,
-   "at": "2026-11-09T00:56:45.425Z"
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "4873153|pr|DraftKings|11.5": {
@@ -5154,9 +5154,9 @@
   "recommended": true,
   "firstSeen": "2026-11-09T00:56:09.082Z",
   "close": {
-   "over": 2.2,
+   "over": 2.1,
    "under": 1.6153846153846154,
-   "at": "2026-11-09T00:56:45.425Z"
+   "at": "2026-11-09T01:26:23.415Z"
   }
  },
  "5144091|reb|DraftKings|3.5": {
@@ -5187,6 +5187,306 @@
    "over": 1.5714285714285714,
    "under": 2.2,
    "at": "2026-11-09T00:56:45.425Z"
+  }
+ },
+ "4251|pts|DraftKings|17.5": {
+  "date": "2026-11-08",
+  "gameId": "401909949",
+  "tipoff": "2026-11-09T01:00Z",
+  "playerId": "4251",
+  "name": "Paul George",
+  "team": "BOS",
+  "opp": "MIL",
+  "home": false,
+  "stat": "pts",
+  "line": 17.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "LOW",
+  "pWin": 0.5276445054919364,
+  "edge": 0.04794907401985521,
+  "ev": 0.030163082150923448,
+  "minutes": 30.24793394110149,
+  "projection": 19.34228130970922,
+  "recommended": false,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "4065648|ast|DraftKings|6.5": {
+  "date": "2026-11-08",
+  "gameId": "401909949",
+  "tipoff": "2026-11-09T01:00Z",
+  "playerId": "4065648",
+  "name": "Jayson Tatum",
+  "team": "BOS",
+  "opp": "MIL",
+  "home": false,
+  "stat": "ast",
+  "line": 6.5,
+  "book": "DraftKings",
+  "over": 1.6666666666666665,
+  "under": 2.05,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5066517491564343,
+  "edge": 0.058221255882891676,
+  "ev": 0.03863608577069022,
+  "minutes": 33.34798346419768,
+  "projection": 6.56969073791414,
+  "recommended": false,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 1.6666666666666665,
+   "under": 2.05,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "4351852|pr|DraftKings|11.5": {
+  "date": "2026-11-08",
+  "gameId": "401909949",
+  "tipoff": "2026-11-09T01:00Z",
+  "playerId": "4351852",
+  "name": "Mitchell Robinson",
+  "team": "BOS",
+  "opp": "MIL",
+  "home": false,
+  "stat": "pr",
+  "line": 11.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5698695233921695,
+  "edge": 0.06986952339216945,
+  "ev": 0.04476079288564411,
+  "minutes": 18.694061702876756,
+  "projection": 10.87553001563779,
+  "recommended": true,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "3448|ra|DraftKings|7.5": {
+  "date": "2026-11-08",
+  "gameId": "401909950",
+  "tipoff": "2026-11-09T02:00Z",
+  "playerId": "3448",
+  "name": "Brook Lopez",
+  "team": "LAC",
+  "opp": "NOP",
+  "home": true,
+  "stat": "ra",
+  "line": 7.5,
+  "book": "DraftKings",
+  "over": 2,
+  "under": 1.7272727272727273,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6091401973570508,
+  "edge": 0.07255483150339226,
+  "ev": 0.052151249980360526,
+  "minutes": 23.667441344413447,
+  "projection": 6.862201488267747,
+  "recommended": true,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 2,
+   "under": 1.7272727272727273,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "4396907|pts|DraftKings|21.5": {
+  "date": "2026-11-08",
+  "gameId": "401909950",
+  "tipoff": "2026-11-09T02:00Z",
+  "playerId": "4396907",
+  "name": "Darius Garland",
+  "team": "LAC",
+  "opp": "NOP",
+  "home": true,
+  "stat": "pts",
+  "line": 21.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.9090909090909092,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5671969920287828,
+  "edge": 0.07731844951866129,
+  "ev": 0.08283062114585815,
+  "minutes": 33.35470457541471,
+  "projection": 21.00670086135303,
+  "recommended": true,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.9090909090909092,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "5144091|reb|DraftKings|4.5": {
+  "date": "2026-11-08",
+  "gameId": "401909950",
+  "tipoff": "2026-11-09T02:00Z",
+  "playerId": "5144091",
+  "name": "Jeremiah Fears",
+  "team": "NOP",
+  "opp": "LAC",
+  "home": false,
+  "stat": "reb",
+  "line": 4.5,
+  "book": "DraftKings",
+  "over": 2.2,
+  "under": 1.6153846153846154,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6495660000384446,
+  "edge": 0.07295309681263817,
+  "ev": 0.04929892313902584,
+  "minutes": 29.702665243515632,
+  "projection": 3.888515520227539,
+  "recommended": true,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 2.2,
+   "under": 1.6153846153846154,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "6475|ast|DraftKings|1.5": {
+  "date": "2026-11-08",
+  "gameId": "401909951",
+  "tipoff": "2026-11-09T02:00Z",
+  "playerId": "6475",
+  "name": "Klay Thompson",
+  "team": "MIA",
+  "opp": "SAC",
+  "home": false,
+  "stat": "ast",
+  "line": 1.5,
+  "book": "DraftKings",
+  "over": 1.6666666666666665,
+  "under": 2.1,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5165385989528589,
+  "edge": 0.07406072284666432,
+  "ev": 0.08473105780100376,
+  "minutes": 23.646148781921777,
+  "projection": 1.6432932314940834,
+  "recommended": true,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 1.6666666666666665,
+   "under": 2.1,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "3059319|reb|DraftKings|3.5": {
+  "date": "2026-11-08",
+  "gameId": "401909951",
+  "tipoff": "2026-11-09T02:00Z",
+  "playerId": "3059319",
+  "name": "Andrew Wiggins",
+  "team": "MIA",
+  "opp": "SAC",
+  "home": false,
+  "stat": "reb",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5726770769533255,
+  "edge": 0.05797119460038436,
+  "ev": 0.030818738515985877,
+  "minutes": 25.977210635800876,
+  "projection": 3.438566941192914,
+  "recommended": false,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "4066261|ast|DraftKings|3.5": {
+  "date": "2026-11-08",
+  "gameId": "401909951",
+  "tipoff": "2026-11-09T02:00Z",
+  "playerId": "4066261",
+  "name": "Bam Adebayo",
+  "team": "MIA",
+  "opp": "SAC",
+  "home": false,
+  "stat": "ast",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 2.1,
+  "under": 1.6666666666666665,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.62333125316548,
+  "edge": 0.0658091292716747,
+  "ev": 0.03888542194246658,
+  "minutes": 33.481298157700586,
+  "projection": 3.1778101757539776,
+  "recommended": true,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 2.1,
+   "under": 1.6666666666666665,
+   "at": "2026-11-09T01:26:23.415Z"
+  }
+ },
+ "5142620|reb|DraftKings|3.5": {
+  "date": "2026-11-08",
+  "gameId": "401909951",
+  "tipoff": "2026-11-09T02:00Z",
+  "playerId": "5142620",
+  "name": "Darius Acuff Jr.",
+  "team": "SAC",
+  "opp": "MIA",
+  "home": true,
+  "stat": "reb",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 1.7272727272727273,
+  "under": 2,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6121570263996604,
+  "edge": 0.07557166054600184,
+  "ev": 0.05736213650850436,
+  "minutes": 36.963576240075426,
+  "projection": 4.374346692269575,
+  "recommended": true,
+  "firstSeen": "2026-11-09T01:26:23.415Z",
+  "close": {
+   "over": 1.7272727272727273,
+   "under": 2,
+   "at": "2026-11-09T01:26:23.415Z"
   }
  }
 }
