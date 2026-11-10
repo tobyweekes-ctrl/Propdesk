@@ -5758,5 +5758,35 @@
    "under": 2,
    "at": "2026-11-10T03:21:23.818Z"
   }
+ },
+ "4278594|pa|DraftKings|13.5": {
+  "date": "2026-11-09",
+  "gameId": "401909956",
+  "tipoff": "2026-11-10T01:00Z",
+  "playerId": "4278594",
+  "name": "Naji Marshall",
+  "team": "DAL",
+  "opp": "IND",
+  "home": true,
+  "stat": "pa",
+  "line": 13.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5455640615263724,
+  "edge": 0.060269943879313614,
+  "ev": 0.041531390186710926,
+  "minutes": 24.5329444482366,
+  "projection": 15.299929308985531,
+  "recommended": true,
+  "firstSeen": "2026-11-10T04:12:37.218Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-10T04:12:37.218Z"
+  }
  }
 }
