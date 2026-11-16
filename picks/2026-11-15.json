@@ -1734,9 +1734,9 @@
   "recommended": true,
   "firstSeen": "2026-11-15T19:22:51.060Z",
   "close": {
-   "over": 1.9523809523809523,
+   "over": 1.9090909090909092,
    "under": 1.8,
-   "at": "2026-11-15T19:22:51.060Z"
+   "at": "2026-11-16T01:32:35.816Z"
   }
  },
  "4065732|pts|DraftKings|14.5": {
@@ -1884,9 +1884,9 @@
   "recommended": true,
   "firstSeen": "2026-11-15T19:22:51.060Z",
   "close": {
-   "over": 1.8,
-   "under": 1.9090909090909092,
-   "at": "2026-11-16T01:02:32.460Z"
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-16T01:32:35.816Z"
   }
  },
  "4594327|pts|DraftKings|11.5": {
@@ -5066,7 +5066,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-16T01:02:32.460Z"
+   "at": "2026-11-16T01:32:35.816Z"
   }
  },
  "4251|pts|DraftKings|20.5": {
@@ -5604,9 +5604,9 @@
   "recommended": true,
   "firstSeen": "2026-11-16T00:32:34.938Z",
   "close": {
-   "over": 1.9090909090909092,
-   "under": 1.8,
-   "at": "2026-11-16T01:02:32.460Z"
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-16T01:32:35.816Z"
   }
  },
  "3134907|pts|DraftKings|12.5": {
@@ -5967,6 +5967,276 @@
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
    "at": "2026-11-16T01:02:32.460Z"
+  }
+ },
+ "4278039|reb|DraftKings|3.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "4278039",
+  "name": "Nickeil Alexander-Walker",
+  "team": "ATL",
+  "opp": "MIL",
+  "home": false,
+  "stat": "reb",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 2,
+  "under": 1.7272727272727273,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5298603081804169,
+  "edge": 0.06644567403407542,
+  "ev": 0.0597206163608337,
+  "minutes": 33.45893652402987,
+  "projection": 3.804035410527841,
+  "recommended": true,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 2,
+   "under": 1.7272727272727273,
+   "at": "2026-11-16T01:32:35.816Z"
+  }
+ },
+ "5082206|ra|DraftKings|9.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "5082206",
+  "name": "Brayden Burries",
+  "team": "MIL",
+  "opp": "ATL",
+  "home": true,
+  "stat": "ra",
+  "line": 9.5,
+  "book": "DraftKings",
+  "over": 2,
+  "under": 1.7272727272727273,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6058092352159765,
+  "edge": 0.06922386936231795,
+  "ev": 0.046397769918504916,
+  "minutes": 25.212301281723505,
+  "projection": 8.795611894909856,
+  "recommended": true,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 2,
+   "under": 1.7272727272727273,
+   "at": "2026-11-16T01:32:35.816Z"
+  }
+ },
+ "3155942|pts|DraftKings|13.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "3155942",
+  "name": "Domantas Sabonis",
+  "team": "SAC",
+  "opp": "OKC",
+  "home": true,
+  "stat": "pts",
+  "line": 13.5,
+  "book": "DraftKings",
+  "over": 1.7272727272727273,
+  "under": 2,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6160905816156843,
+  "edge": 0.07950521576202574,
+  "ev": 0.0641564591543638,
+  "minutes": 33.16623174104698,
+  "projection": 16.366678512822944,
+  "recommended": true,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 1.7272727272727273,
+   "under": 2,
+   "at": "2026-11-16T01:32:35.816Z"
+  }
+ },
+ "4222252|pa|DraftKings|13.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "4222252",
+  "name": "Isaiah Hartenstein",
+  "team": "OKC",
+  "opp": "SAC",
+  "home": false,
+  "stat": "pa",
+  "line": 13.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5697936399801643,
+  "edge": 0.0697936399801643,
+  "ev": 0.04462167329696798,
+  "minutes": 25.60402838043539,
+  "projection": 13.661741321540795,
+  "recommended": true,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-16T01:32:35.816Z"
+  }
+ },
+ "4594327|pts|DraftKings|13.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "4594327",
+  "name": "Keegan Murray",
+  "team": "SAC",
+  "opp": "OKC",
+  "home": true,
+  "stat": "pts",
+  "line": 13.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.9090909090909092,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5445282069953788,
+  "edge": 0.05464966448525732,
+  "ev": 0.03955384971845055,
+  "minutes": 33.224890748570935,
+  "projection": 13.511642026521743,
+  "recommended": false,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.9090909090909092,
+   "at": "2026-11-16T01:32:35.816Z"
+  }
+ },
+ "4594327|pr|DraftKings|18.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "4594327",
+  "name": "Keegan Murray",
+  "team": "SAC",
+  "opp": "OKC",
+  "home": true,
+  "stat": "pr",
+  "line": 18.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9090909090909092,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5442708169293807,
+  "edge": 0.058976699282321965,
+  "ev": 0.03906246868336327,
+  "minutes": 33.224890748570935,
+  "projection": 18.097900333552126,
+  "recommended": false,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9090909090909092,
+   "at": "2026-11-16T01:32:35.816Z"
+  }
+ },
+ "4683778|pts|DraftKings|14.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "4683778",
+  "name": "Jared McCain",
+  "team": "OKC",
+  "opp": "SAC",
+  "home": false,
+  "stat": "pts",
+  "line": 14.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5731729996851181,
+  "edge": 0.0528684311571993,
+  "ev": 0.03171139943321266,
+  "minutes": 26.613145781838433,
+  "projection": 13.869725487217732,
+  "recommended": false,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-16T01:32:35.816Z"
+  }
+ },
+ "4683778|pa|DraftKings|16.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "4683778",
+  "name": "Jared McCain",
+  "team": "OKC",
+  "opp": "SAC",
+  "home": false,
+  "stat": "pa",
+  "line": 16.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5754354485988659,
+  "edge": 0.06072956624592474,
+  "ev": 0.03578380747795856,
+  "minutes": 26.613145781838433,
+  "projection": 15.807932773488679,
+  "recommended": true,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-16T01:32:35.816Z"
+  }
+ },
+ "5174983|pts|DraftKings|8.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "5174983",
+  "name": "Aday Mara",
+  "team": "OKC",
+  "opp": "SAC",
+  "home": false,
+  "stat": "pts",
+  "line": 8.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9523809523809523,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5906580276044047,
+  "edge": 0.07035345907648582,
+  "ev": 0.06318444968792841,
+  "minutes": 23.207132548204356,
+  "projection": 9.826785899788806,
+  "recommended": true,
+  "firstSeen": "2026-11-16T01:32:35.816Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-11-16T01:32:35.816Z"
   }
  }
 }
