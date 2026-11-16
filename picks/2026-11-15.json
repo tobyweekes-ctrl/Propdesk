@@ -6448,5 +6448,65 @@
    "under": 1.7272727272727273,
    "at": "2026-11-16T02:02:47.185Z"
   }
+ },
+ "4683778|fg3m|DraftKings|2.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "4683778",
+  "name": "Jared McCain",
+  "team": "OKC",
+  "opp": "SAC",
+  "home": false,
+  "stat": "fg3m",
+  "line": 2.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.570123645390337,
+  "edge": 0.060002187900458415,
+  "ev": 0.0452266832156179,
+  "minutes": 26.613145781838433,
+  "projection": 2.4694641639466064,
+  "recommended": true,
+  "firstSeen": "2026-11-16T02:16:47.875Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8333333333333335,
+   "at": "2026-11-16T02:16:47.875Z"
+  }
+ },
+ "4900671|reb|DraftKings|3.5": {
+  "date": "2026-11-15",
+  "gameId": "401909993",
+  "tipoff": "2026-11-16T02:00Z",
+  "playerId": "4900671",
+  "name": "Ajay Mitchell",
+  "team": "OKC",
+  "opp": "SAC",
+  "home": false,
+  "stat": "reb",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5773537573078973,
+  "edge": 0.07735375730789729,
+  "ev": 0.058481888397811765,
+  "minutes": 27.209442658501487,
+  "projection": 3.34791939294067,
+  "recommended": true,
+  "firstSeen": "2026-11-16T02:16:47.875Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-16T02:16:47.875Z"
+  }
  }
 }
