@@ -1676,7 +1676,7 @@
   "close": {
    "over": 1.8,
    "under": 1.9090909090909092,
-   "at": "2026-11-15T23:02:28.190Z"
+   "at": "2026-11-16T00:02:29.013Z"
   }
  },
  "4869342|pts|DraftKings|9.5": {
@@ -1704,9 +1704,9 @@
   "recommended": true,
   "firstSeen": "2026-11-15T19:22:51.060Z",
   "close": {
-   "over": 1.7272727272727273,
-   "under": 2,
-   "at": "2026-11-15T23:02:28.190Z"
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-11-16T00:02:29.013Z"
   }
  },
  "3155942|pa|DraftKings|19.5": {
@@ -1796,7 +1796,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-15T23:33:04.363Z"
+   "at": "2026-11-16T00:02:29.013Z"
   }
  },
  "4065732|pr|DraftKings|18.5": {
@@ -1886,7 +1886,7 @@
   "close": {
    "over": 1.8,
    "under": 1.9090909090909092,
-   "at": "2026-11-15T23:33:04.363Z"
+   "at": "2026-11-16T00:02:29.013Z"
   }
  },
  "4594327|pts|DraftKings|11.5": {
@@ -2516,7 +2516,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-15T23:33:04.363Z"
+   "at": "2026-11-16T00:02:29.013Z"
   }
  },
  "5106258|reb|DraftKings|2.5": {
@@ -5036,7 +5036,7 @@
   "close": {
    "over": 1.8,
    "under": 1.9523809523809523,
-   "at": "2026-11-15T23:33:04.363Z"
+   "at": "2026-11-16T00:02:29.013Z"
   }
  },
  "4900671|pr|DraftKings|21.5": {
@@ -5066,7 +5066,397 @@
   "close": {
    "over": 1.9090909090909092,
    "under": 1.8333333333333335,
-   "at": "2026-11-15T23:33:04.363Z"
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "4251|pts|DraftKings|20.5": {
+  "date": "2026-11-15",
+  "gameId": "401909989",
+  "tipoff": "2026-11-15T23:00Z",
+  "playerId": "4251",
+  "name": "Paul George",
+  "team": "BOS",
+  "opp": "DAL",
+  "home": true,
+  "stat": "pts",
+  "line": 20.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.9090909090909092,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5426385748288373,
+  "edge": 0.05276003231871573,
+  "ev": 0.03594637012778029,
+  "minutes": 29.919369623258252,
+  "projection": 21.158351682461145,
+  "recommended": false,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.9090909090909092,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "4251|ra|DraftKings|8.5": {
+  "date": "2026-11-15",
+  "gameId": "401909989",
+  "tipoff": "2026-11-15T23:00Z",
+  "playerId": "4251",
+  "name": "Paul George",
+  "team": "BOS",
+  "opp": "DAL",
+  "home": true,
+  "stat": "ra",
+  "line": 8.5,
+  "book": "DraftKings",
+  "over": 1.6666666666666665,
+  "under": 2.05,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5101501276884843,
+  "edge": 0.061719634414941715,
+  "ev": 0.045807761761392785,
+  "minutes": 29.919369623258252,
+  "projection": 8.836512154008958,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.6666666666666665,
+   "under": 2.05,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "3202|ra|DraftKings|9.5": {
+  "date": "2026-11-15",
+  "gameId": "401909991",
+  "tipoff": "2026-11-16T00:00Z",
+  "playerId": "3202",
+  "name": "Kevin Durant",
+  "team": "HOU",
+  "opp": "WAS",
+  "home": false,
+  "stat": "ra",
+  "line": 9.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5528209890934339,
+  "edge": 0.06752687144637515,
+  "ev": 0.05538552463291935,
+  "minutes": 34.32283963969919,
+  "projection": 10.355410662497611,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "4432639|reb|DraftKings|5.5": {
+  "date": "2026-11-15",
+  "gameId": "401909991",
+  "tipoff": "2026-11-16T00:00Z",
+  "playerId": "4432639",
+  "name": "Jabari Smith Jr.",
+  "team": "HOU",
+  "opp": "WAS",
+  "home": false,
+  "stat": "reb",
+  "line": 5.5,
+  "book": "DraftKings",
+  "over": 1.6666666666666665,
+  "under": 2.1,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6239231230080086,
+  "edge": 0.06640099911420327,
+  "ev": 0.03987187168001416,
+  "minutes": 34.12084499171528,
+  "projection": 6.653129028974321,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.6666666666666665,
+   "under": 2.1,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "2490149|pts|DraftKings|15.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "2490149",
+  "name": "CJ McCollum",
+  "team": "ATL",
+  "opp": "MIL",
+  "home": false,
+  "stat": "pts",
+  "line": 15.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.9090909090909092,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5439872501608376,
+  "edge": 0.05410870765071607,
+  "ev": 0.038521113943417284,
+  "minutes": 27.17345306545542,
+  "projection": 15.638259343596049,
+  "recommended": false,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.9090909090909092,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "2490149|ra|DraftKings|7.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "2490149",
+  "name": "CJ McCollum",
+  "team": "ATL",
+  "opp": "MIL",
+  "home": false,
+  "stat": "ra",
+  "line": 7.5,
+  "book": "DraftKings",
+  "over": 2.1,
+  "under": 1.6666666666666665,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "LOW",
+  "pWin": 0.4995344449154997,
+  "edge": 0.0570565688093051,
+  "ev": 0.04902233432254943,
+  "minutes": 27.17345306545542,
+  "projection": 7.942720154614889,
+  "recommended": false,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 2.1,
+   "under": 1.6666666666666665,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "3133628|pts|DraftKings|9.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "3133628",
+  "name": "Myles Turner",
+  "team": "MIL",
+  "opp": "ATL",
+  "home": true,
+  "stat": "pts",
+  "line": 9.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9523809523809523,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5435425785780597,
+  "edge": 0.06384714710597844,
+  "ev": 0.0612021772238307,
+  "minutes": 29.454401925823426,
+  "projection": 9.454247496494014,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "4395725|ast|DraftKings|5.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "4395725",
+  "name": "Tyler Herro",
+  "team": "MIL",
+  "opp": "ATL",
+  "home": true,
+  "stat": "ast",
+  "line": 5.5,
+  "book": "DraftKings",
+  "over": 2.05,
+  "under": 1.6666666666666665,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6192001592346795,
+  "edge": 0.06763065250822209,
+  "ev": 0.03200026539113243,
+  "minutes": 32.668802212368846,
+  "projection": 4.950392492678693,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 2.05,
+   "under": 1.6666666666666665,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "4397020|fg3m|DraftKings|1.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "4397020",
+  "name": "Luguentz Dort",
+  "team": "ATL",
+  "opp": "MIL",
+  "home": false,
+  "stat": "fg3m",
+  "line": 1.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5511611737110881,
+  "edge": 0.07146574223900687,
+  "ev": 0.07607657724545769,
+  "minutes": 26.931086214351353,
+  "projection": 2.016738009373565,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "4397183|ast|DraftKings|2.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "4397183",
+  "name": "Aaron Wiggins",
+  "team": "ATL",
+  "opp": "MIL",
+  "home": false,
+  "stat": "ast",
+  "line": 2.5,
+  "book": "DraftKings",
+  "over": 2.1,
+  "under": 1.6153846153846154,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5135646645391554,
+  "edge": 0.07878205584350328,
+  "ev": 0.07848579553222634,
+  "minutes": 26.64691436923404,
+  "projection": 2.7828446270017606,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 2.1,
+   "under": 1.6153846153846154,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "4701230|pts|DraftKings|21.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "4701230",
+  "name": "Jalen Johnson",
+  "team": "ATL",
+  "opp": "MIL",
+  "home": false,
+  "stat": "pts",
+  "line": 21.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9523809523809523,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5494275384329422,
+  "edge": 0.06973210696086102,
+  "ev": 0.07269186075003009,
+  "minutes": 35.88267252270518,
+  "projection": 21.63903453301471,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "4869342|pr|DraftKings|16.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "4869342",
+  "name": "Dyson Daniels",
+  "team": "ATL",
+  "opp": "MIL",
+  "home": false,
+  "stat": "pr",
+  "line": 16.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9090909090909092,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5875658992574521,
+  "edge": 0.07286001690451094,
+  "ev": 0.05761861866341372,
+  "minutes": 33.220555323401626,
+  "projection": 18.551145144266112,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9090909090909092,
+   "at": "2026-11-16T00:02:29.013Z"
+  }
+ },
+ "5082206|ast|DraftKings|3.5": {
+  "date": "2026-11-15",
+  "gameId": "401909992",
+  "tipoff": "2026-11-16T01:00Z",
+  "playerId": "5082206",
+  "name": "Brayden Burries",
+  "team": "MIL",
+  "opp": "ATL",
+  "home": true,
+  "stat": "ast",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 2.1,
+  "under": 1.6666666666666665,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6284589688782826,
+  "edge": 0.07093684498447728,
+  "ev": 0.047431614797137533,
+  "minutes": 25.212301281723505,
+  "projection": 3.1690010212732562,
+  "recommended": true,
+  "firstSeen": "2026-11-16T00:02:29.013Z",
+  "close": {
+   "over": 2.1,
+   "under": 1.6666666666666665,
+   "at": "2026-11-16T00:02:29.013Z"
   }
  }
 }
