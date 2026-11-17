@@ -5008,5 +5008,65 @@
    "under": 1.8333333333333335,
    "at": "2026-11-17T01:49:40.887Z"
   }
+ },
+ "3112335|pts|DraftKings|25.5": {
+  "date": "2026-11-16",
+  "gameId": "401910001",
+  "tipoff": "2026-11-17T02:00Z",
+  "playerId": "3112335",
+  "name": "Nikola Jokic",
+  "team": "DEN",
+  "opp": "PHX",
+  "home": true,
+  "stat": "pts",
+  "line": 25.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5874607913619475,
+  "edge": 0.06715622283402867,
+  "ev": 0.05742942445150556,
+  "minutes": 36.347759197282954,
+  "projection": 24.518240463025226,
+  "recommended": true,
+  "firstSeen": "2026-11-17T02:19:42.079Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-17T02:19:42.079Z"
+  }
+ },
+ "4066383|reb|DraftKings|5.5": {
+  "date": "2026-11-16",
+  "gameId": "401910001",
+  "tipoff": "2026-11-17T02:00Z",
+  "playerId": "4066383",
+  "name": "Miles Bridges",
+  "team": "PHX",
+  "opp": "DEN",
+  "home": false,
+  "stat": "reb",
+  "line": 5.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9090909090909092,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.591951315864928,
+  "edge": 0.07724543351198698,
+  "ev": 0.06551236855687043,
+  "minutes": 27.236267134111095,
+  "projection": 6.4668366655256975,
+  "recommended": true,
+  "firstSeen": "2026-11-17T02:19:42.079Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9090909090909092,
+   "at": "2026-11-17T02:19:42.079Z"
+  }
  }
 }
