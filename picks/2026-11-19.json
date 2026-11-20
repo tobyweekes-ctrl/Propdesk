@@ -3778,5 +3778,65 @@
    "under": 2.1,
    "at": "2026-11-20T01:16:03.211Z"
   }
+ },
+ "4395723|reb|DraftKings|5.5": {
+  "date": "2026-11-19",
+  "gameId": "401910022",
+  "tipoff": "2026-11-20T01:00Z",
+  "playerId": "4395723",
+  "name": "Keldon Johnson",
+  "team": "SAS",
+  "opp": "LAC",
+  "home": true,
+  "stat": "reb",
+  "line": 5.5,
+  "book": "DraftKings",
+  "over": 2.05,
+  "under": 1.6666666666666665,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5163098382624489,
+  "edge": 0.0678793449889063,
+  "ev": 0.05843516843802021,
+  "minutes": 25.20455669616235,
+  "projection": 5.759723151985895,
+  "recommended": true,
+  "firstSeen": "2026-11-20T01:27:13.694Z",
+  "close": {
+   "over": 2.05,
+   "under": 1.6666666666666665,
+   "at": "2026-11-20T01:27:13.694Z"
+  }
+ },
+ "4845367|ra|DraftKings|12.5": {
+  "date": "2026-11-19",
+  "gameId": "401910022",
+  "tipoff": "2026-11-20T01:00Z",
+  "playerId": "4845367",
+  "name": "Stephon Castle",
+  "team": "SAS",
+  "opp": "LAC",
+  "home": true,
+  "stat": "ra",
+  "line": 12.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5964767598847287,
+  "edge": 0.06588852459061101,
+  "ev": 0.03027803980089505,
+  "minutes": 30.86225352656381,
+  "projection": 11.863064639764612,
+  "recommended": true,
+  "firstSeen": "2026-11-20T01:27:13.694Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-11-20T01:27:13.694Z"
+  }
  }
 }
