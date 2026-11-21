@@ -10078,5 +10078,65 @@
    "under": 1.9090909090909092,
    "at": "2026-11-21T02:50:50.706Z"
   }
+ },
+ "2990992|pts|DraftKings|5.5": {
+  "date": "2026-11-20",
+  "gameId": "401909312",
+  "tipoff": "2026-11-21T03:00Z",
+  "playerId": "2990992",
+  "name": "Marcus Smart",
+  "team": "HOU",
+  "opp": "DEN",
+  "home": false,
+  "stat": "pts",
+  "line": 5.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.9090909090909092,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "LOW",
+  "pWin": 0.5645445077757226,
+  "edge": 0.054423050285844043,
+  "ev": 0.034998264255491573,
+  "minutes": 21.5303179641312,
+  "projection": 7.300455315410618,
+  "recommended": false,
+  "firstSeen": "2026-11-21T03:18:52.514Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.9090909090909092,
+   "at": "2026-11-21T03:18:52.514Z"
+  }
+ },
+ "2991230|ra|DraftKings|7.5": {
+  "date": "2026-11-20",
+  "gameId": "401909312",
+  "tipoff": "2026-11-21T03:00Z",
+  "playerId": "2991230",
+  "name": "Fred VanVleet",
+  "team": "HOU",
+  "opp": "DEN",
+  "home": false,
+  "stat": "ra",
+  "line": 7.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5364103333346795,
+  "edge": 0.0669985686287971,
+  "ev": 0.04727731746294561,
+  "minutes": 29.731349399471437,
+  "projection": 7.939320213609683,
+  "recommended": true,
+  "firstSeen": "2026-11-21T03:18:52.514Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-11-21T03:18:52.514Z"
+  }
  }
 }
