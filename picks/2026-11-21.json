@@ -5458,5 +5458,65 @@
    "under": 1.6666666666666665,
    "at": "2026-11-22T02:35:33.312Z"
   }
+ },
+ "4251|pra|DraftKings|35.5": {
+  "date": "2026-11-21",
+  "gameId": "401910028",
+  "tipoff": "2026-11-22T03:00Z",
+  "playerId": "4251",
+  "name": "Paul George",
+  "team": "BOS",
+  "opp": "SAC",
+  "home": false,
+  "stat": "pra",
+  "line": 35.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.5725041947687659,
+  "edge": 0.05779831241582478,
+  "ev": 0.03050755058377863,
+  "minutes": 31.41917645468508,
+  "projection": 35.050994792877674,
+  "recommended": false,
+  "firstSeen": "2026-11-22T03:05:37.988Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-22T03:05:37.988Z"
+  }
+ },
+ "4593841|pts|DraftKings|8.5": {
+  "date": "2026-11-21",
+  "gameId": "401910028",
+  "tipoff": "2026-11-22T03:00Z",
+  "playerId": "4593841",
+  "name": "Baylor Scheierman",
+  "team": "BOS",
+  "opp": "SAC",
+  "home": false,
+  "stat": "pts",
+  "line": 8.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5923227596736791,
+  "edge": 0.07201819114576025,
+  "ev": 0.06618096741262236,
+  "minutes": 22.49123632553842,
+  "projection": 8.22646770368526,
+  "recommended": true,
+  "firstSeen": "2026-11-22T03:05:37.988Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-22T03:05:37.988Z"
+  }
  }
 }
