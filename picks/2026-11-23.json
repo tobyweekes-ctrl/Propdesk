@@ -4198,5 +4198,35 @@
    "under": 1.8333333333333335,
    "at": "2026-11-24T03:03:09.271Z"
   }
+ },
+ "4433136|pra|DraftKings|26.5": {
+  "date": "2026-11-23",
+  "gameId": "401910044",
+  "tipoff": "2026-11-24T03:00Z",
+  "playerId": "4433136",
+  "name": "Walker Kessler",
+  "team": "LAL",
+  "opp": "UTA",
+  "home": true,
+  "stat": "pra",
+  "line": 26.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5509460199453874,
+  "edge": 0.06565190229832862,
+  "ev": 0.05180603807755779,
+  "minutes": 30.621080063941356,
+  "projection": 28.027459345253845,
+  "recommended": true,
+  "firstSeen": "2026-11-24T03:33:11.986Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-24T03:33:11.986Z"
+  }
  }
 }
