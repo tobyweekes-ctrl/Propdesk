@@ -416,7 +416,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "6583|fg3m|DraftKings|0.5": {
@@ -444,9 +444,9 @@
   "recommended": true,
   "firstSeen": "2026-11-24T23:01:33.932Z",
   "close": {
-   "over": 1.6666666666666665,
-   "under": 2.05,
-   "at": "2026-11-24T23:01:33.932Z"
+   "over": 1.7272727272727273,
+   "under": 2,
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "6583|ra|DraftKings|12.5": {
@@ -536,7 +536,7 @@
   "close": {
    "over": 1.5,
    "under": 2.375,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "4065648|pra|DraftKings|40.5": {
@@ -566,7 +566,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "4065804|pr|DraftKings|10.5": {
@@ -595,8 +595,8 @@
   "firstSeen": "2026-11-24T23:01:33.932Z",
   "close": {
    "over": 1.9090909090909092,
-   "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "under": 1.8,
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "4066354|pr|DraftKings|16.5": {
@@ -624,9 +624,9 @@
   "recommended": true,
   "firstSeen": "2026-11-24T23:01:33.932Z",
   "close": {
-   "over": 1.8,
-   "under": 1.9523809523809523,
-   "at": "2026-11-24T23:01:33.932Z"
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "4066354|pa|DraftKings|17.5": {
@@ -654,9 +654,9 @@
   "recommended": true,
   "firstSeen": "2026-11-24T23:01:33.932Z",
   "close": {
-   "over": 1.8,
-   "under": 1.9090909090909092,
-   "at": "2026-11-24T23:01:33.932Z"
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "5104155|ra|DraftKings|4.5": {
@@ -714,9 +714,9 @@
   "recommended": false,
   "firstSeen": "2026-11-24T23:01:33.932Z",
   "close": {
-   "over": 1.9090909090909092,
+   "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "3064290|pra|DraftKings|21.5": {
@@ -746,7 +746,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "3064290|pr|DraftKings|18.5": {
@@ -806,7 +806,7 @@
   "close": {
    "over": 1.9090909090909092,
    "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "3112335|pra|DraftKings|47.5": {
@@ -836,7 +836,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "4278594|reb|DraftKings|2.5": {
@@ -896,7 +896,7 @@
   "close": {
    "over": 2,
    "under": 1.7272727272727273,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "4431767|pra|DraftKings|20.5": {
@@ -926,7 +926,7 @@
   "close": {
    "over": 1.9090909090909092,
    "under": 1.8,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "4431767|pr|DraftKings|17.5": {
@@ -956,7 +956,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
   }
  },
  "4431767|pa|DraftKings|15.5": {
@@ -986,7 +986,427 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-24T23:01:33.932Z"
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "3908845|pra|DraftKings|18.5": {
+  "date": "2026-11-24",
+  "gameId": "401909314",
+  "tipoff": "2026-11-25T00:00Z",
+  "playerId": "3908845",
+  "name": "John Collins",
+  "team": "DET",
+  "opp": "ORL",
+  "home": false,
+  "stat": "pra",
+  "line": 18.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9523809523809523,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5592721202396892,
+  "edge": 0.07957668876760798,
+  "ev": 0.09191223475367882,
+  "minutes": 26.16301914608569,
+  "projection": 18.422279910700293,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "4066372|pts|DraftKings|12.5": {
+  "date": "2026-11-24",
+  "gameId": "401909314",
+  "tipoff": "2026-11-25T00:00Z",
+  "playerId": "4066372",
+  "name": "Kevin Huerter",
+  "team": "DET",
+  "opp": "ORL",
+  "home": false,
+  "stat": "pts",
+  "line": 12.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5793862766911347,
+  "edge": 0.07938627669113474,
+  "ev": 0.06220817393374711,
+  "minutes": 30.115995134927836,
+  "projection": 12.205395693948,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "4066372|reb|DraftKings|3.5": {
+  "date": "2026-11-24",
+  "gameId": "401909314",
+  "tipoff": "2026-11-25T00:00Z",
+  "playerId": "4066372",
+  "name": "Kevin Huerter",
+  "team": "DET",
+  "opp": "ORL",
+  "home": false,
+  "stat": "reb",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6025763992191995,
+  "edge": 0.07198816392508178,
+  "ev": 0.040813780469526384,
+  "minutes": 30.115995134927836,
+  "projection": 3.3022915712304246,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "4277847|pr|DraftKings|19.5": {
+  "date": "2026-11-24",
+  "gameId": "401909314",
+  "tipoff": "2026-11-25T00:00Z",
+  "playerId": "4277847",
+  "name": "Wendell Carter Jr.",
+  "team": "ORL",
+  "opp": "DET",
+  "home": true,
+  "stat": "pr",
+  "line": 19.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5712027205130049,
+  "edge": 0.07120272051300491,
+  "ev": 0.047204987607175786,
+  "minutes": 31.43270350516772,
+  "projection": 19.23347146151158,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "4712849|ast|DraftKings|4.5": {
+  "date": "2026-11-24",
+  "gameId": "401909314",
+  "tipoff": "2026-11-25T00:00Z",
+  "playerId": "4712849",
+  "name": "Anthony Black",
+  "team": "ORL",
+  "opp": "DET",
+  "home": true,
+  "stat": "ast",
+  "line": 4.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5726872459091756,
+  "edge": 0.07268724590917564,
+  "ev": 0.049926617500155424,
+  "minutes": 34.04081982300973,
+  "projection": 4.226032934663912,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "6583|pr|DraftKings|30.5": {
+  "date": "2026-11-24",
+  "gameId": "401909315",
+  "tipoff": "2026-11-25T01:00Z",
+  "playerId": "6583",
+  "name": "Anthony Davis",
+  "team": "WAS",
+  "opp": "BOS",
+  "home": true,
+  "stat": "pr",
+  "line": 30.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5535772359105279,
+  "edge": 0.06828311826346911,
+  "ev": 0.05682926855646231,
+  "minutes": 33.64550619230572,
+  "projection": 32.61277475258086,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "3078576|ra|DraftKings|7.5": {
+  "date": "2026-11-24",
+  "gameId": "401909315",
+  "tipoff": "2026-11-25T01:00Z",
+  "playerId": "3078576",
+  "name": "Derrick White",
+  "team": "BOS",
+  "opp": "WAS",
+  "home": false,
+  "stat": "ra",
+  "line": 7.5,
+  "book": "DraftKings",
+  "over": 1.6666666666666665,
+  "under": 2.05,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6252590539760196,
+  "edge": 0.07368954724956212,
+  "ev": 0.04209842329336583,
+  "minutes": 30.81477736299178,
+  "projection": 8.869310268206307,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.6666666666666665,
+   "under": 2.05,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "4066354|pts|DraftKings|13.5": {
+  "date": "2026-11-24",
+  "gameId": "401909315",
+  "tipoff": "2026-11-25T01:00Z",
+  "playerId": "4066354",
+  "name": "Payton Pritchard",
+  "team": "BOS",
+  "opp": "WAS",
+  "home": false,
+  "stat": "pts",
+  "line": 13.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5879657004959297,
+  "edge": 0.07325981814298854,
+  "ev": 0.05833826089267341,
+  "minutes": 28.895181706091297,
+  "projection": 13.095118774793393,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "5104155|pra|DraftKings|11.5": {
+  "date": "2026-11-24",
+  "gameId": "401909315",
+  "tipoff": "2026-11-25T01:00Z",
+  "playerId": "5104155",
+  "name": "Bilal Coulibaly",
+  "team": "WAS",
+  "opp": "BOS",
+  "home": true,
+  "stat": "pra",
+  "line": 11.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.7272727272727273,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5316534760605788,
+  "edge": 0.062241711354696416,
+  "ev": 0.03799011992779666,
+  "minutes": 24.433789042488417,
+  "projection": 12.711070287624974,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.7272727272727273,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "5160992|pr|DraftKings|15.5": {
+  "date": "2026-11-24",
+  "gameId": "401909315",
+  "tipoff": "2026-11-25T01:00Z",
+  "playerId": "5160992",
+  "name": "Alex Sarr",
+  "team": "WAS",
+  "opp": "BOS",
+  "home": true,
+  "stat": "pr",
+  "line": 15.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5752377930612019,
+  "edge": 0.07523779306120193,
+  "ev": 0.05460262061220361,
+  "minutes": 26.688678121706,
+  "projection": 17.776441996514954,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "5174563|ast|DraftKings|3.5": {
+  "date": "2026-11-24",
+  "gameId": "401909315",
+  "tipoff": "2026-11-25T01:00Z",
+  "playerId": "5174563",
+  "name": "Kyshawn George",
+  "team": "WAS",
+  "opp": "BOS",
+  "home": true,
+  "stat": "ast",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 1.5714285714285714,
+  "under": 2.2,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.4828316913349989,
+  "edge": 0.06616502466833224,
+  "ev": 0.062229720936997746,
+  "minutes": 33.807137297802086,
+  "projection": 3.8528319315866497,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.5714285714285714,
+   "under": 2.2,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "5174563|ra|DraftKings|8.5": {
+  "date": "2026-11-24",
+  "gameId": "401909315",
+  "tipoff": "2026-11-25T01:00Z",
+  "playerId": "5174563",
+  "name": "Kyshawn George",
+  "team": "WAS",
+  "opp": "BOS",
+  "home": true,
+  "stat": "ra",
+  "line": 8.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5822186812030897,
+  "edge": 0.0675127988501486,
+  "ev": 0.04799362616556152,
+  "minutes": 33.807137297802086,
+  "projection": 8.145950914702414,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "3064290|pr|DraftKings|19.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "3064290",
+  "name": "Aaron Gordon",
+  "team": "DEN",
+  "opp": "DAL",
+  "home": true,
+  "stat": "pr",
+  "line": 19.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5945776570819528,
+  "edge": 0.07427308855403392,
+  "ev": 0.07023978274751497,
+  "minutes": 29.44109420366632,
+  "projection": 18.419884512138577,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-25T00:04:39.114Z"
+  }
+ },
+ "4278594|reb|DraftKings|3.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "4278594",
+  "name": "Naji Marshall",
+  "team": "DAL",
+  "opp": "DEN",
+  "home": false,
+  "stat": "reb",
+  "line": 3.5,
+  "book": "DraftKings",
+  "over": 2.25,
+  "under": 1.5714285714285714,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.6613390223715677,
+  "edge": 0.0725539756425958,
+  "ev": 0.039247035155320686,
+  "minutes": 24.459023139054402,
+  "projection": 2.8832611391436314,
+  "recommended": true,
+  "firstSeen": "2026-11-25T00:04:39.114Z",
+  "close": {
+   "over": 2.25,
+   "under": 1.5714285714285714,
+   "at": "2026-11-25T00:04:39.114Z"
   }
  }
 }
