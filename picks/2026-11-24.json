@@ -2068,5 +2068,65 @@
    "under": 1.9090909090909092,
    "at": "2026-11-25T03:04:50.530Z"
   }
+ },
+ "3936299|pts|DraftKings|23.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "3936299",
+  "name": "Jamal Murray",
+  "team": "DEN",
+  "opp": "DAL",
+  "home": true,
+  "stat": "pts",
+  "line": 23.5,
+  "book": "DraftKings",
+  "over": 1.8,
+  "under": 1.9523809523809523,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5964781122301335,
+  "edge": 0.07617354370221474,
+  "ev": 0.0736606020142403,
+  "minutes": 37.16199455614774,
+  "projection": 27.288877380955128,
+  "recommended": true,
+  "firstSeen": "2026-11-25T03:34:48.569Z",
+  "close": {
+   "over": 1.8,
+   "under": 1.9523809523809523,
+   "at": "2026-11-25T03:34:48.569Z"
+  }
+ },
+ "4278049|ast|DraftKings|1.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "4278049",
+  "name": "Daniel Gafford",
+  "team": "DAL",
+  "opp": "DEN",
+  "home": false,
+  "stat": "ast",
+  "line": 1.5,
+  "book": "DraftKings",
+  "over": 1.5714285714285714,
+  "under": 2.25,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.48451901104959144,
+  "edge": 0.07330405777856347,
+  "ev": 0.09016777486158067,
+  "minutes": 22.740095031922507,
+  "projection": 1.7962636871938618,
+  "recommended": true,
+  "firstSeen": "2026-11-25T03:34:48.569Z",
+  "close": {
+   "over": 1.5714285714285714,
+   "under": 2.25,
+   "at": "2026-11-25T03:34:48.569Z"
+  }
  }
 }
