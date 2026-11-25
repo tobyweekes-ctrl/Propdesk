@@ -836,7 +836,7 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.8333333333333335,
-   "at": "2026-11-25T01:34:46.844Z"
+   "at": "2026-11-25T02:04:45.997Z"
   }
  },
  "4278594|reb|DraftKings|2.5": {
@@ -864,9 +864,9 @@
   "recommended": false,
   "firstSeen": "2026-11-24T23:01:33.932Z",
   "close": {
-   "over": 1.5714285714285714,
-   "under": 2.25,
-   "at": "2026-11-24T23:01:33.932Z"
+   "over": 1.6666666666666665,
+   "under": 2.05,
+   "at": "2026-11-25T02:04:45.997Z"
   }
  },
  "4431767|fg3m|DraftKings|1.5": {
@@ -1376,7 +1376,7 @@
   "close": {
    "over": 1.9090909090909092,
    "under": 1.8,
-   "at": "2026-11-25T01:34:46.844Z"
+   "at": "2026-11-25T02:04:45.997Z"
   }
  },
  "4278594|reb|DraftKings|3.5": {
@@ -1766,7 +1766,157 @@
   "close": {
    "over": 1.8333333333333335,
    "under": 1.9090909090909092,
-   "at": "2026-11-25T01:34:46.844Z"
+   "at": "2026-11-25T02:04:45.997Z"
+  }
+ },
+ "4278594|pts|DraftKings|9.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "4278594",
+  "name": "Naji Marshall",
+  "team": "DAL",
+  "opp": "DEN",
+  "home": false,
+  "stat": "pts",
+  "line": 9.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5718532687241189,
+  "edge": 0.0718532687241189,
+  "ev": 0.04839765932755141,
+  "minutes": 24.459023139054402,
+  "projection": 11.151767583037493,
+  "recommended": true,
+  "firstSeen": "2026-11-25T02:04:45.997Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-25T02:04:45.997Z"
+  }
+ },
+ "4278594|pra|DraftKings|15.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "4278594",
+  "name": "Naji Marshall",
+  "team": "DAL",
+  "opp": "DEN",
+  "home": false,
+  "stat": "pra",
+  "line": 15.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.550760188469569,
+  "edge": 0.06546607082251021,
+  "ev": 0.05145126889644991,
+  "minutes": 24.459023139054402,
+  "projection": 17.15516310268217,
+  "recommended": true,
+  "firstSeen": "2026-11-25T02:04:45.997Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-25T02:04:45.997Z"
+  }
+ },
+ "4278594|pr|DraftKings|12.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "4278594",
+  "name": "Naji Marshall",
+  "team": "DAL",
+  "opp": "DEN",
+  "home": false,
+  "stat": "pr",
+  "line": 12.5,
+  "book": "DraftKings",
+  "over": 1.8333333333333335,
+  "under": 1.8333333333333335,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5623929697603248,
+  "edge": 0.06239296976032482,
+  "ev": 0.031053777893928936,
+  "minutes": 24.459023139054402,
+  "projection": 14.035031716921196,
+  "recommended": true,
+  "firstSeen": "2026-11-25T02:04:45.997Z",
+  "close": {
+   "over": 1.8333333333333335,
+   "under": 1.8333333333333335,
+   "at": "2026-11-25T02:04:45.997Z"
+  }
+ },
+ "5211175|pts|DraftKings|7.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "5211175",
+  "name": "Zaccharie Risacher",
+  "team": "DAL",
+  "opp": "DEN",
+  "home": false,
+  "stat": "pts",
+  "line": 7.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "over",
+  "verdict": "OVER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5485504518700677,
+  "edge": 0.06885502039798647,
+  "ev": 0.07097945365108449,
+  "minutes": 22.889075668457384,
+  "projection": 8.988157043000893,
+  "recommended": true,
+  "firstSeen": "2026-11-25T02:04:45.997Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-25T02:04:45.997Z"
+  }
+ },
+ "5211175|fg3m|DraftKings|0.5": {
+  "date": "2026-11-24",
+  "gameId": "401909316",
+  "tipoff": "2026-11-25T03:00Z",
+  "playerId": "5211175",
+  "name": "Zaccharie Risacher",
+  "team": "DAL",
+  "opp": "DEN",
+  "home": false,
+  "stat": "fg3m",
+  "line": 0.5,
+  "book": "DraftKings",
+  "over": 1.4444444444444444,
+  "under": 2.5,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "LOW",
+  "pWin": 0.425455375454732,
+  "edge": 0.05925819235614049,
+  "ev": 0.06363843863682994,
+  "minutes": 22.889075668457384,
+  "projection": 0.9621326861644047,
+  "recommended": false,
+  "firstSeen": "2026-11-25T02:04:45.997Z",
+  "close": {
+   "over": 1.4444444444444444,
+   "under": 2.5,
+   "at": "2026-11-25T02:04:45.997Z"
   }
  }
 }
