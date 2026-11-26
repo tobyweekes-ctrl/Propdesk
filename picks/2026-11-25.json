@@ -6268,5 +6268,65 @@
    "under": 1.8333333333333335,
    "at": "2026-11-26T03:16:56.147Z"
   }
+ },
+ "4845367|reb|DraftKings|5.5": {
+  "date": "2026-11-25",
+  "gameId": "401909325",
+  "tipoff": "2026-11-26T03:00Z",
+  "playerId": "4845367",
+  "name": "Stephon Castle",
+  "team": "SAS",
+  "opp": "POR",
+  "home": false,
+  "stat": "reb",
+  "line": 5.5,
+  "book": "DraftKings",
+  "over": 1.9090909090909092,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5785923045854364,
+  "edge": 0.0638864222324953,
+  "ev": 0.041466148253785584,
+  "minutes": 32.419785976049525,
+  "projection": 5.267918606230327,
+  "recommended": true,
+  "firstSeen": "2026-11-26T03:45:13.433Z",
+  "close": {
+   "over": 1.9090909090909092,
+   "under": 1.8,
+   "at": "2026-11-26T03:45:13.433Z"
+  }
+ },
+ "5104157|pts|DraftKings|31.5": {
+  "date": "2026-11-25",
+  "gameId": "401909325",
+  "tipoff": "2026-11-26T03:00Z",
+  "playerId": "5104157",
+  "name": "Victor Wembanyama",
+  "team": "SAS",
+  "opp": "POR",
+  "home": false,
+  "stat": "pts",
+  "line": 31.5,
+  "book": "DraftKings",
+  "over": 1.9523809523809523,
+  "under": 1.8,
+  "side": "under",
+  "verdict": "UNDER",
+  "confidence": "MEDIUM",
+  "pWin": 0.5974852838657164,
+  "edge": 0.07718071533779758,
+  "ev": 0.07547351095828958,
+  "minutes": 31.81680426407488,
+  "projection": 29.823342579779847,
+  "recommended": true,
+  "firstSeen": "2026-11-26T03:45:13.433Z",
+  "close": {
+   "over": 1.9523809523809523,
+   "under": 1.8,
+   "at": "2026-11-26T03:45:13.433Z"
+  }
  }
 }
